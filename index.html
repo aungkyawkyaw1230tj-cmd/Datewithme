@@ -1,381 +1,244 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will You Go On A Date With Me? 🥺</title>
+    <title>2D/3D Note & Analytics App</title>
+    
+    <!-- Bulletproof Internal CSS (အင်တာနက်မလိုဘဲ အလုပ်လုပ်သည်) -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Fredoka', sans-serif;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: #f3f4f6; padding: 16px; color: #333; }
+        
+        /* Grid Layout */
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        
+        @media (min-width: 768px) {
+            .container { grid-template-columns: repeat(3, 1fr); }
+            .md-span-2 { grid-column: span 2; }
+            .md-span-3 { grid-column: span 3; }
+            .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         }
 
-        body {
-            background-color: #ffe3ec;
-            background-image: radial-gradient(#ffb3c6 15%, transparent 16%), radial-gradient(#ffb3c6 15%, transparent 16%);
-            background-size: 60px 60px;
-            background-position: 0 0, 30px 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
+        /* 2D Live Card */
+        .live-card { background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; flex-direction: column; justify-content: space-between; min-height: 280px; }
+        .live-title { font-size: 1.25rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .ping-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; }
+        .live-number { text-align: center; font-size: 4.5rem; font-weight: 800; margin: 20px 0; tracking-spacing: 2px; }
+        .live-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; text-align: center; font-size: 0.9rem; }
+        
+        /* White Box Panels */
+        .panel { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .panel-title { font-size: 1.25rem; font-weight: bold; color: #1f2937; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .icon-svg { width: 22px; height: 22px; stroke: currentColor; fill: none; }
 
-        /* Heart Floating Animation Background */
-        .hearts-bg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            pointer-events: none;
-        }
+        /* Form Styling */
+        .form-group-wrapper { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px; }
+        @media (min-width: 480px) { .form-group-wrapper { grid-template-columns: repeat(3, 1fr); } }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: #4b5563; margin-bottom: 5px; }
+        .form-group input { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1rem; outline: none; }
+        .form-group input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+        .btn-submit { width: 100%; background: #4f46e5; color: white; border: none; padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-submit:hover { background: #4338ca; }
 
-        .heart-pop {
-            position: absolute;
-            font-size: 24px;
-            color: #ff4d6d;
-            opacity: 0.6;
-            animation: floatUp 4s linear infinite;
-        }
+        /* Table Styling */
+        .table-wrapper { width: 100%; overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+        th { background-color: #f9fafb; padding: 10px; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
+        td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; color: #374151; }
+        .text-right { text-align: right; }
+        .text-indigo { color: #4f46e5; font-weight: bold; }
+        .text-emerald { color: #059669; font-weight: bold; }
+        .empty-text { text-align: center; color: #9ca3af; padding: 20px 0; }
 
-        @keyframes floatUp {
-            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
-            50% { opacity: 0.8; }
-            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
-        }
-
-        /* Main Container Card */
-        .card {
-            background: white;
-            width: 90%;
-            max-width: 400px;
-            padding: 30px 25px;
-            border-radius: 30px;
-            box-shadow: 0 10px 30px rgba(255, 77, 109, 0.2);
-            border: 4px solid #ff758f;
-            text-align: center;
-            position: relative;
-            z-index: 10;
-            transition: all 0.4s ease;
-        }
-
-        .step {
-            display: none;
-        }
-
-        .step.active {
-            display: block;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Images and Media */
-        .meme-img {
-            width: 180px;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 20px;
-            margin-bottom: 20px;
-        }
-
-        h2 {
-            color: #c9184a;
-            font-size: 26px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        p {
-            color: #590d22;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        /* Buttons CSS */
-        .btn-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-            position: relative;
-            height: 55px;
-        }
-
-        button {
-            padding: 12px 30px;
-            font-size: 18px;
-            font-weight: 600;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-        }
-
-        .btn-yes, .btn-next {
-            background-color: #ff4d6d;
-            color: white;
-            box-shadow: 0 5px 15px rgba(255, 77, 109, 0.4);
-        }
-
-        .btn-yes:hover, .btn-next:hover {
-            background-color: #ff758f;
-            transform: scale(1.05);
-        }
-
-        .btn-no {
-            background-color: #fff0f3;
-            color: #ff4d6d;
-            border: 2px solid #ff4d6d;
-            position: absolute;
-            z-index: 999;
-        }
-
-        /* Inputs Form Style */
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .input-group label {
-            display: block;
-            color: #ff4d6d;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        input[type="date"], input[type="time"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ffb3c6;
-            border-radius: 15px;
-            font-size: 16px;
-            color: #590d22;
-            outline: none;
-            text-align: center;
-        }
-
-        input:focus {
-            border-color: #ff4d6d;
-        }
-
-        /* Grid Selection Setup */
-        .grid-selection {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
-        .grid-item {
-            background: #fff0f3;
-            border: 2px solid transparent;
-            border-radius: 18px;
-            padding: 15px 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .grid-item:hover {
-            background: #ffdeeb;
-            transform: translateY(-3px);
-        }
-
-        .grid-item.selected {
-            background: #ffdeeb;
-            border-color: #ff4d6d;
-            transform: scale(1.05);
-        }
-
-        /* Summary Setup */
-        .summary-box {
-            background: #fff0f3;
-            border-radius: 20px;
-            padding: 15px;
-            text-align: left;
-            margin-top: 15px;
-        }
-
-        .summary-item {
-            font-size: 16px;
-            color: #590d22;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        /* Animations */
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div class="hearts-bg" id="heartsBg"></div>
-
-    <div class="card">
-        <div class="step active" id="step1">
-            <img src="https://media.tenor.com/w9U8vAitv6gAAAAM/shrek-sad.gif" alt="Sad Shrek" class="meme-img" id="proposalImg">
-            <h2>Will you go on a date with me? 🥺</h2>
-            <div class="btn-container" id="proposalBtns">
-                <button class="btn-yes" onclick="nextStep(2)">Yes</button>
-                <button class="btn-no" id="noBtn">No</button>
+    <div class="container">
+        
+        <!-- အပိုင်း ၁ - 2D LIVE RESULT -->
+        <div class="live-card">
+            <div>
+                <div class="live-title">
+                    <!-- Broadcast/Live Icon -->
+                    <svg class="icon-svg" style="stroke-width: 2.5;" viewBox="0 0 24 24"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
+                    2D Live Result
+                    <span class="ping-dot" style="margin-left: auto;"></span>
+                </div>
+                <p style="font-size: 0.75rem; color: #ddd; margin-top: 4px;">ထိုင်းစတော့အိတ်ချိန်း Live တန်ဖိုး</p>
             </div>
+            
+            <div class="live-number" id="live-2d">--</div>
+            
+            <div class="live-details">
+                <div>SET: <span id="live-set" style="font-weight:bold;">--</span></div>
+                <div>VALUE: <span id="live-value" style="font-weight:bold;">--</span></div>
+            </div>
+            
+            <p id="live-time" style="text-align: right; font-size: 0.7rem; color: #ddd; margin-top: 10px;">နောက်ဆုံးအပ်ဒိတ်: --:--:--</p>
         </div>
 
-        <div class="step" id="step2">
-            <h2>When are you free? 📅</h2>
-            <div class="input-group">
-                <label>Pick a date</label>
-                <input type="date" id="dateInput">
+        <!-- အပိုင်း ၂ - စာရင်းသွင်းရန် FORM -->
+        <div class="panel md-span-2">
+            <div class="panel-title" style="color: #4f46e5;">
+                <!-- Edit/Note Icon -->
+                <svg class="icon-svg" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                စာရင်းအသစ်မှတ်ရန်
             </div>
-            <div class="input-group">
-                <label>Pick a time</label>
-                <input type="time" id="timeInput">
-            </div>
-            <button class="btn-next" onclick="validateStep2()">Select the date</button>
+            
+            <form id="noteForm">
+                <div class="form-group-wrapper">
+                    <div class="form-group">
+                        <label>အမည်</label>
+                        <input type="text" id="name" required placeholder="မောင်မောင်">
+                    </div>
+                    <div class="form-group">
+                        <label>ဂဏန်း (2D/3D)</label>
+                        <input type="number" id="number" required placeholder="85">
+                    </div>
+                    <div class="form-group">
+                        <label>ထိုးကြေး (ကျပ်)</label>
+                        <input type="number" id="amount" required placeholder="1000">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">သိမ်းဆည်းမည်</button>
+            </form>
         </div>
 
-        <div class="step" id="step3">
-            <h2>what are we feelin' 😉</h2>
-            <p>Pick our ideal food</p>
-            <div class="grid-selection" id="foodGrid">
-                <div class="grid-item" onclick="selectItem(this, 'food', '🍔')">🍔</div>
-                <div class="grid-item" onclick="selectItem(this, 'food', '🍣')">🍣</div>
-                <div class="grid-item" onclick="selectItem(this, 'food', '🍝')">🍝</div>
-                <div class="grid-item" onclick="selectItem(this, 'food', '🌮')">🌮</div>
-                <div class="grid-item" onclick="selectItem(this, 'food', '🍕')">🍕</div>
+        <!-- အပိုင်း ၃ - ANALYTICS -->
+        <div class="panel md-span-3 grid-2col">
+            
+            <!-- အထိုးအများဆုံး ဇယား -->
+            <div>
+                <div class="panel-title" style="font-size: 1.1rem; color: #dc2626;">
+                    <!-- Flame/Hot Icon -->
+                    <svg class="icon-svg" stroke-width="2" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                    အထိုးအများဆုံး နံပါတ်များ (အကြိမ်ရေ)
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>နံပါတ်</th>
+                                <th class="text-right">ထိုးသည့်အကြိမ်ရေ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-counts-table">
+                            <tr><td colspan="2" class="empty-text">ဒေတာမရှိသေးပါ</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <button class="btn-next" onclick="validateSelection('food', 4, 'mm-mm, sounds yummy!')">mmmm, sounds yummy!</button>
-        </div>
 
-        <div class="step" id="step4">
-            <h2>what's your vibe? 💭</h2>
-            <p>Pick our ideal activity</p>
-            <div class="grid-selection" id="activityGrid">
-                <div class="grid-item" onclick="selectItem(this, 'activity', '⛳')">⛳</div>
-                <div class="grid-item" onclick="selectItem(this, 'activity', '🚶')">🚶</div>
-                <div class="grid-item" onclick="selectItem(this, 'activity', '🎬')">🎬</div>
-                <div class="grid-item" onclick="selectItem(this, 'activity', '💃')">💃</div>
-                <div class="grid-item" onclick="selectItem(this, 'activity', '🎢')">🎢</div>
-                <div class="grid-item" onclick="selectItem(this, 'activity', '🏝️')">🏝️</div>
+            <!-- ပိုက်ဆံအများဆုံး ဇယား -->
+            <div>
+                <div class="panel-title" style="font-size: 1.1rem; color: #16a34a;">
+                    <!-- Dollar/Money Icon -->
+                    <svg class="icon-svg" stroke-width="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    ပိုက်ဆံအများဆုံး နံပါတ်များ (စုစုပေါင်းကြေး)
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>နံပါတ်</th>
+                                <th class="text-right">စုစုပေါင်းပမာဏ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-amounts-table">
+                            <tr><td colspan="2" class="empty-text">ဒေတာမရှိသေးပါ</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <button class="btn-next" onclick="validateSelection('activity', 5, 'sounds like a plan!')">sounds like a plan!</button>
-        </div>
 
-        <div class="step" id="step5">
-            <img src="https://i.pinimg.com/originals/db/1d/a1/db1da1b82736b69601d516ca4d7bc916.gif" alt="Happy Cat" class="meme-img">
-            <h2>I got you girl. 💕</h2>
-            <p>Be ready, I'm coming to get you 🚗</p>
-            <div class="summary-box">
-                <div class="summary-item">📅 <span id="summaryDate"></span></div>
-                <div class="summary-item">⏰ <span id="summaryTime"></span></div>
-                <div class="summary-item">🍽️ <span id="summaryFood"></span></div>
-                <div class="summary-item">🎡 <span id="summaryActivity"></span></div>
-            </div>
         </div>
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Floating hearts generation
-        const heartsBg = document.getElementById('heartsBg');
-        const heartEmojis = ['❤️', '💖', '💗', '💓', '💕'];
-        
-        for (let i = 0; i < 25; i++) {
-            let heart = document.createElement('div');
-            heart.classList.add('heart-pop');
-            heart.innerText = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
-            heart.style.left = Math.random() * 100 + 'vw';
-            heart.style.animationDelay = Math.random() * 4 + 's';
-            heart.style.fontSize = Math.random() * 15 + 15 + 'px';
-            heartsBg.appendChild(heart);
+        // သင့်ထံမှ ရရှိသော Production Webhook URL များကို ထည့်သွင်းထားသည်
+        const N8N_ADD_NOTE_URL = 'https://perseus484.app.n8n.cloud/webhook/add-note';
+        const N8N_GET_ANALYTICS_URL = 'https://perseus484.app.n8n.cloud/webhook/get-analytics';
+
+        // ၁။ စာရင်းသွင်းခြင်း လုပ်ဆောင်ချက်
+        document.getElementById('noteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('name').value,
+                number: document.getElementById('number').value,
+                amount: parseInt(document.getElementById('amount').value)
+            };
+
+            try {
+                const response = await fetch(N8N_ADD_NOTE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    alert('စာရင်းမှတ်သားပြီးပါပြီ။');
+                    document.getElementById('noteForm').reset();
+                    fetchAnalytics(); // ဒေတာအသစ်သွင်းပြီးလျှင် Analytics ချက်ချင်း update လုပ်မည်
+                } else {
+                    alert('အမှားအယွင်းရှိနေပါသည်။');
+                }
+            } catch (error) {
+                alert('n8n နဲ့ ချိတ်ဆက်၍မရပါ။');
+            }
+        });
+
+        // ၂။ စာရင်းအချက်အလက် (Analytics) ပြန်လည်ဆွဲယူပြသခြင်း
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch(N8N_GET_ANALYTICS_URL);
+                const data = await response.json();
+
+                const countsTable = document.getElementById('top-counts-table');
+                countsTable.innerHTML = data.topCounts.length ? data.topCounts.map(item => `
+                    <tr>
+                        <td class="text-indigo">${item.number}</td>
+                        <td class="text-right">${item.count} ကြိမ်</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="2" class="empty-text">ဒေတာမရှိသေးပါ</td></tr>';
+
+                const amountsTable = document.getElementById('top-amounts-table');
+                amountsTable.innerHTML = data.topAmounts.length ? data.topAmounts.map(item => `
+                    <tr>
+                        <td class="text-emerald">${item.number}</td>
+                        <td class="text-right">${item.amount.toLocaleString()} ကျပ်</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="2" class="empty-text">ဒေတာမရှိသေးပါ</td></tr>';
+            } catch (error) {
+                console.error('Analytics Error:', error);
+            }
         }
 
-        // Runaway "No" Button Logic
-        const noBtn = document.getElementById('noBtn');
-        const proposalBtns = document.getElementById('proposalBtns');
+        // ၃။ 2D Live သရုပ်ပြစနစ်
+        function simulateLive2D() {
+            setInterval(() => {
+                const set = (Math.random() * 1000 + 1300).toFixed(2);
+                const value = (Math.random() * 10000 + 30000).toFixed(2);
+                const lastDigitSet = set.split('.').pop().slice(-1);
+                const lastDigitValue = value.split('.').pop().slice(-1);
+                const live2D = lastDigitSet + lastDigitValue;
 
-        const moveNoButton = () => {
-            // Get container dimensions to safely bounding look
-            const containerRect = proposalBtns.getBoundingClientRect();
-            const cardRect = document.querySelector('.card').getBoundingClientRect();
-            
-            // Generate random positions within the visible card but away from Yes button
-            const randomX = Math.random() * (cardRect.width - noBtn.offsetWidth - 20) - (cardRect.width/2 - noBtn.offsetWidth);
-            const randomY = (Math.random() * 150) - 75; // float around standard row
+                document.getElementById('live-2d').innerText = live2D;
+                document.getElementById('live-set').innerText = set;
+                document.getElementById('live-value').innerText = value;
+                document.getElementById('live-time').innerText = `နောက်ဆုံးအပ်ဒိတ်: ${new Date().toLocaleTimeString()}`;
+            }, 3000);
+        }
 
-            noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+        // စတင်ပွင့်လာချိန်တွင် အလုပ်လုပ်မည့် စနစ်များ
+        window.onload = () => {
+            fetchAnalytics();
+            simulateLive2D();
         };
-
-        noBtn.addEventListener('mouseenter', moveNoButton);
-        noBtn.addEventListener('click', moveNoButton);
-
-        // State variables to save inputs
-        let selections = {
-            date: '',
-            time: '',
-            food: '',
-            activity: ''
-        };
-
-        function nextStep(stepNum) {
-            document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
-            document.getElementById(`step${stepNum}`).classList.add('active');
-        }
-
-        function validateStep2() {
-            const dateVal = document.getElementById('dateInput').value;
-            const timeVal = document.getElementById('timeInput').value;
-
-            if(!dateVal || !timeVal) {
-                alert("Please pick both date and time! 🥺");
-                return;
-            }
-
-            // Format date nicely
-            const options = { month: 'long', day: 'numeric', year: 'numeric' };
-            selections.date = new Date(dateVal).toLocaleDateString('en-US', options);
-            selections.time = timeVal;
-
-            nextStep(3);
-        }
-
-        function selectItem(element, type, value) {
-            // Remove previous selected in the same grid
-            element.parentElement.querySelectorAll('.grid-item').forEach(item => item.classList.remove('selected'));
-            // Add to current
-            element.classList.add('selected');
-            selections[type] = value;
-        }
-
-        function validateSelection(type, nextStepNum, alertMsg) {
-            if(!selections[type]) {
-                alert("Please pick one choice! 🥰");
-                return;
-            }
-            
-            if(nextStepNum === 5) {
-                // Populate summary data before showing last screen
-                document.getElementById('summaryDate').innerText = selections.date;
-                document.getElementById('summaryTime').innerText = selections.time;
-                document.getElementById('summaryFood').innerText = selections.food;
-                document.getElementById('summaryActivity').innerText = selections.activity;
-            }
-
-            nextStep(nextStepNum);
-        }
     </script>
 </body>
-              </html>
+</html>
