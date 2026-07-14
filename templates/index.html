@@ -3,141 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X-Esports Bet - Full Version</title>
+    <title>X-Esports Bet - Integrated Version</title>
     
-    <!-- PWA Fix (Jinja2 Error မတက်အောင် Raw သုံးထားသည်) -->
+    <!-- PWA Meta Tags (Jinja2 error မတက်အောင် raw သုံးထားသည်) -->
     {% raw %}
     <link rel="manifest" href="data:application/manifest+json,{"name":"X-Esports","short_name":"X-Esports","start_url":".","display":"standalone","background_color":"#f4f6f9","theme_color":"#00aa4b"}" />
     {% endraw %}
 
     <style>
-        :root { --bg-main: #f4f6f9; --primary-green: #00aa4b; --text-main: #1a1f26; --border: #ddd; }
-        body { font-family: sans-serif; background: var(--bg-main); margin: 0; padding: 0; }
+        :root { --primary: #00aa4b; --bg: #f4f6f9; --text: #1a1f26; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
         
         /* Navbar */
-        .navbar { background: white; padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; border-bottom: 1px solid var(--border); align-items: center; }
-        .logo { font-weight: 800; color: var(--primary-green); font-size: 18px; }
-        .balance-box { background: var(--bg-main); padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 14px; }
-        .btn-deposit { background: var(--primary-green); color: white; padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .navbar { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+        .logo { font-weight: 800; color: var(--primary); }
+        .balance-box { background: var(--bg); padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 14px; }
         
-        /* Tabs */
-        .tabs { display: flex; gap: 10px; padding: 15px; overflow-x: auto; background: white; margin-bottom: 10px; }
-        .tab-btn { padding: 8px 20px; border: 1px solid var(--primary-green); border-radius: 5px; color: var(--primary-green); background: white; cursor: pointer; white-space: nowrap; }
-        .tab-btn.active { background: var(--primary-green); color: white; }
+        /* Main Content */
+        .container { max-width: 600px; margin: 10px auto; padding: 10px; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        .odds-btn { background: #eee; border: 1px solid #ddd; padding: 10px; width: 48%; border-radius: 5px; cursor: pointer; }
+        
+        /* Bottom Nav */
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #ddd; z-index: 100; }
+        .nav-item { cursor: pointer; font-weight: bold; color: #666; }
+        .nav-item.active { color: var(--primary); }
 
-        /* Match Cards */
-        .main-container { max-width: 600px; margin: 0 auto; padding: 10px; }
-        .match-card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .game-tag { font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 4px; color: #666; font-weight: bold; }
-        .odds-row { display: flex; gap: 10px; margin-top: 10px; }
-        .odds-btn { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; text-align: center; }
-        .odds-val { font-weight: bold; color: var(--primary-green); display: block; }
-
-        /* Bet Slip */
-        .bet-slip { background: white; padding: 15px; border-radius: 10px; border: 1px solid var(--border); margin-top: 20px; }
-        
-        /* Modal */
-        .modal-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; }
-        
-        /* Panels */
-        .panel { display: none; padding: 15px; background: #fff3cd; margin-bottom: 15px; border: 1px solid #ffeeba; border-radius: 8px; font-weight: bold; }
+        /* Modal & Alert */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
+        .box { background: white; padding: 20px; border-radius: 10px; width: 80%; max-width: 300px; text-align: center; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="logo">X-ESPORTS BET</div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <div class="balance-box">လက်ကျန်ငွေ: 50000 Coins</div>
-            <button class="btn-deposit" onclick="alert('Admin ဆီဆက်သွယ်ပါ')">Coin ထည့်မည်</button>
-        </div>
+        <div class="logo">X-ESPORTS</div>
+        <div class="balance-box" id="balance">0 Coins</div>
     </div>
 
-    <!-- Login Area -->
-    <div style="padding: 10px; text-align: center;">
-        <button onclick="toggleModal('login-modal', true)" style="background:none; border:none; color:blue; cursor:pointer;">Login / Agent / Admin</button>
-        <div id="user-status" style="font-weight: bold; margin-top: 5px;">Guest Mode</div>
+    <div class="container" id="app-view">
+        <!-- Content inject here -->
     </div>
 
-    <div class="main-container">
-        <!-- Control Panels -->
-        <div id="admin-panel" class="panel" style="background:#d4edda; color:#155724; display:none;">🛡️ Admin Control Panel</div>
-        <div id="agent-panel" class="panel" style="display:none;">💼 Agent Management Panel</div>
-
-        <!-- Game Tabs -->
-        <div class="tabs">
-            <button class="tab-btn active">All Games</button>
-            <button class="tab-btn">Dota 2</button>
-            <button class="tab-btn">MLBB</button>
-            <button class="tab-btn">CS:GO 2</button>
-        </div>
-
-        <div id="matches-wrapper"></div>
-
-        <div class="bet-slip">
-            <h4 style="margin-top:0">BET SLIP (လောင်းကြေးတင်ရန်)</h4>
-            <p style="color:#666; font-size:14px;">ပွဲစဉ်များရွေးချယ်ပါ</p>
-        </div>
+    <!-- Bottom Nav -->
+    <div class="nav-bottom">
+        <div class="nav-item active" onclick="setView('home', this)">Home</div>
+        <div class="nav-item" onclick="setView('history', this)">History</div>
+        <div class="nav-item" id="nav-role" onclick="setView('profile', this)">Profile</div>
     </div>
 
     <!-- Login Modal -->
-    <div id="login-modal" class="modal-overlay">
-        <div class="modal">
-            <h3>Account Login</h3>
-            <select id="role-select" style="width:100%; padding:10px; margin-bottom:10px;">
+    <div class="modal" id="login-modal" style="display:flex;">
+        <div class="box">
+            <h4>Login</h4>
+            <select id="role-select">
                 <option value="user">User</option>
                 <option value="agent">Agent</option>
                 <option value="admin">Admin</option>
             </select>
-            <input type="password" id="pass-input" placeholder="Enter Password" style="width:100%; padding:10px; box-sizing:border-box;">
-            <button onclick="login()" style="width:100%; padding:12px; margin-top:15px; background:var(--primary-green); color:white; border:none; border-radius:5px; cursor:pointer;">Login Now</button>
-            <button onclick="toggleModal('login-modal', false)" style="width:100%; padding:10px; margin-top:5px; background:none; border:1px solid #ddd; cursor:pointer;">Close</button>
+            <input type="password" id="pass-input" placeholder="Password">
+            <button onclick="login()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:5px;">Enter</button>
+        </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="modal" id="alert-modal">
+        <div class="box">
+            <h4 id="alert-title">Notification</h4>
+            <p id="alert-msg"></p>
+            <button onclick="document.getElementById('alert-modal').style.display='none'">OK</button>
         </div>
     </div>
 
     <script>
-        // Data
-        const matches = [
-            { id: 1, tag: "DOTA 2", team1: "Team Spirit", team2: "Team Liquid", odds1: "1.85", odds2: "2.05" },
-            { id: 2, tag: "MLBB", team1: "AP.Bren", team2: "Fnatic ONIC", odds1: "1.60", odds2: "2.30" },
-            { id: 3, tag: "VALORANT", team1: "Sentinels", team2: "Fnatic", odds1: "1.90", odds2: "1.90" }
+        let currentUser = { role: 'user', name: 'Player One', uid: 'U-998877' };
+        let matches = [
+            { id: 1, game: 'Football', team1: 'MU', team2: 'Chelsea', odds: 1.85 },
+            { id: 2, game: 'Dota 2', team1: 'Spirit', team2: 'Liquid', odds: 2.10 }
         ];
 
-        function loadMatches() {
-            const container = document.getElementById('matches-wrapper');
-            container.innerHTML = matches.map(m => `
-                <div class="match-card">
-                    <span class="game-tag">${m.tag}</span>
-                    <div style="font-weight:bold; margin: 10px 0;">${m.team1} VS ${m.team2}</div>
-                    <div class="odds-row">
-                        <button class="odds-btn">${m.team1}<br><span class="odds-val">${m.odds1}</span></button>
-                        <button class="odds-btn">${m.team2}<br><span class="odds-val">${m.odds2}</span></button>
-                    </div>
-                </div>
-            `).join('');
+        // 1. Auto Odds Update
+        setInterval(() => {
+            matches.forEach(m => m.odds = (parseFloat(m.odds) + (Math.random()-0.5)*0.1).toFixed(2));
+            if(document.querySelector('.home-view')) renderHome();
+        }, 3000);
+
+        // 2. View System
+        function setView(view, el) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            const app = document.getElementById('app-view');
+            if(view === 'home') renderHome();
+            else if(view === 'history') app.innerHTML = `<div class="card"><h3>History</h3><p>No transactions.</p></div>`;
+            else renderProfile();
         }
 
-        function toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
+        function renderHome() {
+            const app = document.getElementById('app-view');
+            app.innerHTML = `<div class="home-view">
+                ${matches.length === 0 ? '<div class="card">No Data</div>' : matches.map(m => `
+                    <div class="card">
+                        <small>${m.game}</small>
+                        <h4>${m.team1} vs ${m.team2}</h4>
+                        <div style="display:flex; justify-content:space-between;">
+                            <button class="odds-btn" onclick="bet('${m.team1}', ${m.odds})">${m.team1}: ${m.odds}</button>
+                            <button class="odds-btn" onclick="bet('${m.team2}', ${m.odds})">${m.team2}: ${m.odds}</button>
+                        </div>
+                    </div>
+                `).join('')}
+                <div class="card"><h3>BET SLIP</h3><p>Select match to bet.</p></div>
+            </div>`;
+        }
+
+        function renderProfile() {
+            const app = document.getElementById('app-view');
+            if(currentUser.role === 'user') {
+                app.innerHTML = `<div class="card"><h3>Profile</h3><p>Name: ${currentUser.name}</p><p>UID: ${currentUser.uid}</p></div>`;
+            } else {
+                app.innerHTML = `<div class="card"><h3>Transfer (${currentUser.role.toUpperCase()})</h3>
+                    <input type="text" id="uid" placeholder="Receiver UID">
+                    <input type="number" id="amt" placeholder="Amount">
+                    <button class="btn" style="width:100%; padding:10px;" onclick="showAlert('Success', 'Transfer Complete')">Send</button>
+                </div>`;
+            }
+        }
+
+        function bet(team, odds) { showAlert('Betting', 'Placed on ' + team + ' (' + odds + ')'); }
+        function showAlert(t, m) {
+            document.getElementById('alert-title').innerText = t;
+            document.getElementById('alert-msg').innerText = m;
+            document.getElementById('alert-modal').style.display = 'flex';
+        }
 
         function login() {
             const role = document.getElementById('role-select').value;
             const pass = document.getElementById('pass-input').value;
-
-            // Password check
-            if(role === 'admin' && pass !== 'Admin@2026!') return alert('Invalid Admin Pass');
-            if(role === 'agent' && pass !== 'Agent@2026!') return alert('Invalid Agent Pass');
-
-            // UI Update
-            document.getElementById('user-status').innerText = role.toUpperCase() + " Mode";
-            document.getElementById('admin-panel').style.display = (role === 'admin') ? 'block' : 'none';
-            document.getElementById('agent-panel').style.display = (role === 'agent') ? 'block' : 'none';
+            if(role !== 'user' && pass !== 'Admin@2026!') return alert('Wrong Password');
             
-            toggleModal('login-modal', false);
-            alert('Welcome ' + role + '!');
+            currentUser.role = role;
+            document.getElementById('nav-role').innerText = (role === 'user') ? 'Profile' : 'Transfer';
+            document.getElementById('login-modal').style.display = 'none';
+            renderHome();
         }
 
-        window.onload = loadMatches;
+        window.onload = () => renderHome();
     </script>
 </body>
 </html>
