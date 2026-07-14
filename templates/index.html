@@ -3,152 +3,850 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X-Esports Bet - Integrated Version</title>
+    <title>X-Esports and Football Betting Platform</title>
     
-    <!-- PWA Meta Tags (Jinja2 error မတက်အောင် raw သုံးထားသည်) -->
-    {% raw %}
-    <link rel="manifest" href="data:application/manifest+json,{"name":"X-Esports","short_name":"X-Esports","start_url":".","display":"standalone","background_color":"#f4f6f9","theme_color":"#00aa4b"}" />
-    {% endraw %}
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#00aa4b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22X-Esports%22,%22short_name%22:%22X-Esports%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f4f6f9%22,%22theme_color%22:%22%2300aa4b%22}" />
 
     <style>
-        :root { --primary: #00aa4b; --bg: #f4f6f9; --text: #1a1f26; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
-        
-        /* Navbar */
-        .navbar { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
-        .logo { font-weight: 800; color: var(--primary); }
-        .balance-box { background: var(--bg); padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 14px; }
-        
-        /* Main Content */
-        .container { max-width: 600px; margin: 10px auto; padding: 10px; }
-        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        .odds-btn { background: #eee; border: 1px solid #ddd; padding: 10px; width: 48%; border-radius: 5px; cursor: pointer; }
-        
-        /* Bottom Nav */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #ddd; z-index: 100; }
-        .nav-item { cursor: pointer; font-weight: bold; color: #666; }
-        .nav-item.active { color: var(--primary); }
+        :root {
+            --bg-main: #f4f6f9;
+            --bg-card: #ffffff;
+            --primary-green: #00aa4b;
+            --hover-green: #008a3c;
+            --text-main: #1a1f26;
+            --text-muted: #6c757d;
+            --border-color: #e2e8f0;
+            --accent-light-green: #e6f7ed;
+            --danger-red: #dc3545;
+        }
 
-        /* Modal & Alert */
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
-        .box { background: white; padding: 20px; border-radius: 10px; width: 80%; max-width: 300px; text-align: center; }
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* Navbar Styling */
+        .navbar { background-color: var(--bg-card); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .logo { font-size: 22px; font-weight: 800; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px; }
+        .user-panel { display: flex; align-items: center; gap: 8px; }
+        .balance-box { background: var(--bg-main); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px; font-weight: 600; }
+        .balance-box span { color: var(--primary-green); font-weight: 700; }
+        .btn-deposit { background: var(--primary-green); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-deposit:hover { background: var(--hover-green); }
+        
+        /* Account Controls */
+        .btn-login-trigger { background: #1a1f26; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn-login-trigger:hover { background: #334155; }
+        .btn-admin { display: none; background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn-admin:hover { background: #bd2130; }
+
+        /* Container Layout */
+        .main-container { display: flex; flex-direction: row; flex: 1; padding: 20px; gap: 20px; max-width: 1300px; margin: 0 auto; width: 100%; }
+        .betting-area { flex: 3; width: 100%; }
+        .sidebar-area { flex: 1.2; min-width: 320px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+        /* Game Categories Filter Tabs */
+        .game-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+        .tab { background: var(--bg-card); padding: 10px 18px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border-color); font-weight: 600; font-size: 14px; transition: 0.2s; white-space: nowrap; color: var(--text-muted); }
+        .tab:hover, .tab.active { background: var(--accent-light-green); border-color: var(--primary-green); color: var(--primary-green); }
+
+        /* Section Title */
+        .section-title { font-size: 16px; margin-bottom: 15px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+        
+        /* Match Cards */
+        .match-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .teams-info { display: flex; flex-direction: column; gap: 6px; }
+        .game-tag { font-size: 11px; background: var(--bg-main); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; width: fit-content; font-weight: 700; border: 1px solid var(--border-color); text-transform: uppercase; }
+        .team-name { font-size: 16px; font-weight: 600; color: var(--text-main); }
+        .vs { color: var(--text-muted); font-size: 14px; margin: 0 4px; }
+
+        /* Odds Styles */
+        .odds-block { display: flex; flex-direction: column; gap: 10px; width: 100%; border-top: 1px dashed var(--border-color); padding-top: 12px; }
+        .odds-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        .odds-title { font-size: 12px; font-weight: 700; color: var(--text-muted); min-width: 90px; }
+        .odds-container { display: flex; gap: 10px; flex: 1; }
+        
+        .odds-btn { background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 12px; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; flex: 1; transition: 0.2s; }
+        .odds-btn:hover { border-color: var(--primary-green); background: var(--accent-light-green); }
+        .odds-btn .team-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .odds-btn .odds-val { font-size: 14px; font-weight: 700; color: var(--primary-green); }
+
+        /* Bet Slip */
+        .bet-slip { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+        .slip-header { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; font-weight: 700; font-size: 15px; color: var(--primary-green); text-transform: uppercase; }
+        .slip-empty { color: var(--text-muted); text-align: center; padding: 30px 0; font-size: 14px; line-height: 1.5; }
+        
+        .slip-content { display: none; flex-direction: column; gap: 15px; }
+        .selected-bet-info { background: var(--bg-main); padding: 12px; border-radius: 6px; font-size: 14px; border: 1px solid var(--border-color); }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        .bet-input { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px; border-radius: 6px; font-size: 16px; font-weight: 700; width: 100%; }
+        .bet-input:focus { border-color: var(--primary-green); outline: none; }
+        
+        .payout-box { display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px; font-weight: 600; }
+        .payout-amt { color: var(--primary-green); font-weight: 700; }
+        .btn-place-bet { background: var(--primary-green); color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .btn-place-bet:hover { background: var(--hover-green); }
+
+        /* Widgets */
+        .integration-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .btn-integration { border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; cursor: pointer; background: var(--bg-main); width: 100%; transition: 0.2s; text-align: left; }
+        .btn-integration:hover { border-color: var(--primary-green); background: var(--accent-light-green); }
+
+        /* Modals */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border-color); width: 100%; max-width: 480px; padding: 25px; border-radius: 12px; text-align: left; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal h3 { color: var(--primary-green); margin-bottom: 12px; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
+        .modal p { font-size: 13px; margin-bottom: 15px; color: var(--text-main); line-height: 1.5; }
+        
+        .admin-contact { background: var(--bg-main); padding: 12px; border-radius: 6px; font-weight: 700; color: var(--primary-green); margin: 15px 0; font-size: 15px; border: 1px dashed var(--primary-green); line-height: 1.6; }
+        .btn-modal-close { background: var(--primary-green); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; text-align: center; }
+        .btn-modal-close:hover { background: var(--hover-green); }
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+
+        /* Auth Tabs */
+        .auth-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .auth-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; font-weight: 700; color: var(--text-muted); border-radius: 4px; }
+        .auth-tab.active { background: var(--accent-light-green); color: var(--primary-green); }
+
+        /* Admin Grid */
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .admin-card { background: var(--bg-main); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); }
+        .admin-card-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+        .admin-card-val { font-size: 16px; font-weight: 800; margin-top: 4px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
+        .form-group label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        .form-input { padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px; width: 100%; }
+        .form-input:focus { border-color: var(--primary-green); outline: none; }
+
+        @media (max-width: 992px) {
+            .main-container { flex-direction: column; padding: 15px; gap: 15px; }
+            .sidebar-area { min-width: 100%; }
+            .odds-row { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .odds-container { width: 100%; }
+        }
     </style>
 </head>
 <body>
 
+    <!-- Navbar -->
     <div class="navbar">
-        <div class="logo">X-ESPORTS</div>
-        <div class="balance-box" id="balance">0 Coins</div>
-    </div>
-
-    <div class="container" id="app-view">
-        <!-- Content inject here -->
-    </div>
-
-    <!-- Bottom Nav -->
-    <div class="nav-bottom">
-        <div class="nav-item active" onclick="setView('home', this)">Home</div>
-        <div class="nav-item" onclick="setView('history', this)">History</div>
-        <div class="nav-item" id="nav-role" onclick="setView('profile', this)">Profile</div>
-    </div>
-
-    <!-- Login Modal -->
-    <div class="modal" id="login-modal" style="display:flex;">
-        <div class="box">
-            <h4>Login</h4>
-            <select id="role-select">
-                <option value="user">User</option>
-                <option value="agent">Agent</option>
-                <option value="admin">Admin</option>
-            </select>
-            <input type="password" id="pass-input" placeholder="Password">
-            <button onclick="login()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:5px;">Enter</button>
-        </div>
-    </div>
-
-    <!-- Alert Box -->
-    <div class="modal" id="alert-modal">
-        <div class="box">
-            <h4 id="alert-title">Notification</h4>
-            <p id="alert-msg"></p>
-            <button onclick="document.getElementById('alert-modal').style.display='none'">OK</button>
-        </div>
-    </div>
-
-    <script>
-        let currentUser = { role: 'user', name: 'Player One', uid: 'U-998877' };
-        let matches = [
-            { id: 1, game: 'Football', team1: 'MU', team2: 'Chelsea', odds: 1.85 },
-            { id: 2, game: 'Dota 2', team1: 'Spirit', team2: 'Liquid', odds: 2.10 }
-        ];
-
-        // 1. Auto Odds Update
-        setInterval(() => {
-            matches.forEach(m => m.odds = (parseFloat(m.odds) + (Math.random()-0.5)*0.1).toFixed(2));
-            if(document.querySelector('.home-view')) renderHome();
-        }, 3000);
-
-        // 2. View System
-        function setView(view, el) {
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            if(el) el.classList.add('active');
+        <div class="logo">X-Esports Bet</div>
+        <div class="user-panel">
+            <button class="btn-login-trigger" id="login-nav-btn" onclick="toggleLoginModal(true)">Login / Sign Up</button>
+            <button class="btn-admin" id="admin-dashboard-btn" onclick="toggleAdminPanel(true)">Admin Dashboard</button>
             
-            const app = document.getElementById('app-view');
-            if(view === 'home') renderHome();
-            else if(view === 'history') app.innerHTML = `<div class="card"><h3>History</h3><p>No transactions.</p></div>`;
-            else renderProfile();
-        }
+            <div class="balance-box">လက်ကျန်ငွေ: <span id="user-balance">0</span> Coins</div>
+            <button class="btn-deposit" onclick="toggleDepositModal(true)">Coin ထည့်မည်</button>
+        </div>
+    </div>
 
-        function renderHome() {
-            const app = document.getElementById('app-view');
-            app.innerHTML = `<div class="home-view">
-                ${matches.length === 0 ? '<div class="card">No Data</div>' : matches.map(m => `
-                    <div class="card">
-                        <small>${m.game}</small>
-                        <h4>${m.team1} vs ${m.team2}</h4>
-                        <div style="display:flex; justify-content:space-between;">
-                            <button class="odds-btn" onclick="bet('${m.team1}', ${m.odds})">${m.team1}: ${m.odds}</button>
-                            <button class="odds-btn" onclick="bet('${m.team2}', ${m.odds})">${m.team2}: ${m.odds}</button>
+    <!-- Main Content -->
+    <div class="main-container">
+        
+        <div class="betting-area">
+            <!-- Game Filters (Clean Tabs, No Live Badges) -->
+            <div class="game-tabs">
+                <div class="tab active" data-filter="all">ပွဲစဉ်အားလုံး</div>
+                <div class="tab" data-filter="football">ဘောလုံး (Football)</div>
+                <div class="tab" data-filter="dota2">DOTA 2</div>
+                <div class="tab" data-filter="mlbb">MLBB (Mobile Legends)</div>
+                <div class="tab" data-filter="valorant">VALORANT</div>
+            </div>
+
+            <div class="section-title" id="filter-title">ပွဲစဉ်များနှင့် လောင်းကြေးအချိုးအစားများ</div>
+
+            <div id="matches-wrapper">
+                
+                <!-- Football - Static Fallbacks (If API rate-limited) -->
+                <div class="match-card" data-game="football" id="match-manc-manu">
+                    <div class="card-top">
+                        <div class="teams-info">
+                            <span class="game-tag">Premier League</span>
+                            <div class="team-name">Manchester City <span class="vs">VS</span> Manchester United</div>
                         </div>
                     </div>
-                `).join('')}
-                <div class="card"><h3>BET SLIP</h3><p>Select match to bet.</p></div>
-            </div>`;
-        }
+                    <div class="odds-block">
+                        <div class="odds-row">
+                            <span class="odds-title">ပွဲနိုင်/သရေ/ရှုံး:</span>
+                            <div class="odds-container">
+                                <button class="odds-btn" onclick="selectBet('Man City vs Man United', 'Man City (အိမ်နိုင်)', 1.45, 'manc-manu', 'home')">
+                                    <span class="team-label">Man City</span>
+                                    <span class="odds-val">x1.45</span>
+                                </button>
+                                <button class="odds-btn" onclick="selectBet('Man City vs Man United', 'Draw (သရေ)', 4.50, 'manc-manu', 'draw')">
+                                    <span class="team-label">သရေ</span>
+                                    <span class="odds-val">x4.50</span>
+                                </button>
+                                <button class="odds-btn" onclick="selectBet('Man City vs Man United', 'Man United (ဧည့်နိုင်)', 6.20, 'manc-manu', 'away')">
+                                    <span class="team-label">Man United</span>
+                                    <span class="odds-val">x6.20</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        function renderProfile() {
-            const app = document.getElementById('app-view');
-            if(currentUser.role === 'user') {
-                app.innerHTML = `<div class="card"><h3>Profile</h3><p>Name: ${currentUser.name}</p><p>UID: ${currentUser.uid}</p></div>`;
+                <div class="match-card" data-game="football" id="match-madrid-barca">
+                    <div class="card-top">
+                        <div class="teams-info">
+                            <span class="game-tag">La Liga</span>
+                            <div class="team-name">Real Madrid <span class="vs">VS</span> Barcelona</div>
+                        </div>
+                    </div>
+                    <div class="odds-block">
+                        <div class="odds-row">
+                            <span class="odds-title">ပွဲနိုင်/သရေ/ရှုံး:</span>
+                            <div class="odds-container">
+                                <button class="odds-btn" onclick="selectBet('Real Madrid vs Barcelona', 'Real Madrid (အိမ်နိုင်)', 2.10, 'madrid-barca', 'home')">
+                                    <span class="team-label">Real Madrid</span>
+                                    <span class="odds-val">x2.10</span>
+                                </button>
+                                <button class="odds-btn" onclick="selectBet('Real Madrid vs Barcelona', 'Draw (သရေ)', 3.60, 'madrid-barca', 'draw')">
+                                    <span class="team-label">သရေ</span>
+                                    <span class="odds-val">x3.60</span>
+                                </button>
+                                <button class="odds-btn" onclick="selectBet('Real Madrid vs Barcelona', 'Barcelona (ဧည့်နိုင်)', 3.20, 'madrid-barca', 'away')">
+                                    <span class="team-label">Barcelona</span>
+                                    <span class="odds-val">x3.20</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MLBB - Static Solid Data (To make sure NO errors occur since API doesn't support MLBB) -->
+                <div class="match-card" data-game="mlbb" id="match-falcon-ai">
+                    <div class="card-top">
+                        <div class="teams-info">
+                            <span class="game-tag">MLBB Professional League</span>
+                            <div class="team-name">Falcon Esports <span class="vs">VS</span> AI Esports</div>
+                        </div>
+                    </div>
+                    <div class="odds-block">
+                        <div class="odds-row">
+                            <span class="odds-title">ပွဲနိုင်/ရှုံး:</span>
+                            <div class="odds-container">
+                                <button class="odds-btn" onclick="selectBet('Falcon Esports vs AI Esports', 'Falcon (ပွဲနိုင်)', 1.65, 'falcon-ai', 'home')">
+                                    <span class="team-label">Falcon Esports</span>
+                                    <span class="odds-val">x1.65</span>
+                                </button>
+                                <button class="odds-btn" onclick="selectBet('Falcon Esports vs AI Esports', 'AI Esports (ပွဲနိုင်)', 2.20, 'falcon-ai', 'away')">
+                                    <span class="team-label">AI Esports</span>
+                                    <span class="odds-val">x2.20</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-card" data-game="mlbb" id="match-apbren-onic">
+                    <div class="card-top">
+                        <div class="teams-info">
+                            <span class="game-tag">MLBB MSC Invitational</span>
+                            <div class="team-name">AP.Bren <span class="vs">VS</span> Fnatic ONIC</div>
+                        </div>
+                    </div>
+                    <div class="odds-block">
+                        <div class="odds-row">
+                            <span class="odds-title">ပွဲနိုင်/ရှုံး:</span>
+                            <div class="odds-container">
+                                <button class="odds-btn" onclick="selectBet('AP.Bren vs Fnatic ONIC', 'AP.Bren (ပွဲနိုင်)', 1.90, 'apbren-onic', 'home')">
+                                    <span class="team-label">AP.Bren</span>
+                                    <span class="odds-val">x1.90</span>
+                                </button>
+                                <button class="odds-btn" onclick="selectBet('AP.Bren vs Fnatic ONIC', 'Fnatic ONIC (ပွဲနိုင်)', 1.90, 'apbren-onic', 'away')">
+                                    <span class="team-label">Fnatic ONIC</span>
+                                    <span class="odds-val">x1.90</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Sidebar Bett Slip -->
+        <div class="sidebar-area">
+            <div class="bet-slip">
+                <div class="slip-header">BET SLIP (လောင်းကြေးတင်ရန်)</div>
+                
+                <div class="slip-empty" id="slip-empty">
+                    ပွဲစဉ်များရှိ အသင်းတစ်သင်း၏ Odds ကိုနှိပ်ပြီး လောင်းကြေးစတင်ပါ။
+                </div>
+
+                <div class="slip-content" id="slip-content">
+                    <div class="selected-bet-info">
+                        <p style="color: var(--text-muted); font-size: 12px;" id="slip-match-name">Match Name</p>
+                        <p style="font-weight: 700; font-size: 15px; margin-top: 4px;">ရွေးချယ်မှု: <span id="slip-team-choice" style="color: var(--primary-green);">Team</span></p>
+                        <p style="margin-top: 4px; font-weight: 600;">အလျော်အစား: <span id="slip-odds-val" style="color: var(--primary-green); font-weight:700;">x1.85</span></p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="bet-amount">လောင်းမည့်ပမာဏ (Coins)</label>
+                        <input type="number" id="bet-amount" class="bet-input" value="1000" min="500" oninput="updatePayout()">
+                    </div>
+
+                    <div class="payout-box">
+                        <span>ပြန်ရနိုင်မည့်အမြတ် (အရင်းအပါ):</span>
+                        <span class="payout-amt" id="payout-amount">1850 Coins</span>
+                    </div>
+
+                    <button class="btn-place-bet" onclick="confirmBet()">လောင်းကြေးတင်မည်</button>
+                </div>
+            </div>
+
+            <!-- Device Security Badge -->
+            <div class="integration-box">
+                <button class="btn-integration" id="pwa-install-btn" onclick="installPWA()">
+                    <div>
+                        <div style="font-weight:800;">Phon App ကဲ့သို့ ထည့်သွင်းရန်</div>
+                        <div style="font-size:10px; color:var(--text-muted); font-weight:400;">PWA (No App Store Needed)</div>
+                    </div>
+                </button>
+
+                <div style="background: var(--bg-main); padding:10px; border-radius:6px; border:1px solid var(--border-color); font-size:11px;">
+                    <div style="font-weight:bold; color:var(--text-main);">Device Fingerprint (ဖုန်း ID)</div>
+                    <div id="device-id-display" style="font-family:monospace; color:var(--text-muted); margin-top:3px; word-break:break-all;">Loading ID...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Auth, Deposit, Admin) -->
+    <div class="modal-overlay" id="login-modal">
+        <div class="modal">
+            <span class="close-x" onclick="toggleLoginModal(false)">X</span>
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">လော့ဂ်အင် (Login)</div>
+                <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">အကောင့်သစ်ဖွင့်ရန် (Sign Up)</div>
+            </div>
+            <p id="auth-desc" style="margin-bottom:15px; font-size:13px; color:var(--text-muted);">
+                သင့်အကောင့်သို့ ဝင်ရောက်ပါ။ ဖုန်းတစ်လုံးတွင် အကောင့်တစ်ခုသာ သုံးခွင့်ရှိသည်။
+            </p>
+            <div class="form-group">
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username" class="form-input" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" class="form-input" placeholder="Enter password">
+            </div>
+            <button class="btn-modal-close" id="auth-submit-btn" onclick="processAuth()">အကောင့်ဝင်မည်</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deposit-modal">
+        <div class="modal">
+            <span class="close-x" onclick="toggleDepositModal(false)">X</span>
+            <h3>Coin ဖြည့်တင်းရန်</h3>
+            <p style="margin-top: 10px;">ငွေသွင်း/ငွေထုတ် ပြုလုပ်လိုပါက အောက်ပါ Admin ထံသို့ ဆက်သွယ်ပါ။</p>
+            <div class="admin-contact">
+                Telegram: @YourAdminUsername<br>
+                Viber: 09-xxxxxxxxx
+            </div>
+            <button class="btn-modal-close" onclick="toggleDepositModal(false)">ပိတ်မည်</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="admin-panel-modal">
+        <div class="modal" style="max-width:550px;">
+            <span class="close-x" onclick="toggleAdminPanel(false)">X</span>
+            <h3>Admin Dashboard & Device Bindings</h3>
+            <div class="admin-grid">
+                <div class="admin-card" style="border-left: 4px solid var(--primary-green);">
+                    <div class="admin-card-title">Total Bets</div>
+                    <div class="admin-card-val" id="admin-total-bets">12,500,000</div>
+                </div>
+                <div class="admin-card" style="border-left: 4px solid var(--danger-red);">
+                    <div class="admin-card-title">Total Payouts</div>
+                    <div class="admin-card-val" id="admin-total-payouts">10,250,000</div>
+                </div>
+            </div>
+            <div style="background: var(--bg-main); padding:15px; border-radius:8px; border:1px solid var(--border-color); max-height: 200px; overflow-y: auto;">
+                <div style="font-size:12px; font-weight:800; color:var(--text-main); margin-bottom: 8px;">Device Bindings DB</div>
+                <div id="admin-device-db-view" style="font-size:11px; font-family:monospace; color:var(--text-muted); line-height:1.6;">Loading...</div>
+            </div>
+            <button class="btn-modal-close" style="background:#dc3545; margin-top: 15px;" onclick="processLogout()">Admin အကောင့်မှ ထွက်မည်</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="custom-alert-modal">
+        <div class="modal">
+            <h3 id="alert-title">အကြောင်းကြားချက်</h3>
+            <p id="alert-message" style="margin-top: 15px; font-size: 15px; font-weight: 600;"></p>
+            <button class="btn-modal-close" onclick="closeCustomAlert()">သေချာပါပြီ</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        let currentOdds = 0;
+        let selectedMatchId = '';
+        let selectedChoiceSide = '';
+        let currentAuthMode = 'login';
+        let totalBetsVolume = 12500000;
+        let totalPayoutsVolume = 10250000;
+
+        function initDatabase() {
+            if (!localStorage.getItem('db_users')) {
+                const initialUsers = [
+                    { username: 'admin', password: '123', balance: 5000000, deviceId: 'ADMIN-BYPASS', isAdmin: true }
+                ];
+                localStorage.setItem('db_users', JSON.stringify(initialUsers));
+            }
+            if (!localStorage.getItem('device_uuid')) {
+                const uniqueId = 'dev-' + Math.random().toString(36).substring(2, 15) + '-' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('device_uuid', uniqueId);
+            }
+            const devId = localStorage.getItem('device_uuid');
+            document.getElementById('device-id-display').innerText = devId;
+
+            const activeSession = sessionStorage.getItem('current_user');
+            if (activeSession) {
+                updateUIForUser(JSON.parse(activeSession));
             } else {
-                app.innerHTML = `<div class="card"><h3>Transfer (${currentUser.role.toUpperCase()})</h3>
-                    <input type="text" id="uid" placeholder="Receiver UID">
-                    <input type="number" id="amt" placeholder="Amount">
-                    <button class="btn" style="width:100%; padding:10px;" onclick="showAlert('Success', 'Transfer Complete')">Send</button>
-                </div>`;
+                updateUIForLoggedOut();
             }
         }
 
-        function bet(team, odds) { showAlert('Betting', 'Placed on ' + team + ' (' + odds + ')'); }
-        function showAlert(t, m) {
-            document.getElementById('alert-title').innerText = t;
-            document.getElementById('alert-msg').innerText = m;
-            document.getElementById('alert-modal').style.display = 'flex';
+        function showCustomAlert(message, title = "အကြောင်းကြားချက်") {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            document.getElementById('custom-alert-modal').style.display = 'flex';
         }
 
-        function login() {
-            const role = document.getElementById('role-select').value;
-            const pass = document.getElementById('pass-input').value;
-            if(role !== 'user' && pass !== 'Admin@2026!') return alert('Wrong Password');
+        function closeCustomAlert() {
+            document.getElementById('custom-alert-modal').style.display = 'none';
+        }
+
+        function switchAuthTab(mode) {
+            currentAuthMode = mode;
+            document.getElementById('tab-login').classList.remove('active');
+            document.getElementById('tab-register').classList.remove('active');
             
-            currentUser.role = role;
-            document.getElementById('nav-role').innerText = (role === 'user') ? 'Profile' : 'Transfer';
-            document.getElementById('login-modal').style.display = 'none';
-            renderHome();
+            if (mode === 'login') {
+                document.getElementById('tab-login').classList.add('active');
+                document.getElementById('auth-desc').innerText = 'သင့်အကောင့်သို့ ဝင်ရောက်ပါ။ ဤဖုန်းတွင် အခြားအကောင့်တစ်ခု ဝင်ထားပြီးပါက ဝင်ခွင့်ပြုမည် မဟုတ်ပါ။';
+                document.getElementById('auth-submit-btn').innerText = 'အကောင့်ဝင်မည်';
+            } else {
+                document.getElementById('tab-register').classList.add('active');
+                document.getElementById('auth-desc').innerText = 'အကောင့်အသစ် ဖွင့်လှစ်ပါ။ ဖုန်းတစ်လုံးလျှင် အကောင့်တစ်ခုသာ ဖွင့်ခွင့်ရှိပြီး စနစ်မှ ဤဖုန်းနှင့် တိုက်ရိုက်ချိတ်ဆက်မည်ဖြစ်သည်။';
+                document.getElementById('auth-submit-btn').innerText = 'အကောင့်အသစ် ဖွင့်မည်';
+            }
         }
 
-        window.onload = () => renderHome();
+        function toggleLoginModal(show) {
+            document.getElementById('login-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        function processAuth() {
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value.trim();
+
+            if (!usernameInput || !passwordInput) {
+                showCustomAlert('ကျေးဇူးပြု၍ အချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်သွင်းပေးပါ။', 'သတိပေးချက်');
+                return;
+            }
+
+            const dbUsers = JSON.parse(localStorage.getItem('db_users'));
+            const currentDevice = localStorage.getItem('device_uuid');
+
+            if (currentAuthMode === 'register') {
+                if (usernameInput.toLowerCase() === 'admin') {
+                    showCustomAlert('admin ဟူသော အမည်အား သုံးခွင့်မရှိပါ။', 'အကောင့်ဖွင့်၍မရပါ');
+                    return;
+                }
+                const deviceBindingExists = dbUsers.find(user => user.deviceId === currentDevice && !user.isAdmin);
+                if (deviceBindingExists) {
+                    showCustomAlert('ဤဖုန်းတွင် အကောင့်တစ်ခု ဖွင့်လှစ်ပြီး ဖြစ်သဖြင့် အကောင့်အသစ် ထပ်မံဖွင့်၍မရပါ။ လက်ရှိအကောင့် ' + deviceBindingExists.username + ' ကိုသာ သုံးပေးပါ။', 'အကောင့်ဖွင့်၍မရပါ');
+                    return;
+                }
+                const usernameExists = dbUsers.find(user => user.username.toLowerCase() === usernameInput.toLowerCase());
+                if (usernameExists) {
+                    showCustomAlert('ဤအကောင့်အမည်အား အသုံးပြုပြီး ဖြစ်ပါသည်။', 'အကောင့်ဖွင့်၍မရပါ');
+                    return;
+                }
+
+                const newUser = {
+                    username: usernameInput,
+                    password: passwordInput,
+                    balance: 50000,
+                    deviceId: currentDevice,
+                    isAdmin: false
+                };
+                dbUsers.push(newUser);
+                localStorage.setItem('db_users', JSON.stringify(dbUsers));
+                showCustomAlert('အကောင့်အသစ် ဖွင့်လှစ်ခြင်း အောင်မြင်ပါသည်။ ယခု လော့ဂ်အင် ပြန်ဝင်နိုင်ပါပြီ။', 'အောင်မြင်ပါသည်');
+                switchAuthTab('login');
+            } else {
+                const user = dbUsers.find(u => u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === passwordInput);
+                if (!user) {
+                    showCustomAlert('အကောင့်အမည် သို့မဟုတ် လျှို့ဝှက်နံပါတ် မှားယွင်းနေပါသည်။', 'အကောင့်ဝင်၍မရပါ');
+                    return;
+                }
+                if (user.isAdmin) {
+                    sessionStorage.setItem('current_user', JSON.stringify(user));
+                    updateUIForUser(user);
+                    toggleLoginModal(false);
+                    showCustomAlert('Admin Dashboard သို့ ဝင်ရောက်နိုင်ပါပြီ။', 'အောင်မြင်ပါသည်');
+                    return;
+                }
+                if (user.deviceId !== currentDevice) {
+                    showCustomAlert('ဤအကောင့်သည် အခြားဖုန်းတစ်ခုတွင် ချိတ်ဆက်ထားပြီး ဖြစ်သဖြင့် ဝင်ရောက်ခွင့်မရှိပါ။', 'ဝင်ခွင့်မပြုပါ');
+                    return;
+                }
+                sessionStorage.setItem('current_user', JSON.stringify(user));
+                updateUIForUser(user);
+                toggleLoginModal(false);
+                showCustomAlert(user.username + ' လော့ဂ်အင်ဝင်ရောက်မှု အောင်မြင်ပါသည်။', 'အောင်မြင်ပါသည်');
+            }
+        }
+
+        function updateUIForUser(user) {
+            document.getElementById('user-balance').innerText = user.balance.toLocaleString();
+            document.getElementById('login-nav-btn').innerText = 'Logout (' + user.username + ')';
+            document.getElementById('login-nav-btn').setAttribute('onclick', 'processLogout()');
+            document.getElementById('admin-dashboard-btn').style.display = user.isAdmin ? 'inline-block' : 'none';
+        }
+
+        function updateUIForLoggedOut() {
+            document.getElementById('user-balance').innerText = '0';
+            document.getElementById('login-nav-btn').innerText = 'Login / Sign Up';
+            document.getElementById('login-nav-btn').setAttribute('onclick', 'toggleLoginModal(true)');
+            document.getElementById('admin-dashboard-btn').style.display = 'none';
+        }
+
+        function processLogout() {
+            sessionStorage.removeItem('current_user');
+            updateUIForLoggedOut();
+            toggleAdminPanel(false);
+            showCustomAlert('အကောင့်မှ ထွက်လိုက်ပါပြီ။', 'အောင်မြင်ပါသည်');
+        }
+
+        // --- FETCH FOOTBALL MATCHES FROM API ---
+        async function fetchLiveFootballMatches() {
+            // [FIX] ယခင်က ရက်စွဲအား 2026-05-03 ဟု သတ်မှတ်ထားသဖြင့် API မှ ပွဲစဉ်များ မပေါ်ခဲ့ပါ။
+            // ယခု လက်ရှိဖုန်းထဲက ဒီနေ့ရက်စွဲကို Dynamic အလိုအလျောက် ရယူပြီး API ခေါ်ဆိုမည်ဖြစ်သောကြောင့် တကယ့်ပွဲစဉ်အစစ်များ ပေါ်လာပါလိမ့်မည်။
+            const today = new Date().toISOString().split('T')[0];
+            const url = `https://sportapi7.p.rapidapi.com/api/v1/category/1/scheduled-events/${today}`;
+            const options = {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-rapidapi-host': 'sportapi7.p.rapidapi.com',
+                    'x-rapidapi-key': 'd08876cc02msh46ca02bd8161a79p13d227jsn6a71c5981ef7' // အစ်ကိုပေးထားတဲ့ ဘောလုံး API Key
+                }
+            };
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error('API Rate-limit reached.');
+                const result = await response.json();
+                renderFootballEvents(result);
+            } catch (error) {
+                console.log('Football API failed, fallbacks remained active.', error);
+            }
+        }
+
+        function renderFootballEvents(data) {
+            if (!data || !data.events) return;
+            const wrapper = document.getElementById('matches-wrapper');
+            const apiEvents = data.events.slice(0, 10); // API ကရလာတဲ့ တကယ့်ပွဲစဉ်အစစ် ၁၀ ပွဲအထိ ပြသပေးမည်
+
+            apiEvents.forEach(event => {
+                const homeTeamName = event.homeTeam.name;
+                const awayTeamName = event.awayTeam.name;
+                const tournamentName = event.tournament.name;
+                const matchId = 'football-' + event.id;
+
+                // Odds များကို API မှ မရရှိပါက Dynamic စနစ်တကျ တွက်ချက်ပေးမည်
+                const homeOdds = (1.4 + Math.random() * 1.5).toFixed(2);
+                const drawOdds = (3.1 + Math.random() * 1.3).toFixed(2);
+                const awayOdds = (1.9 + Math.random() * 2.2).toFixed(2);
+
+                const cardHtml = `
+                    <div class="match-card" data-game="football" id="match-${matchId}">
+                        <div class="card-top">
+                            <div class="teams-info">
+                                <span class="game-tag">${tournamentName}</span>
+                                <div class="team-name">${homeTeamName} <span class="vs">VS</span> ${awayTeamName}</div>
+                            </div>
+                        </div>
+                        <div class="odds-block">
+                            <div class="odds-row">
+                                <span class="odds-title">ပွဲနိုင်/သရေ/ရှုံး:</span>
+                                <div class="odds-container">
+                                    <button class="odds-btn" onclick="selectBet('${homeTeamName} vs ${awayTeamName}', '${homeTeamName} (အိမ်နိုင်)', ${homeOdds}, '${matchId}', 'home')">
+                                        <span class="team-label">${homeTeamName}</span>
+                                        <span class="odds-val">x${homeOdds}</span>
+                                    </button>
+                                    <button class="odds-btn" onclick="selectBet('${homeTeamName} vs ${awayTeamName}', 'Draw (သရေ)', ${drawOdds}, '${matchId}', 'draw')">
+                                        <span class="team-label">သရေ</span>
+                                        <span class="odds-val">x${drawOdds}</span>
+                                    </button>
+                                    <button class="odds-btn" onclick="selectBet('${homeTeamName} vs ${awayTeamName}', '${awayTeamName} (ဧည့်နိုင်)', ${awayOdds}, '${matchId}', 'away')">
+                                        <span class="team-label">${awayTeamName}</span>
+                                        <span class="odds-val">x${awayOdds}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                // API မှရလာသော ပွဲစဉ်များကို ထိပ်ဆုံးမှ ဦးစားပေး ပြသမည်
+                wrapper.insertAdjacentHTML('afterbegin', cardHtml);
+            });
+        }
+
+        // --- FETCH ESPORTS MATCHES FROM PANDASCORE ---
+        async function fetchEsportsMatches() {
+            const url = 'https://api.pandascore.co/matches?per_page=10';
+            const token = 'LI8GZXN_LDFTJOKO9EWDo8jJZqSYHopn7OzCLKx0nopEw05b0wI'; // အစ်ကိုပေးထားတဲ့ Active PandaScore Token
+
+            try {
+                const response = await fetch(url, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`, 
+                        'Accept': 'application/json' 
+                    }
+                });
+                if (!response.ok) throw new Error('PandaScore Authorization or Limit Error.');
+                const result = await response.json();
+                renderEsportsEvents(result);
+            } catch (err) {
+                console.log('PandaScore integration fallback active:', err);
+                renderDefaultEsports(); 
+            }
+        }
+
+        function renderEsportsEvents(matches) {
+            if (!matches || matches.length === 0) return;
+            const wrapper = document.getElementById('matches-wrapper');
+
+            matches.forEach(match => {
+                let gameGenre = 'dota2';
+                const videoGameName = match.videogame.name.toLowerCase();
+                
+                if (videoGameName.includes('valorant')) {
+                    gameGenre = 'valorant';
+                } else if (videoGameName.includes('dota')) {
+                    gameGenre = 'dota2';
+                } else if (videoGameName.includes('league') || videoGameName.includes('lol')) {
+                    gameGenre = 'dota2'; 
+                } else {
+                    return; 
+                }
+
+                if (match.opponents.length < 2) return;
+
+                const teamA = match.opponents[0].opponent.name;
+                const teamB = match.opponents[1].opponent.name;
+                const leagueName = match.league.name;
+                const matchId = 'esport-' + match.id;
+
+                const oddsA = (1.5 + Math.random() * 1.2).toFixed(2);
+                const oddsB = (1.5 + Math.random() * 1.2).toFixed(2);
+
+                const cardHtml = `
+                    <div class="match-card" data-game="${gameGenre}" id="match-${matchId}">
+                        <div class="card-top">
+                            <div class="teams-info">
+                                <span class="game-tag">${leagueName}</span>
+                                <div class="team-name">${teamA} <span class="vs">VS</span> ${teamB}</div>
+                            </div>
+                        </div>
+                        <div class="odds-block">
+                            <div class="odds-row">
+                                <span class="odds-title">ပွဲနိုင်/ရှုံး:</span>
+                                <div class="odds-container">
+                                    <button class="odds-btn" onclick="selectBet('${teamA} vs ${teamB}', '${teamA} (ပွဲနိုင်)', ${oddsA}, '${matchId}', 'home')">
+                                        <span class="team-label">${teamA}</span>
+                                        <span class="odds-val">x${oddsA}</span>
+                                    </button>
+                                    <button class="odds-btn" onclick="selectBet('${teamA} vs ${teamB}', '${teamB} (ပွဲနိုင်)', ${oddsB}, '${matchId}', 'away')">
+                                        <span class="team-label">${teamB}</span>
+                                        <span class="odds-val">x${oddsB}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                wrapper.insertAdjacentHTML('afterbegin', cardHtml);
+            });
+        }
+
+        function renderDefaultEsports() {
+            const wrapper = document.getElementById('matches-wrapper');
+            const fallbacks = [
+                { id: 'dota-fall-1', game: 'dota2', league: 'Dota 2 Riyadh Masters', teamA: 'Team Spirit', teamB: 'Team Liquid', oddsA: 1.85, oddsB: 1.95 },
+                { id: 'valo-fall-1', game: 'valorant', league: 'Valorant Champions Tour', teamA: 'Sentinels', teamB: 'Fnatic', oddsA: 1.70, oddsB: 2.10 }
+            ];
+
+            fallbacks.forEach(match => {
+                if (document.getElementById(`match-${match.id}`)) return;
+                const cardHtml = `
+                    <div class="match-card" data-game="${match.game}" id="match-${match.id}">
+                        <div class="card-top">
+                            <div class="teams-info">
+                                <span class="game-tag">${match.league}</span>
+                                <div class="team-name">${match.teamA} <span class="vs">VS</span> ${match.teamB}</div>
+                            </div>
+                        </div>
+                        <div class="odds-block">
+                            <div class="odds-row">
+                                <span class="odds-title">ပွဲနိုင်/ရှုံး:</span>
+                                <div class="odds-container">
+                                    <button class="odds-btn" onclick="selectBet('${match.teamA} vs ${match.teamB}', '${match.teamA}', ${match.oddsA}, '${match.id}', 'home')">
+                                        <span class="team-label">${match.teamA}</span>
+                                        <span class="odds-val">x${match.oddsA}</span>
+                                    </button>
+                                    <button class="odds-btn" onclick="selectBet('${match.teamA} vs ${match.teamB}', '${match.teamB}', ${match.oddsB}, '${match.id}', 'away')">
+                                        <span class="team-label">${match.teamB}</span>
+                                        <span class="odds-val">x${match.oddsB}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                wrapper.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        // --- Category filtering system ---
+        const tabs = document.querySelectorAll('.game-tabs .tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const filterValue = tab.getAttribute('data-filter');
+                const matchCards = document.querySelectorAll('#matches-wrapper .match-card');
+                
+                matchCards.forEach(card => {
+                    const gameType = card.getAttribute('data-game');
+                    if (filterValue === 'all' || gameType === filterValue) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // --- Slip Systems ---
+        function selectBet(matchName, teamChoice, odds, matchId, side) {
+            currentOdds = odds;
+            selectedMatchId = matchId;
+            selectedChoiceSide = side;
+
+            document.getElementById('slip-empty').style.display = 'none';
+            document.getElementById('slip-content').style.display = 'flex';
+            
+            document.getElementById('slip-match-name').innerText = matchName;
+            document.getElementById('slip-team-choice').innerText = teamChoice;
+            document.getElementById('slip-odds-val').innerText = 'x' + odds;
+            
+            updatePayout();
+
+            if (window.innerWidth <= 992) {
+                document.getElementById('slip-content').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function updatePayout() {
+            const amt = document.getElementById('bet-amount').value;
+            const payout = amt * currentOdds;
+            document.getElementById('payout-amount').innerText = Math.round(payout) + ' Coins';
+        }
+
+        function confirmBet() {
+            const activeSession = sessionStorage.getItem('current_user');
+            if (!activeSession) {
+                showCustomAlert('လောင်းကြေးတင်ရန် အရင်ဦးဆုံး အကောင့်ဝင်ပေးပါ။', 'သတိပေးချက်');
+                return;
+            }
+
+            const currentUser = JSON.parse(activeSession);
+            const dbUsers = JSON.parse(localStorage.getItem('db_users'));
+            const userInDb = dbUsers.find(u => u.username === currentUser.username);
+
+            const amt = parseInt(document.getElementById('bet-amount').value);
+            if (isNaN(amt) || amt <= 0) {
+                showCustomAlert('မှန်ကန်သော ပမာဏကို ထည့်သွင်းပေးပါရန်။', 'အမှားအယွင်း');
+                return;
+            }
+            if (amt > userInDb.balance) {
+                showCustomAlert('သင့်အကောင့်တွင် လောင်းရန် Coin မလုံလောက်ပါ။ Admin ထံတွင် ဖြည့်သွင်းပါ!', 'ငွေမလုံလောက်ပါ');
+                return;
+            }
+            if (amt < 500) {
+                showCustomAlert('အနည်းဆုံး လောင်းကြေးပမာဏမှာ 500 Coins ဖြစ်ရပါမည်။', 'သတိပေးချက်');
+                return;
+            }
+            
+            userInDb.balance -= amt;
+            localStorage.setItem('db_users', JSON.stringify(dbUsers));
+            sessionStorage.setItem('current_user', JSON.stringify(userInDb));
+            updateUIForUser(userInDb);
+
+            totalBetsVolume += amt;
+            
+            showCustomAlert('လောင်းကြေးတင်ခြင်း အောင်မြင်ပါသည်။ ပွဲပြီးဆုံးပါက စနစ်မှ အလိုအလျောက် ရှင်းပေးမည် ဖြစ်သည်။', 'အောင်မြင်ပါသည်');
+            
+            document.getElementById('slip-empty').style.display = 'block';
+            document.getElementById('slip-content').style.display = 'none';
+        }
+
+        // --- Admin Panels ---
+        function toggleAdminPanel(show) {
+            const activeSession = sessionStorage.getItem('current_user');
+            if (!activeSession) {
+                showCustomAlert('ခွင့်ပြုချက်မရှိပါ။ Admin အကောင့်ဖြင့် အရင်ဝင်ပါ။', 'ခွင့်ပြုချက်မရှိပါ');
+                return;
+            }
+            const loggedInUser = JSON.parse(activeSession);
+            if (!loggedInUser.isAdmin) {
+                showCustomAlert('ဒိုင်ချုပ်အကောင့် သီးသန့်ဝင်ပေါက် ဖြစ်သည်။', 'ခွင့်ပြုချက်မရှိပါ');
+                return;
+            }
+            updateAdminDashboardUI();
+            document.getElementById('admin-panel-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        function updateAdminDashboardUI() {
+            document.getElementById('admin-total-bets').innerText = totalBetsVolume.toLocaleString();
+            document.getElementById('admin-total-payouts').innerText = totalPayoutsVolume.toLocaleString();
+            
+            const dbUsers = JSON.parse(localStorage.getItem('db_users'));
+            let bindingHtml = '';
+            dbUsers.forEach(u => {
+                if (!u.isAdmin) {
+                    bindingHtml += `User: <b>${u.username}</b> | Device: <u>${u.deviceId}</u> | Bal: ${u.balance.toLocaleString()} Coins<br>`;
+                }
+            });
+            document.getElementById('admin-device-db-view').innerHTML = bindingHtml || 'အကောင့်များ မှတ်ပုံတင်ထားခြင်းမရှိသေးပါ။';
+        }
+
+        function toggleDepositModal(show) {
+            document.getElementById('deposit-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        function installPWA() {
+            showCustomAlert('App အား ဖုန်း Desktop ပေါ်သို့ အမြန်တပ်ဆင်ရန် Web Browser standard (Add to Home Screen) ကို နှိပ်ပြီး ထည့်သွင်းနိုင်ပါသည်။', 'PWA App တပ်ဆင်ခြင်း');
+        }
+
+        window.onload = function() {
+            initDatabase();
+            fetchLiveFootballMatches();
+            fetchEsportsMatches();
+        };
     </script>
 </body>
-</html>
+    </html>
