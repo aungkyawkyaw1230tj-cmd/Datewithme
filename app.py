@@ -20,12 +20,9 @@ def get_football():
     response = requests.get(url, headers=headers)
     return jsonify(response.json())
 
-@app.route('/api/esports-matches')
-def get_esports():
-    url = "https://api.pandascore.co/matches?per_page=10"
-    headers = {"Authorization": f"Bearer {PANDA_TOKEN}"}
-    response = requests.get(url, headers=headers)
-    return jsonify(response.json())
+@app.route('/')
+def index():
+    return "<h1>Hello! Flask is working.</h1>"
 
 if __name__ == '__main__':
     app.run()
