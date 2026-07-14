@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Esports and Football Betting Platform</title>
+    <!-- (CSS Code အပြည့်အစုံ) -->
+    <style>
+        /* မင်းရဲ့ Original CSS တွေ အကုန်ဒီမှာ */
+        :root { --bg-main: #f4f6f9; --bg-card: #ffffff; --primary-green: #00aa4b; --hover-green: #008a3c; --text-main: #1a1f26; --text-muted: #6c757d; --border-color: #e2e8f0; --accent-light-green: #e6f7ed; --danger-red: #dc3545; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar { background-color: var(--bg-card); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        /* ကျန်တဲ့ CSS အကုန်လုံး မင်းပေးထားတာအတိုင်း ဒီမှာထည့်ပါ */
+    </style>
+</head>
+<body>
+    <!-- (Navbar နှင့် HTML body အကုန် မင်းပေးထားတဲ့အတိုင်း) -->
+    <div class="navbar">...</div> 
+    
+    <script>
+        // --- API FETCH LOGIC (ပြင်ထားတဲ့အပိုင်း) ---
+        async function fetchLiveFootballMatches() {
+            try {
+                // ကိုယ့် Flask Backend ကိုပဲ ခေါ်မယ်
+                const response = await fetch('/api/football-matches');
+                const result = await response.json();
+                renderFootballEvents(result);
+            } catch (error) {
+                console.log('Football API failed', error);
+            }
+        }
+
+        async function fetchEsportsMatches() {
+            try {
+                // ကိုယ့် Flask Backend ကိုပဲ ခေါ်မယ်
+                const response = await fetch('/api/esports-matches');
+                const result = await response.json();
+                renderEsportsEvents(result);
+            } catch (err) {
+                console.log('Esports API failed:', err);
+                renderDefaultEsports(); 
+            }
+        }
+
+        // --- မင်းရဲ့ Original Functions အကုန်လုံး ---
+        function initDatabase() { /* မင်း code အတိုင်း */ }
+        function selectBet(...) { /* မင်း code အတိုင်း */ }
+        function confirmBet(...) { /* မင်း code အတိုင်း */ }
+        /* ... ကျန်တဲ့ function အကုန်လုံးကို ဒီမှာ paste လုပ်ပါ ... */
+
+        window.onload = function() {
+            initDatabase();
+            fetchLiveFootballMatches();
+            fetchEsportsMatches();
+        };
+    </script>
+</body>
+</html>
