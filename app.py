@@ -1,14 +1,11 @@
 from flask import Flask, render_template
+import traceback
 
 app = Flask(__name__)
 
-# အဓိက Index Page
 @app.route('/')
 def index():
-    # templates folder ထဲက index.html ကို ခေါ်ပြပေးမယ်
-    return render_template('index.html')
-
-# (Backend API routes တွေရှိရင် ဒီအောက်မှာ ဆက်ထည့်သွားပါ)
-
-if __name__ == '__main__':
-    app.run()
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return str(traceback.format_exc()) # Error တက်ရင် ဘာဖြစ်လို့လဲဆိုတာ Browser ပေါ်မှာ တန်းပြလိမ့်မယ်
