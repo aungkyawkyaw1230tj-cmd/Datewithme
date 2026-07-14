@@ -4,74 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>X-Esports Bet - Full Version</title>
-    <!-- PWA Fix -->
+    
+    <!-- PWA Fix (Jinja2 Error မတက်အောင် Raw သုံးထားသည်) -->
     {% raw %}
     <link rel="manifest" href="data:application/manifest+json,{"name":"X-Esports","short_name":"X-Esports","start_url":".","display":"standalone","background_color":"#f4f6f9","theme_color":"#00aa4b"}" />
     {% endraw %}
 
     <style>
-        :root { --bg-main: #f4f6f9; --primary-green: #00aa4b; --text-main: #1a1f26; }
+        :root { --bg-main: #f4f6f9; --primary-green: #00aa4b; --text-main: #1a1f26; --border: #ddd; }
         body { font-family: sans-serif; background: var(--bg-main); margin: 0; padding: 0; }
         
-        /* Navbar Fix */
-        .navbar { background: white; padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; border-bottom: 1px solid #ddd; }
-        .btn { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-green { background: var(--primary-green); color: white; }
+        /* Navbar */
+        .navbar { background: white; padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; border-bottom: 1px solid var(--border); align-items: center; }
+        .logo { font-weight: 800; color: var(--primary-green); font-size: 18px; }
+        .balance-box { background: var(--bg-main); padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 14px; }
+        .btn-deposit { background: var(--primary-green); color: white; padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         
-        .main-container { max-width: 600px; margin: 20px auto; padding: 10px; }
-        .match-card { background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #ddd; }
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; padding: 15px; overflow-x: auto; background: white; margin-bottom: 10px; }
+        .tab-btn { padding: 8px 20px; border: 1px solid var(--primary-green); border-radius: 5px; color: var(--primary-green); background: white; cursor: pointer; white-space: nowrap; }
+        .tab-btn.active { background: var(--primary-green); color: white; }
+
+        /* Match Cards */
+        .main-container { max-width: 600px; margin: 0 auto; padding: 10px; }
+        .match-card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .game-tag { font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 4px; color: #666; font-weight: bold; }
+        .odds-row { display: flex; gap: 10px; margin-top: 10px; }
+        .odds-btn { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; text-align: center; }
+        .odds-val { font-weight: bold; color: var(--primary-green); display: block; }
+
+        /* Bet Slip */
+        .bet-slip { background: white; padding: 15px; border-radius: 10px; border: 1px solid var(--border); margin-top: 20px; }
         
         /* Modal */
-        .modal-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         
-        .panel { display: none; padding: 15px; background: #fff3cd; margin-bottom: 10px; border: 1px solid #ffeeba; border-radius: 6px; font-weight: bold; }
+        /* Panels */
+        .panel { display: none; padding: 15px; background: #fff3cd; margin-bottom: 15px; border: 1px solid #ffeeba; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <button class="btn" onclick="toggleModal('login-modal', true)">Login / Signup</button>
-        <div id="user-status" style="align-self: center; font-weight: bold;">Guest Mode</div>
+        <div class="logo">X-ESPORTS BET</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="balance-box">လက်ကျန်ငွေ: 50000 Coins</div>
+            <button class="btn-deposit" onclick="alert('Admin ဆီဆက်သွယ်ပါ')">Coin ထည့်မည်</button>
+        </div>
+    </div>
+
+    <!-- Login Area -->
+    <div style="padding: 10px; text-align: center;">
+        <button onclick="toggleModal('login-modal', true)" style="background:none; border:none; color:blue; cursor:pointer;">Login / Agent / Admin</button>
+        <div id="user-status" style="font-weight: bold; margin-top: 5px;">Guest Mode</div>
     </div>
 
     <div class="main-container">
-        <!-- Panels -->
-        <div id="admin-panel" class="panel" style="background:#d4edda; color:#155724;">🛡️ Admin Control Panel</div>
-        <div id="agent-panel" class="panel">💼 Agent Management Panel</div>
+        <!-- Control Panels -->
+        <div id="admin-panel" class="panel" style="background:#d4edda; color:#155724; display:none;">🛡️ Admin Control Panel</div>
+        <div id="agent-panel" class="panel" style="display:none;">💼 Agent Management Panel</div>
+
+        <!-- Game Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active">All Games</button>
+            <button class="tab-btn">Dota 2</button>
+            <button class="tab-btn">MLBB</button>
+            <button class="tab-btn">CS:GO 2</button>
+        </div>
 
         <div id="matches-wrapper"></div>
+
+        <div class="bet-slip">
+            <h4 style="margin-top:0">BET SLIP (လောင်းကြေးတင်ရန်)</h4>
+            <p style="color:#666; font-size:14px;">ပွဲစဉ်များရွေးချယ်ပါ</p>
+        </div>
     </div>
 
     <!-- Login Modal -->
     <div id="login-modal" class="modal-overlay">
         <div class="modal">
             <h3>Account Login</h3>
-            <select id="role-select">
+            <select id="role-select" style="width:100%; padding:10px; margin-bottom:10px;">
                 <option value="user">User</option>
                 <option value="agent">Agent</option>
                 <option value="admin">Admin</option>
             </select>
-            <input type="password" id="pass-input" placeholder="Enter Password">
-            <button class="btn btn-green" style="width:100%" onclick="login()">Login</button>
-            <button class="btn" style="width:100%; margin-top:5px" onclick="toggleModal('login-modal', false)">Cancel</button>
+            <input type="password" id="pass-input" placeholder="Enter Password" style="width:100%; padding:10px; box-sizing:border-box;">
+            <button onclick="login()" style="width:100%; padding:12px; margin-top:15px; background:var(--primary-green); color:white; border:none; border-radius:5px; cursor:pointer;">Login Now</button>
+            <button onclick="toggleModal('login-modal', false)" style="width:100%; padding:10px; margin-top:5px; background:none; border:1px solid #ddd; cursor:pointer;">Close</button>
         </div>
     </div>
 
     <script>
-        // Mock Data
+        // Data
         const matches = [
-            { id: 1, team: "Team Secret vs Liquid", odds: "1.85" },
-            { id: 2, team: "MU vs Chelsea", odds: "2.10" }
+            { id: 1, tag: "DOTA 2", team1: "Team Spirit", team2: "Team Liquid", odds1: "1.85", odds2: "2.05" },
+            { id: 2, tag: "MLBB", team1: "AP.Bren", team2: "Fnatic ONIC", odds1: "1.60", odds2: "2.30" },
+            { id: 3, tag: "VALORANT", team1: "Sentinels", team2: "Fnatic", odds1: "1.90", odds2: "1.90" }
         ];
 
         function loadMatches() {
             const container = document.getElementById('matches-wrapper');
             container.innerHTML = matches.map(m => `
                 <div class="match-card">
-                    <h4 style="margin-top:0">${m.team}</h4>
-                    <button class="btn btn-green" onclick="alert('Bet Placed on ${m.team}')">Odds: ${m.odds}</button>
+                    <span class="game-tag">${m.tag}</span>
+                    <div style="font-weight:bold; margin: 10px 0;">${m.team1} VS ${m.team2}</div>
+                    <div class="odds-row">
+                        <button class="odds-btn">${m.team1}<br><span class="odds-val">${m.odds1}</span></button>
+                        <button class="odds-btn">${m.team2}<br><span class="odds-val">${m.odds2}</span></button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -82,11 +124,11 @@
             const role = document.getElementById('role-select').value;
             const pass = document.getElementById('pass-input').value;
 
-            // Simple Password Logic
+            // Password check
             if(role === 'admin' && pass !== 'Admin@2026!') return alert('Invalid Admin Pass');
             if(role === 'agent' && pass !== 'Agent@2026!') return alert('Invalid Agent Pass');
 
-            // Apply UI Changes
+            // UI Update
             document.getElementById('user-status').innerText = role.toUpperCase() + " Mode";
             document.getElementById('admin-panel').style.display = (role === 'admin') ? 'block' : 'none';
             document.getElementById('agent-panel').style.display = (role === 'agent') ? 'block' : 'none';
