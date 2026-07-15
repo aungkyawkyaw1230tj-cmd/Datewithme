@@ -258,42 +258,57 @@
 
     // ၉။ ပွဲစဉ်များကို UI ပေါ်တွင် အမြန်ဆုံးဆွဲတင်ခြင်း (Optimization)
     function displayMatches(matches) {
-        const container = document.getElementById('matches-display');
-        if (!container) return;
+    const container = document.getElementById('matches-display');
+    if (!container) return;
 
-        if (!matches || matches.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">ပွဲစဉ်မရှိသေးပါ။</p>';
-            return;
+    if (!matches || matches.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">ပွဲစဉ်မရှိသေးပါ။</p>';
+        return;
+    }
+
+    const matchesHTML = matches.map(m => {
+        let matchTime = 'စတင်မည့်အချိန် မရှိပါ';
+        
+        if (m.match_date) {
+            try {
+                // ISO String format သို့မဟုတ် standard format ဖြစ်အောင် အစားထိုးပြီးမှ Date ပြောင်းမယ်
+                const safeDateStr = m.match_date.replace(' ', 'T'); 
+                const parsedDate = new Date(safeDateStr);
+                
+                if (!isNaN(parsedDate)) {
+                    matchTime = parsedDate.toLocaleString('en-US', {
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                }
+            } catch (e) {
+                console.error("Date parsing error for match:", m.id, e);
+            }
         }
 
-        const matchesHTML = matches.map(m => {
-            let matchTime = 'စတင်မည့်အချိန် မရှိပါ';
-            if (m.match_date) {
-                matchTime = new Date(m.match_date).toLocaleString('my-MM', {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
-            }
-
-            return `
-                <div class="match-card">
-                    <div class="card-header">
-                        <span>${matchTime}</span>
-                        <span class="badge">${m.league || m.game_type || 'Football'}</span>
-                    </div>
-                    <div class="teams-container">
-                        <span>${m.team_a || 'Team A'}</span>
-                        <span style="color:var(--text-muted); font-size:14px;">VS</span>
-                        <span>${m.team_b || 'Team B'}</span>
-                    </div>
-                    <div class="odds-container">
-                        <button class="odds-btn"><span>${m.team_a || 'Team A'}</span> <span class="odds-val">${m.odds_a || '1.9'}</span></button>
-                        <button class="odds-btn"><span>${m.team_b || 'Team B'}</span> <span class="odds-val">${m.odds_b || '1.9'}</span></button>
-                    </div>
+        return `
+            <div class="match-card">
+                <div class="card-header">
+                    <span>${matchTime}</span>
+                    <span class="badge">${m.league || m.game_type || 'Football'}</span>
                 </div>
-            `;
-        }).join('');
+                <div class="teams-container">
+                    <span>${m.team_a || 'Team A'}</span>
+                    <span style="color:var(--text-muted); font-size:14px;">VS</span>
+                    <span>${m.team_b || 'Team B'}</span>
+                </div>
+                <div class="odds-container">
+                    <button class="odds-btn"><span>${m.team_a || 'Team A'}</span> <span class="odds-val">${m.odds_a || '1.9'}</span></button>
+                    <button class="odds-btn"><span>${m.team_b || 'Team B'}</span> <span class="odds-val">${m.odds_b || '1.9'}</span></button>
+                </div>
+            </div>
+        `;
+    }).join('');
 
-        container.innerHTML = matchesHTML;
+    container.innerHTML = matchesHTML;
     }
 
     // ၁၀။ အကောင့်ထဲမှ ထွက်ခြင်း Logout
