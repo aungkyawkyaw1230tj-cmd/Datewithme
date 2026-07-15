@@ -3,84 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X-Esports and Football Betting Platform</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#00aa4b">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href='data:application/manifest+json,{"name":"X-Esports","short_name":"X-Esports","start_url":".","display":"standalone","background_color":"#f4f6f9","theme_color":"#00aa4b"}' />
-
+    <title>X-Esports | ပွဲစဉ်များ</title>
     <style>
-        :root {
-            --bg-main: #f4f6f9;
-            --bg-card: #ffffff;
-            --primary-green: #00aa4b;
-            --text-main: #333;
-            --text-muted: #666;
-            --border-color: #ddd;
-            --hover-green: #008f3d;
-            --accent-light-green: #e6f7ef;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        :root { --primary-green: #00aa4b; --bg-main: #f4f6f9; --text-dark: #2c3e50; }
+        body { background-color: var(--bg-main); font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; color: var(--text-dark); }
         
-        /* Navbar */
-        .navbar { background-color: var(--bg-card); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .logo { font-size: 22px; font-weight: 800; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 25px; border: none; cursor: pointer; border-radius: 20px; background: #fff; border: 1px solid var(--primary-green); color: var(--primary-green); transition: 0.3s; }
+        .tab-btn.active { background: var(--primary-green); color: white; }
         
-        /* Layout */
-        .main-container { display: flex; flex-direction: row; flex: 1; padding: 20px; gap: 20px; max-width: 1300px; margin: 0 auto; width: 100%; }
-        .betting-area { flex: 3; width: 100%; }
-        .match-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 12px; }
-        
-        /* Odds */
-        .odds-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 15px; }
-        .odds-btn { background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; }
-        .odds-btn:hover { border-color: var(--primary-green); background: var(--accent-light-green); }
-
-        /* Responsive */
-        @media (max-width: 992px) { .main-container { flex-direction: column; } }
+        .match-card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid var(--primary-green); }
+        .match-header { display: flex; justify-content: space-between; font-size: 13px; color: #7f8c8d; margin-bottom: 10px; }
+        .teams { font-size: 17px; font-weight: bold; margin-bottom: 12px; }
+        .odds-row { display: flex; gap: 10px; }
+        .odds-btn { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; flex: 1; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .odds-btn:active { background: var(--primary-green); color: white; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="logo">X-Esports</div>
-        <div class="balance-box">လက်ကျန်: <span id="balance">0</span> Coins</div>
-    </nav>
-
-    <div class="main-container">
-        <div class="betting-area" id="matches-list">
-            <p>ပွဲစဉ်များ တင်နေသည်...</p>
-        </div>
+    <div class="header">
+        <h2>X-Esports</h2>
+        <p>လက်ရှိပွဲစဉ်များ</p>
     </div>
 
+    <div class="tabs">
+        <button class="tab-btn active" onclick="filterMatches('all', this)">အားလုံး</button>
+        <button class="tab-btn" onclick="filterMatches('Football', this)">Football</button>
+        <button class="tab-btn" onclick="filterMatches('Esports', this)">Esports</button>
+    </div>
+
+    <div id="matches-list"></div>
+
     <script>
+        let allMatches = [];
+        
         async function fetchMatches() {
             try {
-                const response = await fetch('/api/matches');
-                const matches = await response.json();
-                const container = document.getElementById('matches-list');
-                container.innerHTML = '';
+                const res = await fetch('/api/matches');
+                allMatches = await res.json();
+                renderMatches(allMatches);
+            } catch (err) {
+                document.getElementById('matches-list').innerHTML = '<p style="text-align:center;">Data ဆွဲယူ၍ မရသေးပါ။</p>';
+            }
+        }
 
-                matches.forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = 'match-card';
-                    div.innerHTML = `
-                        <div class="team-name"><strong>${m.team_a} vs ${m.team_b}</strong></div>
+        function renderMatches(matches) {
+            const container = document.getElementById('matches-list');
+            container.innerHTML = '';
+            
+            if(matches.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">ပွဲစဉ်မရှိပါ။</p>';
+                return;
+            }
+
+            matches.forEach(m => {
+                const date = new Date(m.match_date).toLocaleString('my-MM', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                
+                container.innerHTML += `
+                    <div class="match-card">
+                        <div class="match-header">
+                            <span>${date}</span>
+                            <span>${m.game_type}</span>
+                        </div>
+                        <div class="teams">${m.team_a} vs ${m.team_b}</div>
                         <div class="odds-row">
                             <button class="odds-btn">${m.team_a}: ${m.odds_a}</button>
                             <button class="odds-btn">${m.team_b}: ${m.odds_b}</button>
                         </div>
-                    `;
-                    container.appendChild(div);
-                });
-            } catch (err) {
-                document.getElementById('matches-list').innerHTML = '<p>အချက်အလက်ရယူ၍မရပါ။</p>';
-            }
+                    </div>
+                `;
+            });
         }
+
+        function filterMatches(category, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const filtered = (category === 'all') ? allMatches : allMatches.filter(m => m.game_type === category);
+            renderMatches(filtered);
+        }
+
         fetchMatches();
     </script>
 </body>
