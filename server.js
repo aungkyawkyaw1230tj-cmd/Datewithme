@@ -116,18 +116,20 @@ app.post('/api/login', async (req, res) => {
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.get('/api/matches', async (req, res) => {
-    const now = new Date().toISOString();
-    
-    // လက်ရှိအချိန်ထက် ကျော်လွန်မယ့် (မကစားရသေးတဲ့) ပွဲတွေကိုပဲ ယူမယ်
+    const fromDate = new Date();
+    const toDate = new Date();
+    toDate.setDate(fromDate.getDate() + 5); // နောက်ထပ် 5 ရက်စာအထိပဲ ယူမယ်
+
     const { data, error } = await supabase
         .from('match')
         .select('*')
-        .gte('match_date', now) 
+        .gte('match_date', fromDate.toISOString())
+        .lte('match_date', toDate.toISOString())
         .order('match_date', { ascending: true });
         
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
-});
+});;
 
 app.get('/api/sync', async (req, res) => {
     await syncMatches();
