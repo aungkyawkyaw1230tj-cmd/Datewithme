@@ -134,22 +134,26 @@ app.post('/api/login', async (req, res) => {
 
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-
+// server.js ထဲက /api/matches API ကို ဒီအတိုင်း အစားထိုးပါ
 app.get('/api/matches', async (req, res) => {
-    const fromDate = new Date();
-    const toDate = new Date();
-    toDate.setDate(fromDate.getDate() + 5); // နောက်ထပ် 5 ရက်စာအထိပဲ ယူမယ်
+    try {
+        const { data, error } = await supabase
+            .from('match')
+            .select('*')
+            .order('match_date', { ascending: true }); // Database ထဲက ပွဲတွေကို အကုန် ဆွဲထုတ်မယ်
 
-    const { data, error } = await supabase
-        .from('match')
-        .select('*')
-        .gte('match_date', fromDate.toISOString())
-        .lte('match_date', toDate.toISOString())
-        .order('match_date', { ascending: true });
-        
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
-});;
+        if (error) {
+            console.error("Supabase Fetch Error:", error.message);
+            return res.status(500).json({ error: error.message });
+        }
+
+        // Frontend သို့ Data အကုန် ပို့ပေးလိုက်မယ်
+        res.json(data);
+    } catch (err) {
+        console.error("API Fetch Error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.get('/api/sync', async (req, res) => {
     await syncMatches();
