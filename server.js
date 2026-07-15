@@ -107,7 +107,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// ၂။ Login API (ဒီအတိုင်း အစားထိုးလိုက်ပါ)
+// ၂။ Login API
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -129,11 +129,10 @@ app.post('/api/login', async (req, res) => {
         console.error("Login Error:", err.message);
         res.status(500).json({ error: err.message });
     }
-}); // <--- ဒီမှာ သေချာ ပိတ်ရပါမယ်
+});
 
 // -----------------------------------------------------------------
 
-// -----------------------------------------------------------------
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
