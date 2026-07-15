@@ -124,11 +124,11 @@
     let isLoginMode = true;
     let rawMatches = [];
     let currentCategory = 'all';
+    let currentLeague = 'all';
 
-    // ၁။ Browser ရဲ့ သတင်းအချက်အလက်တွေ သုံးပြီး Unique ဖြစ်မယ့် Device ID တစ်ခု ဖန်တီးခြင်း
+    // ၁။ Browser ရဲ့ သတင်းအချက်အလက်တွေ သုံးပြီး Unique ဖြစ်မယ့် Device ID ဖန်တီးခြင်း
     function getDeviceID() {
         const navigator_info = window.navigator.userAgent + window.navigator.language + window.screen.colorDepth + window.screen.height + window.screen.width;
-        // ၎င်းစာသားကို အခြေခံပြီး ရိုးရှင်းတဲ့ hash code တစ်ခု ထုတ်ယူတယ်
         let hash = 0;
         for (let i = 0; i < navigator_info.length; i++) {
             let char = navigator_info.charCodeAt(i);
@@ -147,7 +147,7 @@
         document.getElementById('error-message').style.display = 'none';
     }
 
-    // ၃။ Auth လုပ်ဆောင်မှု (Login/Register Form Submit) Handle လုပ်ခြင်း
+    // ၃။ Auth လုပ်ဆောင်မှု Handle လုပ်ခြင်း
     async function handleAuth(e) {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
@@ -158,7 +158,6 @@
         const endpoint = isLoginMode ? '/api/login' : '/api/register';
         const payload = { username, password };
         
-        // Register အကောင့်ဆောက်ချိန်တွင်သာ Device ID ထည့်သွင်းပေးပို့မည်
         if (!isLoginMode) {
             payload.device_id = getDeviceID();
         }
@@ -178,121 +177,133 @@
             }
 
             if (isLoginMode) {
-                // Login အောင်မြင်ပါက Platform ထဲသို့ ပို့မည်
+                // LocalStorage ထဲ သိမ်းပြီး UI ကို ပြောင်းမယ်
                 localStorage.setItem('x_user', JSON.stringify(result.user));
-                enterPlatform(result.user);
+                checkAuth();
             } else {
-                alert('အကောင့်ဆောက်ခြင်း အောင်မြင်ပါသည်။ Login ပြန်ဝင်ပေးပါ။');
+                alert("အကောင့်ဆောက်ခြင်း အောင်မြင်ပါသည်။ Login ပြန်ဝင်ပေးပါဗျာ။");
                 toggleAuthMode();
             }
         } catch (err) {
-            errorDiv.innerText = 'Server ချိတ်ဆက်မှု အဆင်မပြေပါ။';
+            errorDiv.innerText = "ချိတ်ဆက်မှု အဆင်မပြေပါ။";
             errorDiv.style.display = 'block';
         }
     }
 
-    // ၄။ Platform ထဲသို့ ရောက်ရှိသွားချိန် လုပ်ဆောင်ချက်
-    function enterPlatform(user) {
-        document.getElementById('auth-section').style.display = 'none';
-        document.getElementById('main-platform').style.display = 'block';
-        document.getElementById('user-display').innerText = user.username;
-        document.getElementById('user-balance').innerText = user.balance;
-        loadMatches();
-    }
-
-    // ၅။ ပွဲစဉ်များ ဆွဲယူခြင်း
-async function loadMatches() {
-    try {
-        const res = await fetch('/api/matches');
-        rawMatches = await res.json();
-        renderLeaguesAndMatches();
-    } catch (err) {
-        document.getElementById('matches-display').innerHTML = '<p style="text-align:center;">ပွဲစဉ်များ ဆွဲယူ၍မရပါ။</p>';
-    }
-}
-
-function renderLeaguesAndMatches() {
-    const tabContainer = document.getElementById('dynamic-tabs');
-    
-    const filteredByCategory = currentCategory === 'all' ? rawMatches : rawMatches.filter(m => m.game_type === currentCategory);
-    const leagues = [...new Set(filteredByCategory.map(m => m.league))].filter(Boolean);
-    
-    // String template နဲ့ စုပြီးမှ တစ်ချက်တည်းသွင်းလို့ Tab တွေ ဆောက်တာ ပိုမြန်သွားမယ်
-    let tabsHTML = '<button class="sub-tab active" onclick="filterLeague(\'all\', this)">All Leagues</button>';
-    leagues.forEach(league => {
-        tabsHTML += `<button class="sub-tab" onclick="filterLeague('${league}', this)">${league}</button>`;
-    });
-    tabContainer.innerHTML = tabsHTML;
-
-    displayMatches(filteredByCategory);
-}
-
-function displayMatches(matches) {
-    const container = document.getElementById('matches-display');
-    
-    if(matches.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">ပွဲစဉ်မရှိသေးပါ။</p>';
-        return;
-    }
-
-    // loop ပတ်ပြီး ဖြည်းဖြည်းချင်း မသွင်းတော့ဘဲ map နဲ့ HTML တွေအကုန်လုံးကို စက္ကန့်ပိုင်းအတွင်း တစ်ခါတည်း ပုံချလိုက်တာဖြစ်ပါတယ်
-    const matchesHTML = matches.map(m => {
-        const matchTime = new Date(m.match_date).toLocaleString('my-MM', {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
-
-        return `
-            <div class="match-card">
-                <div class="card-header">
-                    <span>${matchTime}</span>
-                    <span class="badge">${m.league || m.game_type}</span>
-                </div>
-                <div class="teams-container">
-                    <span>${m.team_a}</span>
-                    <span style="color:var(--text-muted); font-size:14px;">VS</span>
-                    <span>${m.team_b}</span>
-                </div>
-                <div class="odds-container">
-                    <button class="odds-btn"><span>${m.team_a}</span> <span class="odds-val">${m.odds_a}</span></button>
-                    <button class="odds-btn"><span>${m.team_b}</span> <span class="odds-val">${m.odds_b}</span></button>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    container.innerHTML = matchesHTML;
-}
-
-    function changeCategory(cat, element) {
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        element.classList.add('active');
-        currentCategory = cat;
-        renderLeaguesAndMatches();
-    }
-
-    function filterLeague(leagueName, element) {
-        document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-        element.classList.add('active');
-
-        let matches = currentCategory === 'all' ? rawMatches : rawMatches.filter(m => m.game_type === currentCategory);
-        if (leagueName !== 'all') {
-            matches = matches.filter(m => m.league === leagueName);
+    // ၄။ အကောင့်ဝင်ထားခြင်း ရှိ/မရှိ စစ်ဆေးပြီး UI ပြောင်းလဲခြင်း
+    function checkAuth() {
+        const user = localStorage.getItem('x_user');
+        if (user) {
+            const userData = JSON.parse(user);
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('main-platform').style.display = 'block';
+            document.getElementById('user-display').innerText = userData.username;
+            document.getElementById('user-balance').innerText = userData.balance;
+            loadMatches();
+        } else {
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('main-platform').style.display = 'none';
         }
-        displayMatches(matches);
     }
 
-    // ၆။ Logout ထွက်ခြင်း
+    // ၅။ Database မှ ပွဲစဉ်များ ဆွဲယူခြင်း
+    async function loadMatches() {
+        try {
+            const res = await fetch('/api/matches');
+            rawMatches = await res.json();
+            renderLeaguesAndMatches();
+        } catch (err) {
+            document.getElementById('matches-display').innerHTML = '<p style="text-align:center;">ပွဲစဉ်များ ဆွဲယူ၍မရပါ။</p>';
+        }
+    }
+
+    // ၆။ Categories ပြောင်းလဲခြင်း
+    function changeCategory(category, element) {
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+        currentCategory = category;
+        currentLeague = 'all'; // Category ပြောင်းရင် League ကို default ပြန်ထားမယ်
+        renderLeaguesAndMatches();
+    }
+
+    // ၇။ Leagues Tab များကို dynamic ဆောက်ပေးခြင်း
+    function renderLeaguesAndMatches() {
+        const tabContainer = document.getElementById('dynamic-tabs');
+        if (!tabContainer) return;
+
+        const filteredByCategory = currentCategory === 'all' ? rawMatches : rawMatches.filter(m => m.game_type === currentCategory);
+        const leagues = [...new Set(filteredByCategory.map(m => m.league))].filter(Boolean);
+        
+        let tabsHTML = `<button class="sub-tab ${currentLeague === 'all' ? 'active' : ''}" onclick="filterLeague('all', this)">All Leagues</button>`;
+        leagues.forEach(league => {
+            tabsHTML += `<button class="sub-tab ${currentLeague === league ? 'active' : ''}" onclick="filterLeague('${league}', this)">${league}</button>`;
+        });
+        tabContainer.innerHTML = tabsHTML;
+
+        // နောက်ဆုံး စစ်ထုတ်ထားတဲ့ ပွဲတွေကို ပြသမယ်
+        const finalMatches = currentLeague === 'all' ? filteredByCategory : filteredByCategory.filter(m => m.league === currentLeague);
+        displayMatches(finalMatches);
+    }
+
+    // ၈။ League အလိုက် Filter လုပ်ခြင်း
+    function filterLeague(league, element) {
+        document.querySelectorAll('.sub-tab').forEach(tab => tab.classList.remove('active'));
+        element.classList.add('active');
+        currentLeague = league;
+        
+        const filteredByCategory = currentCategory === 'all' ? rawMatches : rawMatches.filter(m => m.game_type === currentCategory);
+        const finalMatches = currentLeague === 'all' ? filteredByCategory : filteredByCategory.filter(m => m.league === currentLeague);
+        displayMatches(finalMatches);
+    }
+
+    // ၉။ ပွဲစဉ်များကို UI ပေါ်တွင် အမြန်ဆုံးဆွဲတင်ခြင်း (Optimization)
+    function displayMatches(matches) {
+        const container = document.getElementById('matches-display');
+        if (!container) return;
+
+        if (!matches || matches.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">ပွဲစဉ်မရှိသေးပါ။</p>';
+            return;
+        }
+
+        const matchesHTML = matches.map(m => {
+            let matchTime = 'စတင်မည့်အချိန် မရှိပါ';
+            if (m.match_date) {
+                matchTime = new Date(m.match_date).toLocaleString('my-MM', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+            }
+
+            return `
+                <div class="match-card">
+                    <div class="card-header">
+                        <span>${matchTime}</span>
+                        <span class="badge">${m.league || m.game_type || 'Football'}</span>
+                    </div>
+                    <div class="teams-container">
+                        <span>${m.team_a || 'Team A'}</span>
+                        <span style="color:var(--text-muted); font-size:14px;">VS</span>
+                        <span>${m.team_b || 'Team B'}</span>
+                    </div>
+                    <div class="odds-container">
+                        <button class="odds-btn"><span>${m.team_a || 'Team A'}</span> <span class="odds-val">${m.odds_a || '1.9'}</span></button>
+                        <button class="odds-btn"><span>${m.team_b || 'Team B'}</span> <span class="odds-val">${m.odds_b || '1.9'}</span></button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = matchesHTML;
+    }
+
+    // ၁၀။ အကောင့်ထဲမှ ထွက်ခြင်း Logout
     function logout() {
         localStorage.removeItem('x_user');
-        document.getElementById('main-platform').style.display = 'none';
-        document.getElementById('auth-section').style.display = 'block';
+        checkAuth();
     }
 
-    // ၇။ Browser ဖွင့်ထားဆဲမှာ Login Status ရှိမရှိ ကြိုစစ်ဆေးခြင်း
-    window.onload = function() {
-        const savedUser = localStorage.getItem('x_user');
-        if (savedUser) enterPlatform(JSON.stringify(savedUser));
-    };
+    // Page စပွင့်တာနဲ့ Auth အခြေအနေကို စစ်ဆေးမယ်
+    window.onload = checkAuth;
 </script>
 </body>
 </html>
