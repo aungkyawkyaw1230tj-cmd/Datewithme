@@ -207,15 +207,41 @@
     }
 
     // ၅။ Database မှ ပွဲစဉ်များ ဆွဲယူခြင်း
-    async function loadMatches() {
-        try {
-            const res = await fetch('/api/matches');
-            rawMatches = await res.json();
-            renderLeaguesAndMatches();
-        } catch (err) {
-            document.getElementById('matches-display').innerHTML = '<p style="text-align:center;">ပွဲစဉ်များ ဆွဲယူ၍မရပါ။</p>';
+async function loadMatches() {
+    try {
+        const res = await fetch('/api/matches');
+        
+        // အကယ်၍ API က ဆွဲမရရင် ဘာလို့လဲဆိုတာ ဖုန်းပေါ်မှာ တန်းပြမယ်
+        if (!res.ok) {
+            alert(`API Error တက်နေပါတယ်: Status ${res.status}`);
+            return;
         }
+
+        const data = await res.json();
+        
+        // ကွန်ဆိုးမှာလည်း ပြမယ်
+        console.log("မိုဘိုင်းလ် ဒေတာ လက်ခံရရှိမှု စစ်ဆေးခြင်း:", data);
+
+        // ဒေတာ ပုံစံလွဲနေရင် (ဥပမာ Array မဟုတ်ဘဲ Object ဖြစ်နေရင်) အလိုအလျောက် ညှိယူမယ်
+        if (Array.isArray(data)) {
+            rawMatches = data;
+        } else if (data && Array.isArray(data.data)) {
+            rawMatches = data.data; // { success: true, data: [...] } ဖြစ်နေခဲ့ရင်
+        } else {
+            alert("ရလာတဲ့ ဒေတာပုံစံက Array မဟုတ်ဘဲ တခြားပုံစံ ဖြစ်နေပါတယ်!");
+            rawMatches = [];
+        }
+
+        // ဒေတာ ဘယ်နှစ်ခုတောင် ဝင်လာလဲဆိုတာ Alert ပြခိုင်းမယ်
+        alert(`ဒေတာ ချိတ်ဆက်မှု အောင်မြင်သည်။ ပွဲစဉ်ပေါင်း ${rawMatches.length} ခု တွေ့ရှိရပါသည်။`);
+        
+        renderLeaguesAndMatches();
+    } catch (err) {
+        console.error("Load Matches Error:", err);
+        alert(`ချိတ်ဆက်မှု လုံးဝ မရပါ။ Error စာသား: ${err.message}`);
+        document.getElementById('matches-display').innerHTML = `<p style="text-align:center; color: red;">Error: ${err.message}</p>`;
     }
+}
 
     // ၆။ Categories ပြောင်းလဲခြင်း
     function changeCategory(category, element) {
