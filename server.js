@@ -24,18 +24,22 @@ async function syncMatches() {
         const matches = response.data.matches;
         const leagueName = response.data.competition.name; 
 
-        // ၅ ရက်စာ ကာလအပိုင်းအခြား သတ်မှတ်ခြင်း
-        const now = new Date();
+        // ဒီနေ့ ရက်စွဲကို ရယူပြီး အချိန်တွေကို ၀၀:၀၀:၀၀ (ညသန်းခေါင်) သို့ ညှိလိုက်မယ်
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // ယနေ့မှစ၍ ၅ ရက်မြောက်နေ့ရဲ့ ညဉ့်နက်ပိုင်း (၂၃:၅၉:၅၉) သို့ ညှိမယ်
         const maxDate = new Date();
-        maxDate.setDate(now.getDate() + 5); // ဒီနေ့ကနေ နောက်ထပ် ၅ ရက်အထိပဲ ယူမယ်
+        maxDate.setDate(today.getDate() + 5);
+        maxDate.setHours(23, 59, 59, 999);
 
         let syncedCount = 0;
 
         for (let m of matches) {
             const matchDate = new Date(m.utcDate);
 
-            // ပွဲစဉ်ရဲ့ အချိန်က လက်ရှိအချိန်နဲ့ နောက်ထပ် ၅ ရက်အတွင်း ဖြစ်မှသာ Database ထဲ သွင်းမယ်
-            if (matchDate >= now && matchDate <= maxDate) {
+            // ပွဲစဉ်ရက်စွဲသည် ယနေ့မှစ၍ ၅ ရက်အတွင်း ဖြစ်ပါက သွင်းမည်
+            if (matchDate >= today && matchDate <= maxDate) {
                 await supabase.from('match').upsert({
                     id: m.id,
                     team_a: m.homeTeam.name,
@@ -50,11 +54,6 @@ async function syncMatches() {
             }
         }
         console.log(`Successfully synced ${syncedCount} matches for the next 5 days!`);
-    } catch (err) {
-        console.error("Sync Error:", err.message);
-    }
-}
-        console.log("Matches and League synced successfully!");
     } catch (err) {
         console.error("Sync Error:", err.message);
     }
