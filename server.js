@@ -21,7 +21,7 @@ app.get('/api/matches', async (req, res) => {
     try {
         // Supabase table နာမည်က 'matches' လို့ ယူဆထားပါတယ်
         const { data, error } = await supabase
-            .from('matches')
+            .from('match')
             .select('*');
 
         if (error) throw error;
