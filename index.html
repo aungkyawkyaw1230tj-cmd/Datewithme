@@ -3,93 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X-Esports | ပွဲစဉ်များ</title>
+    <title>X-Esports Premium Betting Platform</title>
     <style>
-        :root { --primary-green: #00aa4b; --bg-main: #f4f6f9; --text-dark: #2c3e50; }
-        body { background-color: var(--bg-main); font-family: 'Segoe UI', Tahoma, sans-serif; padding: 15px; color: var(--text-dark); }
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary-neon: #10b981;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --error-red: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+        .container { max-width: 1200px; margin: 0 auto; }
         
-        .header { text-align: center; margin-bottom: 20px; }
-        /* Tabs အတွက် အောက်ဘက်မှာ Scroll လုပ်လို့ရအောင် ပြင်ထားတယ် */
-        .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; white-space: nowrap; }
-        .tab-btn { padding: 8px 16px; border: none; cursor: pointer; border-radius: 20px; background: #fff; border: 1px solid var(--primary-green); color: var(--primary-green); font-size: 14px; }
-        .tab-btn.active { background: var(--primary-green); color: white; }
-        
-        .match-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--primary-green); }
-        .match-header { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 8px; }
-        .teams { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
-        .odds-row { display: flex; gap: 8px; }
-        .odds-btn { background: #f8f9fa; border: 1px solid #dee2e6; padding: 8px; flex: 1; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
-        .odds-btn:active { background: var(--primary-green); color: white; }
+        /* Auth Container (Login / Register) */
+        .auth-container { max-width: 400px; margin: 80px auto; background: var(--bg-card); padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .auth-container h2 { text-align: center; margin-bottom: 20px; color: var(--primary-neon); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 14px; }
+        .form-group input { width: 100%; padding: 12px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 16px; }
+        .form-group input:focus { border-color: var(--primary-neon); outline: none; }
+        .auth-btn { width: 100%; padding: 12px; background: var(--primary-neon); border: none; color: var(--bg-dark); font-weight: bold; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .auth-btn:hover { background: #059669; }
+        .auth-toggle { text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-muted); cursor: pointer; }
+        .auth-toggle span { color: var(--primary-neon); text-decoration: underline; }
+        .error-msg { color: var(--error-red); font-size: 14px; margin-top: 10px; text-align: center; display: none; }
+
+        /* Main Betting UI (Hidden initially) */
+        #main-platform { display: none; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-card); border-radius: 12px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .logo { font-size: 24px; font-weight: 800; color: var(--primary-neon); letter-spacing: 1px; }
+        .nav-right { display: flex; align-items: center; gap: 15px; }
+        .balance-box { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--primary-neon); padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+        .logout-btn { background: var(--error-red); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .main-layout { display: grid; grid-template-columns: 250px 1fr; gap: 20px; }
+        .sidebar { background: var(--bg-card); padding: 20px; border-radius: 12px; height: fit-content; border: 1px solid var(--border-color); }
+        .sidebar h3 { font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+        .nav-list { list-style: none; }
+        .nav-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; color: var(--text-muted); transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.05); color: var(--text-light); border-left: 4px solid var(--primary-neon); }
+
+        .league-tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .sub-tab { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+        .sub-tab.active { background: var(--primary-neon); color: var(--bg-dark); font-weight: bold; border-color: var(--primary-neon); }
+
+        .match-list { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .match-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; }
+        .card-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+        .badge { background: #334155; padding: 3px 8px; border-radius: 4px; color: var(--text-light); }
+        .teams-container { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .odds-container { display: flex; gap: 12px; }
+        .odds-btn { flex: 1; background: #0f172a; border: 1px solid var(--border-color); color: var(--text-light); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; }
+        .odds-btn:hover { border-color: var(--primary-neon); background: rgba(16, 185, 129, 0.05); }
+        .odds-val { color: var(--primary-neon); }
+
+        @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2>X-Esports</h2>
+<div class="container">
+    
+    <!-- ================= AUTH SECTION ================= -->
+    <div id="auth-section" class="auth-container">
+        <h2 id="auth-title">Login</h2>
+        <form id="auth-form" onsubmit="handleAuth(event)">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required placeholder="Username ရိုက်ထည့်ပါ">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Password ရိုက်ထည့်ပါ">
+            </div>
+            <button type="submit" id="submit-btn" class="auth-btn">Login ဝင်မည်</button>
+            <div id="error-message" class="error-msg"></div>
+        </form>
+        <div class="auth-toggle" id="auth-toggle-btn" onclick="toggleAuthMode()">
+            အကောင့်မရှိသေးဘူးလား? <span>ဒီမှာဆောက်ပါ</span>
+        </div>
     </div>
 
-    <!-- Tabs တွေကို ဒီမှာ အလိုအလျောက် ထည့်ပေးမယ် -->
-    <div class="tabs" id="league-tabs">
-        <button class="tab-btn active" onclick="filterMatches('all', this)">အားလုံး</button>
+    <!-- ================= MAIN PLATFORM SECTION ================= -->
+    <div id="main-platform">
+        <nav class="navbar">
+            <div class="logo">X-Esports</div>
+            <div class="nav-right">
+                <div class="balance-box"><span id="user-display">User</span>: <span id="user-balance">0</span> Coins</div>
+                <button class="logout-btn" onclick="logout()">ထွက်မည်</button>
+            </div>
+        </nav>
+
+        <div class="main-layout">
+            <aside class="sidebar">
+                <h3>Categories</h3>
+                <ul class="nav-list">
+                    <li class="nav-item active" onclick="changeCategory('all', this)">All Matches</li>
+                    <li class="nav-item" onclick="changeCategory('Football', this)">Football</li>
+                    <li class="nav-item" onclick="changeCategory('Esports', this)">Esports</li>
+                </ul>
+            </aside>
+
+            <main>
+                <div class="league-tabs" id="dynamic-tabs">
+                    <button class="sub-tab active" onclick="filterLeague('all', this)">All Leagues</button>
+                </div>
+                <div class="match-list" id="matches-display"></div>
+            </main>
+        </div>
     </div>
 
-    <div id="matches-list"></div>
+</div>
 
-    <script>
-        let allMatches = [];
+<script>
+    let isLoginMode = true;
+    let rawMatches = [];
+    let currentCategory = 'all';
+
+    // ၁။ Browser ရဲ့ သတင်းအချက်အလက်တွေ သုံးပြီး Unique ဖြစ်မယ့် Device ID တစ်ခု ဖန်တီးခြင်း
+    function getDeviceID() {
+        const navigator_info = window.navigator.userAgent + window.navigator.language + window.screen.colorDepth + window.screen.height + window.screen.width;
+        // ၎င်းစာသားကို အခြေခံပြီး ရိုးရှင်းတဲ့ hash code တစ်ခု ထုတ်ယူတယ်
+        let hash = 0;
+        for (let i = 0; i < navigator_info.length; i++) {
+            let char = navigator_info.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return 'DEV-' + Math.abs(hash);
+    }
+
+    // ၂။ Login / Register ပြောင်းလဲခြင်း Toggle Function
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('auth-title').innerText = isLoginMode ? 'Login' : 'Register အကောင့်ဆောက်ရန်';
+        document.getElementById('submit-btn').innerText = isLoginMode ? 'Login ဝင်မည်' : 'အကောင့်အသစ်ဆောက်မည်';
+        document.getElementById('auth-toggle-btn').innerHTML = isLoginMode ? 'အကောင့်မရှိသေးဘူးလား? <span>ဒီမှာဆောက်ပါ</span>' : 'အကောင့်ရှိပြီးသားလား? <span>ဒီမှာ Login ဝင်ပါ</span>';
+        document.getElementById('error-message').style.display = 'none';
+    }
+
+    // ၃။ Auth လုပ်ဆောင်မှု (Login/Register Form Submit) Handle လုပ်ခြင်း
+    async function handleAuth(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.style.display = 'none';
+
+        const endpoint = isLoginMode ? '/api/login' : '/api/register';
+        const payload = { username, password };
         
-        async function fetchMatches() {
-            try {
-                const res = await fetch('/api/matches');
-                allMatches = await res.json();
-                
-                // လိဂ်တွေကို စုပြီး Tab တွေ တည်ဆောက်မယ်
-                const leagues = [...new Set(allMatches.map(m => m.league))];
-                const tabContainer = document.getElementById('league-tabs');
-                
-                leagues.forEach(l => {
-                    if(l) { // league နာမည်ရှိမှ ခလုတ်ဆောက်မယ်
-                        tabContainer.innerHTML += `<button class="tab-btn" onclick="filterMatches('${l}', this)">${l}</button>`;
-                    }
-                });
-
-                renderMatches(allMatches);
-            } catch (err) {
-                document.getElementById('matches-list').innerHTML = '<p style="text-align:center;">Data ရယူ၍မရပါ။</p>';
-            }
+        // Register အကောင့်ဆောက်ချိန်တွင်သာ Device ID ထည့်သွင်းပေးပို့မည်
+        if (!isLoginMode) {
+            payload.device_id = getDeviceID();
         }
 
-        function renderMatches(matches) {
-            const container = document.getElementById('matches-list');
-            container.innerHTML = '';
-            
-            matches.forEach(m => {
-                const date = new Date(m.match_date).toLocaleString('my-MM', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                container.innerHTML += `
-                    <div class="match-card">
-                        <div class="match-header">
-                            <span>${date}</span>
-                            <span>${m.league || m.game_type}</span>
-                        </div>
-                        <div class="teams">${m.team_a} vs ${m.team_b}</div>
-                        <div class="odds-row">
-                            <button class="odds-btn">${m.team_a}: ${m.odds_a}</button>
-                            <button class="odds-btn">${m.team_b}: ${m.odds_b}</button>
-                        </div>
-                    </div>
-                `;
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
+            const result = await res.json();
+
+            if (!res.ok) {
+                errorDiv.innerText = result.error;
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (isLoginMode) {
+                // Login အောင်မြင်ပါက Platform ထဲသို့ ပို့မည်
+                localStorage.setItem('x_user', JSON.stringify(result.user));
+                enterPlatform(result.user);
+            } else {
+                alert('အကောင့်ဆောက်ခြင်း အောင်မြင်ပါသည်။ Login ပြန်ဝင်ပေးပါ။');
+                toggleAuthMode();
+            }
+        } catch (err) {
+            errorDiv.innerText = 'Server ချိတ်ဆက်မှု အဆင်မပြေပါ။';
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    // ၄။ Platform ထဲသို့ ရောက်ရှိသွားချိန် လုပ်ဆောင်ချက်
+    function enterPlatform(user) {
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('main-platform').style.display = 'block';
+        document.getElementById('user-display').innerText = user.username;
+        document.getElementById('user-balance').innerText = user.balance;
+        loadMatches();
+    }
+
+    // ၅။ ပွဲစဉ်များ ဆွဲယူခြင်း
+    async function loadMatches() {
+        try {
+            const res = await fetch('/api/matches');
+            rawMatches = await res.json();
+            renderLeaguesAndMatches();
+        } catch (err) {
+            document.getElementById('matches-display').innerHTML = '<p style="text-align:center;">ပွဲစဉ်များ ဆွဲယူ၍မရပါ။</p>';
+        }
+    }
+
+    function renderLeaguesAndMatches() {
+        const tabContainer = document.getElementById('dynamic-tabs');
+        tabContainer.innerHTML = '<button class="sub-tab active" onclick="filterLeague(\'all\', this)">All Leagues</button>';
+        
+        const filteredByCategory = currentCategory === 'all' ? rawMatches : rawMatches.filter(m => m.game_type === currentCategory);
+        const leagues = [...new Set(filteredByCategory.map(m => m.league))].filter(Boolean);
+        
+        leagues.forEach(league => {
+            tabContainer.innerHTML += `<button class="sub-tab" onclick="filterLeague('${league}', this)">${league}</button>`;
+        });
+        displayMatches(filteredByCategory);
+    }
+
+    function displayMatches(matches) {
+        const container = document.getElementById('matches-display');
+        container.innerHTML = '';
+
+        if(matches.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">ပွဲစဉ်မရှိသေးပါ။</p>';
+            return;
         }
 
-        function filterMatches(category, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            const filtered = (category === 'all') ? allMatches : allMatches.filter(m => m.league === category || m.game_type === category);
-            renderMatches(filtered);
-        }
+        matches.forEach(m => {
+            const matchTime = new Date(m.match_date).toLocaleString('my-MM', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
 
-        fetchMatches();
-    </script>
+            container.innerHTML += `
+                <div class="match-card">
+                    <div class="card-header">
+                        <span>${matchTime}</span>
+                        <span class="badge">${m.league || m.game_type}</span>
+                    </div>
+                    <div class="teams-container">
+                        <span>${m.team_a}</span>
+                        <span style="color:var(--text-muted); font-size:14px;">VS</span>
+                        <span>${m.team_b}</span>
+                    </div>
+                    <div class="odds-container">
+                        <button class="odds-btn"><span>${m.team_a}</span> <span class="odds-val">${m.odds_a}</span></button>
+                        <button class="odds-btn"><span>${m.team_b}</span> <span class="odds-val">${m.odds_b}</span></button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function changeCategory(cat, element) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        element.classList.add('active');
+        currentCategory = cat;
+        renderLeaguesAndMatches();
+    }
+
+    function filterLeague(leagueName, element) {
+        document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+        element.classList.add('active');
+
+        let matches = currentCategory === 'all' ? rawMatches : rawMatches.filter(m => m.game_type === currentCategory);
+        if (leagueName !== 'all') {
+            matches = matches.filter(m => m.league === leagueName);
+        }
+        displayMatches(matches);
+    }
+
+    // ၆။ Logout ထွက်ခြင်း
+    function logout() {
+        localStorage.removeItem('x_user');
+        document.getElementById('main-platform').style.display = 'none';
+        document.getElementById('auth-section').style.display = 'block';
+    }
+
+    // ၇။ Browser ဖွင့်ထားဆဲမှာ Login Status ရှိမရှိ ကြိုစစ်ဆေးခြင်း
+    window.onload = function() {
+        const savedUser = localStorage.getItem('x_user');
+        if (savedUser) enterPlatform(JSON.stringify(savedUser));
+    };
+</script>
 </body>
 </html>
