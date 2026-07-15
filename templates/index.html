@@ -9,9 +9,8 @@
     <meta name="theme-color" content="#00aa4b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/manifest+json,{% raw %}
-<link rel="manifest" href="data:application/manifest+json,{"name":"X-Esports","short_name":"X-Esports","start_url":".","display":"standalone","background_color":"#f4f6f9","theme_color":"#00aa4b"}" />
-{% endraw %}
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22X-Esports%22,%22short_name%22:%22X-Esports%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f4f6f9%22,%22theme_color%22:%22%2300aa4b%22}" />
+
     <style>
         :root {
             --bg-main: #f4f6f9;
@@ -150,7 +149,7 @@
     <div class="main-container">
         
         <div class="betting-area">
-            <!-- Game Filters (Clean Tabs, No Live Badges) -->
+            <!-- Game Filters -->
             <div class="game-tabs">
                 <div class="tab active" data-filter="all">ပွဲစဉ်အားလုံး</div>
                 <div class="tab" data-filter="football">ဘောလုံး (Football)</div>
@@ -163,7 +162,7 @@
 
             <div id="matches-wrapper">
                 
-                <!-- Football - Static Fallbacks (If API rate-limited) -->
+                <!-- Football -->
                 <div class="match-card" data-game="football" id="match-manc-manu">
                     <div class="card-top">
                         <div class="teams-info">
@@ -220,7 +219,7 @@
                     </div>
                 </div>
 
-                <!-- MLBB - Static Solid Data (To make sure NO errors occur since API doesn't support MLBB) -->
+                <!-- MLBB -->
                 <div class="match-card" data-game="mlbb" id="match-falcon-ai">
                     <div class="card-top">
                         <div class="teams-info">
@@ -319,7 +318,7 @@
         </div>
     </div>
 
-    <!-- Modals (Auth, Deposit, Admin) -->
+    <!-- Modals -->
     <div class="modal-overlay" id="login-modal">
         <div class="modal">
             <span class="close-x" onclick="toggleLoginModal(false)">X</span>
@@ -394,6 +393,10 @@
         let totalBetsVolume = 12500000;
         let totalPayoutsVolume = 10250000;
 
+        document.addEventListener("DOMContentLoaded", () => {
+            initDatabase();
+        });
+
         function initDatabase() {
             if (!localStorage.getItem('db_users')) {
                 const initialUsers = [
@@ -444,6 +447,28 @@
 
         function toggleLoginModal(show) {
             document.getElementById('login-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        function toggleDepositModal(show) {
+            document.getElementById('deposit-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        function toggleAdminPanel(show) {
+            if(show) {
+                const activeSession = sessionStorage.getItem('current_user');
+                if(!activeSession) return;
+                const user = JSON.parse(activeSession);
+                if(!user.isAdmin) return;
+                
+                // Load DB users for admin
+                const dbUsers = JSON.parse(localStorage.getItem('db_users'));
+                let html = '';
+                dbUsers.forEach(u => {
+                    html += `User: ${u.username} | Bal: ${u.balance} | DevID: ${u.deviceId}<br>`;
+                });
+                document.getElementById('admin-device-db-view').innerHTML = html;
+            }
+            document.getElementById('admin-panel-modal').style.display = show ? 'flex' : 'none';
         }
 
         function processAuth() {
@@ -513,7 +538,12 @@
             document.getElementById('user-balance').innerText = user.balance.toLocaleString();
             document.getElementById('login-nav-btn').innerText = 'Logout (' + user.username + ')';
             document.getElementById('login-nav-btn').setAttribute('onclick', 'processLogout()');
-            document.getElementById('admin-dashboard-btn').style.display = user.isAdmin ? 'inline-block' : 'none';
+            
+            if (user.isAdmin) {
+                document.getElementById('admin-dashboard-btn').style.display = 'block';
+            } else {
+                document.getElementById('admin-dashboard-btn').style.display = 'none';
+            }
         }
 
         function updateUIForLoggedOut() {
@@ -527,222 +557,10 @@
             sessionStorage.removeItem('current_user');
             updateUIForLoggedOut();
             toggleAdminPanel(false);
-            showCustomAlert('အကောင့်မှ ထွက်လိုက်ပါပြီ။', 'အောင်မြင်ပါသည်');
+            showCustomAlert('အကောင့်မှ ထွက်ပြီးပါပြီ။', 'အောင်မြင်ပါသည်');
         }
 
-        // --- FETCH FOOTBALL MATCHES FROM API ---
-        async function fetchLiveFootballMatches() {
-            // [FIX] ယခင်က ရက်စွဲအား 2026-05-03 ဟု သတ်မှတ်ထားသဖြင့် API မှ ပွဲစဉ်များ မပေါ်ခဲ့ပါ။
-            // ယခု လက်ရှိဖုန်းထဲက ဒီနေ့ရက်စွဲကို Dynamic အလိုအလျောက် ရယူပြီး API ခေါ်ဆိုမည်ဖြစ်သောကြောင့် တကယ့်ပွဲစဉ်အစစ်များ ပေါ်လာပါလိမ့်မည်။
-            const today = new Date().toISOString().split('T')[0];
-            const url = `https://sportapi7.p.rapidapi.com/api/v1/category/1/scheduled-events/${today}`;
-            const options = {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-rapidapi-host': 'sportapi7.p.rapidapi.com',
-                    'x-rapidapi-key': 'd08876cc02msh46ca02bd8161a79p13d227jsn6a71c5981ef7' // အစ်ကိုပေးထားတဲ့ ဘောလုံး API Key
-                }
-            };
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) throw new Error('API Rate-limit reached.');
-                const result = await response.json();
-                renderFootballEvents(result);
-            } catch (error) {
-                console.log('Football API failed, fallbacks remained active.', error);
-            }
-        }
-
-        function renderFootballEvents(data) {
-            if (!data || !data.events) return;
-            const wrapper = document.getElementById('matches-wrapper');
-            const apiEvents = data.events.slice(0, 10); // API ကရလာတဲ့ တကယ့်ပွဲစဉ်အစစ် ၁၀ ပွဲအထိ ပြသပေးမည်
-
-            apiEvents.forEach(event => {
-                const homeTeamName = event.homeTeam.name;
-                const awayTeamName = event.awayTeam.name;
-                const tournamentName = event.tournament.name;
-                const matchId = 'football-' + event.id;
-
-                // Odds များကို API မှ မရရှိပါက Dynamic စနစ်တကျ တွက်ချက်ပေးမည်
-                const homeOdds = (1.4 + Math.random() * 1.5).toFixed(2);
-                const drawOdds = (3.1 + Math.random() * 1.3).toFixed(2);
-                const awayOdds = (1.9 + Math.random() * 2.2).toFixed(2);
-
-                const cardHtml = `
-                    <div class="match-card" data-game="football" id="match-${matchId}">
-                        <div class="card-top">
-                            <div class="teams-info">
-                                <span class="game-tag">${tournamentName}</span>
-                                <div class="team-name">${homeTeamName} <span class="vs">VS</span> ${awayTeamName}</div>
-                            </div>
-                        </div>
-                        <div class="odds-block">
-                            <div class="odds-row">
-                                <span class="odds-title">ပွဲနိုင်/သရေ/ရှုံး:</span>
-                                <div class="odds-container">
-                                    <button class="odds-btn" onclick="selectBet('${homeTeamName} vs ${awayTeamName}', '${homeTeamName} (အိမ်နိုင်)', ${homeOdds}, '${matchId}', 'home')">
-                                        <span class="team-label">${homeTeamName}</span>
-                                        <span class="odds-val">x${homeOdds}</span>
-                                    </button>
-                                    <button class="odds-btn" onclick="selectBet('${homeTeamName} vs ${awayTeamName}', 'Draw (သရေ)', ${drawOdds}, '${matchId}', 'draw')">
-                                        <span class="team-label">သရေ</span>
-                                        <span class="odds-val">x${drawOdds}</span>
-                                    </button>
-                                    <button class="odds-btn" onclick="selectBet('${homeTeamName} vs ${awayTeamName}', '${awayTeamName} (ဧည့်နိုင်)', ${awayOdds}, '${matchId}', 'away')">
-                                        <span class="team-label">${awayTeamName}</span>
-                                        <span class="odds-val">x${awayOdds}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                // API မှရလာသော ပွဲစဉ်များကို ထိပ်ဆုံးမှ ဦးစားပေး ပြသမည်
-                wrapper.insertAdjacentHTML('afterbegin', cardHtml);
-            });
-        }
-
-        // --- FETCH ESPORTS MATCHES FROM PANDASCORE ---
-        async function fetchEsportsMatches() {
-            const url = 'https://api.pandascore.co/matches?per_page=10';
-            const token = 'LI8GZXN_LDFTJOKO9EWDo8jJZqSYHopn7OzCLKx0nopEw05b0wI'; // အစ်ကိုပေးထားတဲ့ Active PandaScore Token
-
-            try {
-                const response = await fetch(url, {
-                    headers: { 
-                        'Authorization': `Bearer ${token}`, 
-                        'Accept': 'application/json' 
-                    }
-                });
-                if (!response.ok) throw new Error('PandaScore Authorization or Limit Error.');
-                const result = await response.json();
-                renderEsportsEvents(result);
-            } catch (err) {
-                console.log('PandaScore integration fallback active:', err);
-                renderDefaultEsports(); 
-            }
-        }
-
-        function renderEsportsEvents(matches) {
-            if (!matches || matches.length === 0) return;
-            const wrapper = document.getElementById('matches-wrapper');
-
-            matches.forEach(match => {
-                let gameGenre = 'dota2';
-                const videoGameName = match.videogame.name.toLowerCase();
-                
-                if (videoGameName.includes('valorant')) {
-                    gameGenre = 'valorant';
-                } else if (videoGameName.includes('dota')) {
-                    gameGenre = 'dota2';
-                } else if (videoGameName.includes('league') || videoGameName.includes('lol')) {
-                    gameGenre = 'dota2'; 
-                } else {
-                    return; 
-                }
-
-                if (match.opponents.length < 2) return;
-
-                const teamA = match.opponents[0].opponent.name;
-                const teamB = match.opponents[1].opponent.name;
-                const leagueName = match.league.name;
-                const matchId = 'esport-' + match.id;
-
-                const oddsA = (1.5 + Math.random() * 1.2).toFixed(2);
-                const oddsB = (1.5 + Math.random() * 1.2).toFixed(2);
-
-                const cardHtml = `
-                    <div class="match-card" data-game="${gameGenre}" id="match-${matchId}">
-                        <div class="card-top">
-                            <div class="teams-info">
-                                <span class="game-tag">${leagueName}</span>
-                                <div class="team-name">${teamA} <span class="vs">VS</span> ${teamB}</div>
-                            </div>
-                        </div>
-                        <div class="odds-block">
-                            <div class="odds-row">
-                                <span class="odds-title">ပွဲနိုင်/ရှုံး:</span>
-                                <div class="odds-container">
-                                    <button class="odds-btn" onclick="selectBet('${teamA} vs ${teamB}', '${teamA} (ပွဲနိုင်)', ${oddsA}, '${matchId}', 'home')">
-                                        <span class="team-label">${teamA}</span>
-                                        <span class="odds-val">x${oddsA}</span>
-                                    </button>
-                                    <button class="odds-btn" onclick="selectBet('${teamA} vs ${teamB}', '${teamB} (ပွဲနိုင်)', ${oddsB}, '${matchId}', 'away')">
-                                        <span class="team-label">${teamB}</span>
-                                        <span class="odds-val">x${oddsB}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                wrapper.insertAdjacentHTML('afterbegin', cardHtml);
-            });
-        }
-
-        function renderDefaultEsports() {
-            const wrapper = document.getElementById('matches-wrapper');
-            const fallbacks = [
-                { id: 'dota-fall-1', game: 'dota2', league: 'Dota 2 Riyadh Masters', teamA: 'Team Spirit', teamB: 'Team Liquid', oddsA: 1.85, oddsB: 1.95 },
-                { id: 'valo-fall-1', game: 'valorant', league: 'Valorant Champions Tour', teamA: 'Sentinels', teamB: 'Fnatic', oddsA: 1.70, oddsB: 2.10 }
-            ];
-
-            fallbacks.forEach(match => {
-                if (document.getElementById(`match-${match.id}`)) return;
-                const cardHtml = `
-                    <div class="match-card" data-game="${match.game}" id="match-${match.id}">
-                        <div class="card-top">
-                            <div class="teams-info">
-                                <span class="game-tag">${match.league}</span>
-                                <div class="team-name">${match.teamA} <span class="vs">VS</span> ${match.teamB}</div>
-                            </div>
-                        </div>
-                        <div class="odds-block">
-                            <div class="odds-row">
-                                <span class="odds-title">ပွဲနိုင်/ရှုံး:</span>
-                                <div class="odds-container">
-                                    <button class="odds-btn" onclick="selectBet('${match.teamA} vs ${match.teamB}', '${match.teamA}', ${match.oddsA}, '${match.id}', 'home')">
-                                        <span class="team-label">${match.teamA}</span>
-                                        <span class="odds-val">x${match.oddsA}</span>
-                                    </button>
-                                    <button class="odds-btn" onclick="selectBet('${match.teamA} vs ${match.teamB}', '${match.teamB}', ${match.oddsB}, '${match.id}', 'away')">
-                                        <span class="team-label">${match.teamB}</span>
-                                        <span class="odds-val">x${match.oddsB}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                wrapper.insertAdjacentHTML('beforeend', cardHtml);
-            });
-        }
-
-        // --- Category filtering system ---
-        const tabs = document.querySelectorAll('.game-tabs .tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                const filterValue = tab.getAttribute('data-filter');
-                const matchCards = document.querySelectorAll('#matches-wrapper .match-card');
-                
-                matchCards.forEach(card => {
-                    const gameType = card.getAttribute('data-game');
-                    if (filterValue === 'all' || gameType === filterValue) {
-                        card.style.display = 'flex';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-        });
-
-        // --- Slip Systems ---
-        function selectBet(matchName, teamChoice, odds, matchId, side) {
+        function selectBet(matchName, team, odds, matchId, side) {
             currentOdds = odds;
             selectedMatchId = matchId;
             selectedChoiceSide = side;
@@ -751,103 +569,78 @@
             document.getElementById('slip-content').style.display = 'flex';
             
             document.getElementById('slip-match-name').innerText = matchName;
-            document.getElementById('slip-team-choice').innerText = teamChoice;
+            document.getElementById('slip-team-choice').innerText = team;
             document.getElementById('slip-odds-val').innerText = 'x' + odds;
             
             updatePayout();
-
-            if (window.innerWidth <= 992) {
-                document.getElementById('slip-content').scrollIntoView({ behavior: 'smooth' });
-            }
         }
 
         function updatePayout() {
-            const amt = document.getElementById('bet-amount').value;
-            const payout = amt * currentOdds;
-            document.getElementById('payout-amount').innerText = Math.round(payout) + ' Coins';
+            const amount = parseFloat(document.getElementById('bet-amount').value) || 0;
+            const payout = amount * currentOdds;
+            document.getElementById('payout-amount').innerText = payout.toFixed(2) + ' Coins';
         }
 
         function confirmBet() {
             const activeSession = sessionStorage.getItem('current_user');
             if (!activeSession) {
-                showCustomAlert('လောင်းကြေးတင်ရန် အရင်ဦးဆုံး အကောင့်ဝင်ပေးပါ။', 'သတိပေးချက်');
+                showCustomAlert('လောင်းကြေးတင်ရန် အကောင့်ဝင်ရန် လိုအပ်ပါသည်။', 'သတိပေးချက်');
+                toggleLoginModal(true);
+                return;
+            }
+            
+            const user = JSON.parse(activeSession);
+            const amount = parseFloat(document.getElementById('bet-amount').value) || 0;
+
+            if (amount < 500) {
+                showCustomAlert('အနည်းဆုံး လောင်းကြေး 500 Coins ဖြစ်ရပါမည်။', 'သတိပေးချက်');
                 return;
             }
 
-            const currentUser = JSON.parse(activeSession);
+            if (user.balance < amount) {
+                showCustomAlert('လက်ကျန်ငွေ မလုံလောက်ပါ။', 'သတိပေးချက်');
+                return;
+            }
+
+            // Deduct balance and update DB
+            user.balance -= amount;
+            sessionStorage.setItem('current_user', JSON.stringify(user));
+            
             const dbUsers = JSON.parse(localStorage.getItem('db_users'));
-            const userInDb = dbUsers.find(u => u.username === currentUser.username);
-
-            const amt = parseInt(document.getElementById('bet-amount').value);
-            if (isNaN(amt) || amt <= 0) {
-                showCustomAlert('မှန်ကန်သော ပမာဏကို ထည့်သွင်းပေးပါရန်။', 'အမှားအယွင်း');
-                return;
-            }
-            if (amt > userInDb.balance) {
-                showCustomAlert('သင့်အကောင့်တွင် လောင်းရန် Coin မလုံလောက်ပါ။ Admin ထံတွင် ဖြည့်သွင်းပါ!', 'ငွေမလုံလောက်ပါ');
-                return;
-            }
-            if (amt < 500) {
-                showCustomAlert('အနည်းဆုံး လောင်းကြေးပမာဏမှာ 500 Coins ဖြစ်ရပါမည်။', 'သတိပေးချက်');
-                return;
+            const userIndex = dbUsers.findIndex(u => u.username === user.username);
+            if(userIndex !== -1) {
+                dbUsers[userIndex].balance = user.balance;
+                localStorage.setItem('db_users', JSON.stringify(dbUsers));
             }
             
-            userInDb.balance -= amt;
-            localStorage.setItem('db_users', JSON.stringify(dbUsers));
-            sessionStorage.setItem('current_user', JSON.stringify(userInDb));
-            updateUIForUser(userInDb);
-
-            totalBetsVolume += amt;
+            updateUIForUser(user);
+            showCustomAlert(`${amount} Coins ဖြင့် လောင်းကြေးတင်ခြင်း အောင်မြင်ပါသည်။ ပွဲစဉ်ရလဒ်ကို စောင့်ကြည့်ပါ။`, 'အောင်မြင်ပါသည်');
             
-            showCustomAlert('လောင်းကြေးတင်ခြင်း အောင်မြင်ပါသည်။ ပွဲပြီးဆုံးပါက စနစ်မှ အလိုအလျောက် ရှင်းပေးမည် ဖြစ်သည်။', 'အောင်မြင်ပါသည်');
-            
+            // Reset Slip
             document.getElementById('slip-empty').style.display = 'block';
             document.getElementById('slip-content').style.display = 'none';
         }
 
-        // --- Admin Panels ---
-        function toggleAdminPanel(show) {
-            const activeSession = sessionStorage.getItem('current_user');
-            if (!activeSession) {
-                showCustomAlert('ခွင့်ပြုချက်မရှိပါ။ Admin အကောင့်ဖြင့် အရင်ဝင်ပါ။', 'ခွင့်ပြုချက်မရှိပါ');
-                return;
-            }
-            const loggedInUser = JSON.parse(activeSession);
-            if (!loggedInUser.isAdmin) {
-                showCustomAlert('ဒိုင်ချုပ်အကောင့် သီးသန့်ဝင်ပေါက် ဖြစ်သည်။', 'ခွင့်ပြုချက်မရှိပါ');
-                return;
-            }
-            updateAdminDashboardUI();
-            document.getElementById('admin-panel-modal').style.display = show ? 'flex' : 'none';
-        }
-
-        function updateAdminDashboardUI() {
-            document.getElementById('admin-total-bets').innerText = totalBetsVolume.toLocaleString();
-            document.getElementById('admin-total-payouts').innerText = totalPayoutsVolume.toLocaleString();
-            
-            const dbUsers = JSON.parse(localStorage.getItem('db_users'));
-            let bindingHtml = '';
-            dbUsers.forEach(u => {
-                if (!u.isAdmin) {
-                    bindingHtml += `User: <b>${u.username}</b> | Device: <u>${u.deviceId}</u> | Bal: ${u.balance.toLocaleString()} Coins<br>`;
-                }
-            });
-            document.getElementById('admin-device-db-view').innerHTML = bindingHtml || 'အကောင့်များ မှတ်ပုံတင်ထားခြင်းမရှိသေးပါ။';
-        }
-
-        function toggleDepositModal(show) {
-            document.getElementById('deposit-modal').style.display = show ? 'flex' : 'none';
-        }
-
         function installPWA() {
-            showCustomAlert('App အား ဖုန်း Desktop ပေါ်သို့ အမြန်တပ်ဆင်ရန် Web Browser standard (Add to Home Screen) ကို နှိပ်ပြီး ထည့်သွင်းနိုင်ပါသည်။', 'PWA App တပ်ဆင်ခြင်း');
+            showCustomAlert('Browser ၏ Options မှ "Add to Home Screen" သို့မဟုတ် "Install App" ကိုနှိပ်၍ Phone တွင် App အဖြစ် ထည့်သွင်းနိုင်ပါသည်။', 'PWA Install လုပ်နည်း');
         }
 
-        window.onload = function() {
-            initDatabase();
-            fetchLiveFootballMatches();
-            fetchEsportsMatches();
-        };
+        // Game Filters Logic
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.getAttribute('data-filter');
+                document.querySelectorAll('.match-card').forEach(card => {
+                    if(filter === 'all' || card.getAttribute('data-game') === filter) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
     </script>
 </body>
-    </html>
+</html>
