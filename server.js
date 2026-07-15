@@ -14,6 +14,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SEC
 const FOOTBALL_API_TOKEN = process.env.FOOTBALL_API_TOKEN;
 
 // API မှ Data ဆွဲခြင်း
+// API မှ Data ဆွဲပြီး ၅ ရက်စာပဲ Filter လုပ်ပြီး Database ထဲ သွင်းခြင်း
 async function syncMatches() {
     try {
         const response = await axios.get('https://api.football-data.org/v4/competitions/PL/matches', {
@@ -23,18 +24,36 @@ async function syncMatches() {
         const matches = response.data.matches;
         const leagueName = response.data.competition.name; 
 
+        // ၅ ရက်စာ ကာလအပိုင်းအခြား သတ်မှတ်ခြင်း
+        const now = new Date();
+        const maxDate = new Date();
+        maxDate.setDate(now.getDate() + 5); // ဒီနေ့ကနေ နောက်ထပ် ၅ ရက်အထိပဲ ယူမယ်
+
+        let syncedCount = 0;
+
         for (let m of matches) {
-            await supabase.from('match').upsert({
-                id: m.id,
-                team_a: m.homeTeam.name,
-                team_b: m.awayTeam.name,
-                match_date: m.utcDate,
-                league: leagueName, 
-                odds_a: 1.9,
-                odds_b: 1.9,
-                game_type: 'Football'
-            });
+            const matchDate = new Date(m.utcDate);
+
+            // ပွဲစဉ်ရဲ့ အချိန်က လက်ရှိအချိန်နဲ့ နောက်ထပ် ၅ ရက်အတွင်း ဖြစ်မှသာ Database ထဲ သွင်းမယ်
+            if (matchDate >= now && matchDate <= maxDate) {
+                await supabase.from('match').upsert({
+                    id: m.id,
+                    team_a: m.homeTeam.name,
+                    team_b: m.awayTeam.name,
+                    match_date: m.utcDate,
+                    league: leagueName, 
+                    odds_a: 1.9,
+                    odds_b: 1.9,
+                    game_type: 'Football'
+                });
+                syncedCount++;
+            }
         }
+        console.log(`Successfully synced ${syncedCount} matches for the next 5 days!`);
+    } catch (err) {
+        console.error("Sync Error:", err.message);
+    }
+}
         console.log("Matches and League synced successfully!");
     } catch (err) {
         console.error("Sync Error:", err.message);
