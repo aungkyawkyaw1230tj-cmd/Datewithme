@@ -126,9 +126,9 @@ app.post('/api/login', async (req, res) => {
         res.json({ success: true, user: { username: user.username, balance: user.balance } });
 
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Sync Error:", err.message);
     }
-});
+}
 
 // -----------------------------------------------------------------
 
