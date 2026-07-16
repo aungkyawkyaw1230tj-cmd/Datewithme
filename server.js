@@ -17,7 +17,7 @@ const FOOTBALL_API_TOKEN = process.env.FOOTBALL_API_TOKEN;
 const PANDASCORE_TOKEN = 'LI8GZXN_LDFTJOKO9EWDo8jJZqSYHopn7OzCLKx0nopEw05b0wI';
 const BASE_MARGIN = 0.05;
 
-// === [၁] FOOTBALL SYNC ENGINE (ဘောလုံးပွဲစဉ်များ သိမ်းဆည်းခြင်း) ===
+// === [၁] FOOTBALL SYNC ENGINE (ဘောလုံးပွဲစဉ်များ ကန့်သတ်ချက်ဖြင့် သိမ်းဆည်းခြင်း) ===
 async function syncFootballMatches() {
     try {
         if (!FOOTBALL_API_TOKEN) return console.log("Football Token မရှိသေးပါ။");
@@ -27,18 +27,23 @@ async function syncFootballMatches() {
 
         const matches = response.data.matches;
         const leagueName = response.data.competition.name; 
+        
+        // ဘောလုံးပွဲစဉ် အများကြီး မဝင်လာစေရန် ယနေ့မှစ၍ ရှေ့ ၁၀ ရက်စာကိုပဲ Filter ဖြတ်ခြင်း
         const today = new Date(); today.setHours(0, 0, 0, 0);
+        const maxDate = new Date();
+        maxDate.setDate(today.getDate() + 10); 
+        maxDate.setHours(23, 59, 59, 999);
 
         let syncedCount = 0;
         for (let m of matches) {
             const matchDate = new Date(m.utcDate);
-            if (matchDate >= today) {
+            if (matchDate >= today && matchDate <= maxDate) {
                 let dynamicMargin = BASE_MARGIN - (Math.random() * 0.01); 
                 let calculatedOddsA = (2.00 * (1 - dynamicMargin)).toFixed(2);
                 let calculatedOddsB = (2.00 * (1 - dynamicMargin)).toFixed(2);
 
                 await supabase.from('match').upsert({
-                    id: String(m.id), // ရိုးရိုး ID သွင်းခြင်း
+                    id: String(m.id), 
                     team_a: m.homeTeam.name,
                     team_b: m.awayTeam.name,
                     match_date: m.utcDate,
@@ -75,7 +80,6 @@ async function syncEsportsMatches() {
                 let calculatedOddsA = (1.95 * (1 - dynamicMargin)).toFixed(2);
                 let calculatedOddsB = (1.95 * (1 - dynamicMargin)).toFixed(2);
 
-                // ဆောက်ထားသော esport_matches table ထဲသို့ သီးသန့်သွင်းခြင်း
                 await supabase.from('esport_matches').upsert({
                     id: String(m.id), 
                     team_a: teamA,
@@ -112,7 +116,7 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const { data: user, error } = await supabase.from('users').select('*').eq('username', username).eq('password', password).single();
+        const { data: user, error = null } = await supabase.from('users').select('*').eq('username', username).eq('password', password).single();
         if (error || !user) return res.status(400).json({ error: "Username သို့မဟုတ် Password မှားနေပါသည်" });
         res.json({ success: true, user: { username: user.username, balance: user.balance } });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -184,18 +188,17 @@ app.get('/api/bet-history', async (req, res) => {
 // ----------------- MATCHES & SYNC ROUTE -----------------
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// Frontend မှ ပွဲစဉ်တွေတောင်းရင် ဘောလုံးပွဲရော Esports ပွဲရော နှစ်ခုလုံးပေါင်းပြီး တစ်ခါတည်း ပြန်ပို့ပေးမည့် API
 app.get('/api/matches', async (req, res) => {
     try {
-        // ၁။ Football ပွဲစဉ်များဆွဲယူခြင်း
+        // ၁။ Football ပွဲစဉ်များ ဆွဲယူခြင်း
         const { data: footballMatches, error: fbErr } = await supabase.from('match').select('*').order('match_date', { ascending: true });
         if (fbErr) throw fbErr;
 
-        // ၂။ Esports ပွဲစဉ်များဆွဲယူခြင်း
+        // ၂။ Esports ပွဲစဉ်များ ဆွဲယူခြင်း
         const { data: esportsMatches, error: esErr } = await supabase.from('esport_matches').select('*').order('match_date', { ascending: true });
         if (esErr) throw esErr;
 
-        // ၃။ ဒေတာနှစ်ခုကို Format တူအောင် ညှိပြီး ပေါင်းထုတ်ပေးခြင်း
+        // ၃။ ဒေတာနှစ်ခုလုံးကို Frontend က ခလုတ်တွေနဲ့ စစ်ထုတ်ရလွယ်အောင် game_type တစ်ပြေးညီ ညှိပြီး ပေါင်းထုတ်ခြင်း
         const formattedEsports = esportsMatches.map(m => ({
             id: m.id,
             team_a: m.team_a,
@@ -204,7 +207,7 @@ app.get('/api/matches', async (req, res) => {
             league: m.league,
             odds_a: m.odds_a,
             odds_b: m.odds_b,
-            game_type: m.game_name // Frontend က 'game_type' အဖြစ်ပဲ ဖတ်နိုင်အောင် ပြောင်းပေးခြင်း
+            game_type: m.game_name // PandaScore ရဲ့ game_name ကို game_type အဖြစ် ညှိယူခြင်း
         }));
 
         const allMatches = [...footballMatches, ...formattedEsports];
