@@ -17,10 +17,14 @@ const FOOTBALL_API_TOKEN = process.env.FOOTBALL_API_TOKEN;
 const PANDASCORE_TOKEN = 'LI8GZXN_LDFTJOKO9EWDo8jJZqSYHopn7OzCLKx0nopEw05b0wI';
 const BASE_MARGIN = 0.05;
 
-// === [၁] FOOTBALL SYNC ENGINE (ဘောလုံးပွဲစဉ်များ ကန့်သတ်ချက်ဖြင့် သိမ်းဆည်းခြင်း) ===
+// === [၁] FOOTBALL SYNC ENGINE (ဘောလုံးပွဲစဉ်များ သိမ်းဆည်းခြင်း) ===
 async function syncFootballMatches() {
     try {
-        if (!FOOTBALL_API_TOKEN) return console.log("Football Token မရှိသေးပါ။");
+        if (!FOOTBALL_API_TOKEN) {
+            return console.log("❌ Football Token (.env သို့မဟုတ် Render Env) ထဲမှာ မတွေ့ပါ။");
+        }
+        
+        console.log("🔄 Football API (PL) ကနေ ပွဲစဉ်တွေ စတင်ဆွဲယူနေပါတယ်...");
         const response = await axios.get('https://api.football-data.org/v4/competitions/PL/matches', {
             headers: { 'X-Auth-Token': FOOTBALL_API_TOKEN }
         });
@@ -28,21 +32,19 @@ async function syncFootballMatches() {
         const matches = response.data.matches;
         const leagueName = response.data.competition.name; 
         
-        // ဘောလုံးပွဲစဉ် အများကြီး မဝင်လာစေရန် ယနေ့မှစ၍ ရှေ့ ၁၀ ရက်စာကိုပဲ Filter ဖြတ်ခြင်း
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const maxDate = new Date();
-        maxDate.setDate(today.getDate() + 10); 
-        maxDate.setHours(23, 59, 59, 999);
+        console.log(`📊 Football API ကနေ စုစုပေါင်း ပွဲစဉ် ${matches.length} ပွဲ တွေ့ရှိပါတယ်။`);
 
+        // လက်ရှိအချိန်နဲ့ ကိုက်ညီမယ့် ပွဲစဉ်တွေ (ဥပမာ- Schedule ဖြစ်ထားဆဲ သို့မဟုတ် ကစားနေဆဲပွဲများ) ကိုပဲ ယူရန် Filter ညှိခြင်း
+        // အရင်က ၁၀ ရက်စာ ကန့်သတ်ချက်ကို ဖြုတ်ပြီး ပွဲစဉ်တွေ အားလုံး ဝင်လာအောင် status သို့မဟုတ် date ပေါ်မူတည်ပြီး သွင်းပါမယ်
         let syncedCount = 0;
         for (let m of matches) {
-            const matchDate = new Date(m.utcDate);
-            if (matchDate >= today && matchDate <= maxDate) {
+            // FINISHED ဖြစ်သွားတဲ့ ပွဲဟောင်းတွေကို ဖယ်ပြီး လာမယ့်ပွဲစဉ် (SCHEDULED, LIVE, IN_PLAY) တွေကို ယူပါမယ်
+            if (m.status !== 'FINISHED') {
                 let dynamicMargin = BASE_MARGIN - (Math.random() * 0.01); 
                 let calculatedOddsA = (2.00 * (1 - dynamicMargin)).toFixed(2);
                 let calculatedOddsB = (2.00 * (1 - dynamicMargin)).toFixed(2);
 
-                await supabase.from('match').upsert({
+                const { error } = await supabase.from('match').upsert({
                     id: String(m.id), 
                     team_a: m.homeTeam.name,
                     team_b: m.awayTeam.name,
@@ -52,16 +54,24 @@ async function syncFootballMatches() {
                     odds_b: parseFloat(calculatedOddsB),
                     game_type: 'Football'
                 });
-                syncedCount++;
+
+                if (error) {
+                    console.error(`❌ Match ID ${m.id} သွင်းရဆင် Error:`, error.message);
+                } else {
+                    syncedCount++;
+                }
             }
         }
-        console.log(`Successfully synced ${syncedCount} Football matches!`);
-    } catch (err) { console.error("Football Sync Error:", err.message); }
+        console.log(`✅ Successfully synced ${syncedCount} Football matches to Supabase!`);
+    } catch (err) { 
+        console.error("❌ Football Sync Error:", err.response ? JSON.stringify(err.response.data) : err.message); 
+    }
 }
 
 // === [၂] ESPORTS SYNC ENGINE (Esports သီးသန့် Table ထဲသို့ သိမ်းဆည်းခြင်း) ===
 async function syncEsportsMatches() {
     try {
+        console.log("🔄 PandaScore API ကနေ Esports ပွဲစဉ်တွေ စတင်ဆွဲယူနေပါတယ်...");
         const response = await axios.get('https://api.pandascore.co/matches/upcoming', {
             params: { token: PANDASCORE_TOKEN, per_page: 20 }
         });
@@ -93,8 +103,8 @@ async function syncEsportsMatches() {
                 syncedCount++;
             }
         }
-        console.log(`Successfully synced ${syncedCount} Esports matches to esport_matches table!`);
-    } catch (err) { console.error("PandaScore Sync Error:", err.message); }
+        console.log(`✅ Successfully synced ${syncedCount} Esports matches to esport_matches table!`);
+    } catch (err) { console.error("❌ PandaScore Sync Error:", err.message); }
 }
 
 // ----------------- USER SYSTEM -----------------
@@ -198,7 +208,7 @@ app.get('/api/matches', async (req, res) => {
         const { data: esportsMatches, error: esErr } = await supabase.from('esport_matches').select('*').order('match_date', { ascending: true });
         if (esErr) throw esErr;
 
-        // ၃။ ဒေတာနှစ်ခုလုံးကို Frontend က ခလုတ်တွေနဲ့ စစ်ထုတ်ရလွယ်အောင် game_type တစ်ပြေးညီ ညှိပြီး ပေါင်းထုတ်ခြင်း
+        // ၃။ game_type တစ်ပြေးညီ ညှိပြီး ပေါင်းထုတ်ခြင်း
         const formattedEsports = esportsMatches.map(m => ({
             id: m.id,
             team_a: m.team_a,
@@ -207,7 +217,7 @@ app.get('/api/matches', async (req, res) => {
             league: m.league,
             odds_a: m.odds_a,
             odds_b: m.odds_b,
-            game_type: m.game_name // PandaScore ရဲ့ game_name ကို game_type အဖြစ် ညှိယူခြင်း
+            game_type: m.game_name 
         }));
 
         const allMatches = [...footballMatches, ...formattedEsports];
@@ -221,5 +231,13 @@ app.get('/api/sync', async (req, res) => {
     res.send("Football and Esports Tables Sync completed successfully!");
 });
 
+// ----------------- SERVER LISTEN & INITIAL SYNC -----------------
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server live on port ${PORT}`));
+app.listen(PORT, async () => {
+    console.log(`🚀 Server live on port ${PORT}`);
+    
+    // Server စတက်တာနဲ့ နောက်ကွယ်ကနေ ဒေတာတွေကို တစ်ခါတည်း Auto-Sync လုပ်ပေးမှာဖြစ်ပါတယ်
+    console.log("⚡ Starting initial match sync engine...");
+    await syncFootballMatches();
+    await syncEsportsMatches();
+});
