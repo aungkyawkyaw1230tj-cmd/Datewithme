@@ -13,6 +13,7 @@
             --text-muted: #94a3b8;
             --border-color: #334155;
             --error-red: #ef4444;
+            --warning-yellow: #f59e0b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
@@ -20,7 +21,7 @@
 
         .container { max-width: 1200px; margin: 0 auto; }
         
-        /* Auth Container (Login / Register) */
+        /* Auth Container */
         .auth-container { max-width: 400px; margin: 80px auto; background: var(--bg-card); padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         .auth-container h2 { text-align: center; margin-bottom: 20px; color: var(--primary-neon); }
         .form-group { margin-bottom: 15px; }
@@ -33,7 +34,7 @@
         .auth-toggle span { color: var(--primary-neon); text-decoration: underline; }
         .error-msg { color: var(--error-red); font-size: 14px; margin-top: 10px; text-align: center; display: none; }
 
-        /* Main Betting UI (Hidden initially) */
+        /* Main Betting UI */
         #main-platform { display: none; }
         .navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-card); border-radius: 12px; margin-bottom: 25px; border: 1px solid var(--border-color); }
         .logo { font-size: 24px; font-weight: 800; color: var(--primary-neon); letter-spacing: 1px; }
@@ -49,7 +50,7 @@
         .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.05); color: var(--text-light); border-left: 4px solid var(--primary-neon); }
 
         .league-tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .sub-tab { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+        .sub-tab { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .sub-tab.active { background: var(--primary-neon); color: var(--bg-dark); font-weight: bold; border-color: var(--primary-neon); }
 
         .match-list { display: grid; grid-template-columns: 1fr; gap: 15px; }
@@ -61,6 +62,28 @@
         .odds-btn { flex: 1; background: #0f172a; border: 1px solid var(--border-color); color: var(--text-light); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; }
         .odds-btn:hover { border-color: var(--primary-neon); background: rgba(16, 185, 129, 0.05); }
         .odds-val { color: var(--primary-neon); }
+
+        /* Betslip Pop-up UI */
+        .betslip-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .betslip-modal { background: var(--bg-card); border: 1px solid var(--border-color); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .betslip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .betslip-header h4 { color: var(--primary-neon); font-size: 18px; }
+        .close-slip { cursor: pointer; color: var(--text-muted); font-size: 20px; }
+        .slip-detail { background: var(--bg-dark); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .slip-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+        .slip-input-group { margin-bottom: 15px; }
+        .slip-input-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 13px; }
+        .slip-input { width: 100%; padding: 10px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 16px; text-align: center; }
+        .slip-calc { background: rgba(16, 185, 129, 0.05); border: 1px dashed var(--primary-neon); padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; color: var(--primary-neon); }
+
+        /* History Tab Section */
+        #history-section { display: none; }
+        .history-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; margin-bottom: 12px; }
+        .history-header { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning-yellow); }
+        .status-won { background: rgba(16, 185, 129, 0.2); color: var(--primary-neon); }
+        .status-lost { background: rgba(239, 68, 68, 0.2); color: var(--error-red); }
 
         @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } }
     </style>
@@ -101,23 +124,59 @@
 
         <div class="main-layout">
             <aside class="sidebar">
-                <h3>Categories</h3>
+                <h3>Menu</h3>
                 <ul class="nav-list">
-                    <li class="nav-item active" onclick="changeCategory('all', this)">All Matches</li>
-                    <li class="nav-item" onclick="changeCategory('Football', this)">Football</li>
-                    <li class="nav-item" onclick="changeCategory('Esports', this)">Esports</li>
+                    <li class="nav-item active" id="menu-all" onclick="switchView('matches')">All Matches</li>
+                    <li class="nav-item" id="menu-history" onclick="switchView('history')">Bet History (မှတ်တမ်း)</li>
+                </ul>
+                <br>
+                <h3>Categories</h3>
+                <ul class="nav-list" id="category-section">
+                    <li class="nav-item active cat-item" onclick="changeCategory('all', this)">All Sports</li>
+                    <li class="nav-item cat-item" onclick="changeCategory('Football', this)">Football</li>
+                    <li class="nav-item cat-item" onclick="changeCategory('Esports', this)">Esports</li>
                 </ul>
             </aside>
 
-            <main>
+            <!-- MATCHES VIEW -->
+            <main id="matches-section">
                 <div class="league-tabs" id="dynamic-tabs">
                     <button class="sub-tab active" onclick="filterLeague('all', this)">All Leagues</button>
                 </div>
                 <div class="match-list" id="matches-display"></div>
             </main>
+
+            <!-- HISTORY VIEW -->
+            <main id="history-section">
+                <h2 style="margin-bottom: 20px; color: var(--primary-neon);">လောင်းကြေးမှတ်တမ်း (Bet History)</h2>
+                <div id="history-display">လှမ်းဆွဲနေဆဲ...</div>
+            </main>
         </div>
     </div>
 
+</div>
+
+<!-- ================= BETSLIP MODAL UI ================= -->
+<div class="betslip-overlay" id="betslip-popup">
+    <div class="betslip-modal">
+        <div class="betslip-header">
+            <h4>Betslip (လောင်းကြေးဘောင်)</h4>
+            <span class="close-slip" onclick="closeBetslip()">&times;</span>
+        </div>
+        <div class="slip-detail">
+            <div class="slip-row"><span style="color:var(--text-muted)">ပွဲစဉ်:</span> <span id="slip-match-name" style="font-weight:bold;">Team A vs Team B</span></div>
+            <div class="slip-row"><span style="color:var(--text-muted)">ရွေးချယ်မှု:</span> <span id="slip-selected-team" style="color:var(--primary-neon); font-weight:bold;">Team A</span></div>
+            <div class="slip-row"><span style="color:var(--text-muted)">Odds ကြေး:</span> <span id="slip-odds" style="color:var(--primary-neon); font-weight:bold;">1.9</span></div>
+        </div>
+        <div class="slip-input-group">
+            <label>လောင်းမည့် ပမာဏ (Coins)</label>
+            <input type="number" class="slip-input" id="slip-amount" value="10" min="1" oninput="calculateReturn()">
+        </div>
+        <div class="slip-calc">
+            နိုင်ပါက ရရှိမည့်ပိုက်ဆံ: <span id="slip-return">19.00</span> Coins
+        </div>
+        <button class="auth-btn" onclick="submitBet()">လောင်းကြေး အတည်ပြုမည်</button>
+    </div>
 </div>
 
 <script>
@@ -125,8 +184,10 @@
     let rawMatches = [];
     let currentCategory = 'all';
     let currentLeague = 'all';
+    
+    // Betslip အတွက် လက်ရှိဒေတာ ယာယီသိမ်းရန်
+    let currentActiveBet = null;
 
-    // ၁။ Browser ရဲ့ သတင်းအချက်အလက်တွေ သုံးပြီး Unique ဖြစ်မယ့် Device ID ဖန်တီးခြင်း
     function getDeviceID() {
         const navigator_info = window.navigator.userAgent + window.navigator.language + window.screen.colorDepth + window.screen.height + window.screen.width;
         let hash = 0;
@@ -138,7 +199,6 @@
         return 'DEV-' + Math.abs(hash);
     }
 
-    // ၂။ Login / Register ပြောင်းလဲခြင်း Toggle Function
     function toggleAuthMode() {
         isLoginMode = !isLoginMode;
         document.getElementById('auth-title').innerText = isLoginMode ? 'Login' : 'Register အကောင့်ဆောက်ရန်';
@@ -147,7 +207,6 @@
         document.getElementById('error-message').style.display = 'none';
     }
 
-    // ၃။ Auth လုပ်ဆောင်မှု Handle လုပ်ခြင်း
     async function handleAuth(e) {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
@@ -158,9 +217,7 @@
         const endpoint = isLoginMode ? '/api/login' : '/api/register';
         const payload = { username, password };
         
-        if (!isLoginMode) {
-            payload.device_id = getDeviceID();
-        }
+        if (!isLoginMode) payload.device_id = getDeviceID();
 
         try {
             const res = await fetch(endpoint, {
@@ -189,7 +246,6 @@
         }
     }
 
-    // ၄။ အကောင့်ဝင်ထားခြင်း ရှိ/မရှိ စစ်ဆေးပြီး UI ပြောင်းလဲခြင်း
     function checkAuth() {
         const user = localStorage.getItem('x_user');
         if (user) {
@@ -198,46 +254,53 @@
             document.getElementById('main-platform').style.display = 'block';
             document.getElementById('user-display').innerText = userData.username;
             document.getElementById('user-balance').innerText = userData.balance;
-            loadMatches();
+            switchView('matches');
         } else {
             document.getElementById('auth-section').style.display = 'block';
             document.getElementById('main-platform').style.display = 'none';
         }
     }
 
-    // ၅။ Database မှ ပွဲစဉ်များ ဆွဲယူခြင်း
+    // View ပြောင်းခြင်း (Matches သို့မဟုတ် History)
+    function switchView(view) {
+        document.getElementById('menu-all').classList.remove('active');
+        document.getElementById('menu-history').classList.remove('active');
+        
+        if (view === 'matches') {
+            document.getElementById('menu-all').classList.add('active');
+            document.getElementById('matches-section').style.display = 'block';
+            document.getElementById('category-section').style.display = 'block';
+            document.getElementById('history-section').style.display = 'none';
+            loadMatches();
+        } else {
+            document.getElementById('menu-history').classList.add('active');
+            document.getElementById('matches-section').style.display = 'none';
+            document.getElementById('category-section').style.display = 'none';
+            document.getElementById('history-section').style.display = 'block';
+            loadBetHistory();
+        }
+    }
+
     async function loadMatches() {
         try {
             const res = await fetch('/api/matches');
             if (!res.ok) return;
-
             const data = await res.json();
-            
-            if (Array.isArray(data)) {
-                rawMatches = data;
-            } else if (data && Array.isArray(data.data)) {
-                rawMatches = data.data;
-            } else {
-                rawMatches = [];
-            }
-            
+            rawMatches = Array.isArray(data) ? data : (data.data || []);
             renderLeaguesAndMatches();
         } catch (err) {
-            console.error("Load Matches Error:", err);
-            document.getElementById('matches-display').innerHTML = `<p style="text-align:center; color: red;">Error: ${err.message}</p>`;
+            console.error(err);
         }
     }
 
-    // ၆။ Categories ပြောင်းလဲခြင်း
     function changeCategory(category, element) {
-        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.cat-item').forEach(item => item.classList.remove('active'));
         element.classList.add('active');
         currentCategory = category;
         currentLeague = 'all';
         renderLeaguesAndMatches();
     }
 
-    // ၇။ Leagues Tab များကို dynamic ဆောက်ပေးခြင်း
     function renderLeaguesAndMatches() {
         const tabContainer = document.getElementById('dynamic-tabs');
         if (!tabContainer) return;
@@ -255,18 +318,13 @@
         displayMatches(finalMatches);
     }
 
-    // ၈။ League အလိုက် Filter လုပ်ခြင်း
     function filterLeague(league, element) {
         document.querySelectorAll('.sub-tab').forEach(tab => tab.classList.remove('active'));
         element.classList.add('active');
         currentLeague = league;
-        
-        const filteredByCategory = currentCategory === 'all' ? rawMatches : rawMatches.filter(m => m.game_type === currentCategory);
-        const finalMatches = currentLeague === 'all' ? filteredByCategory : filteredByCategory.filter(m => m.league === currentLeague);
-        displayMatches(finalMatches);
+        renderLeaguesAndMatches();
     }
 
-    // ၉။ ပွဲစဉ်များကို UI ပေါ်တွင် အမြန်ဆုံးဆွဲတင်ခြင်း (လောင်းကြေးခလုတ် ချိတ်ဆက်မှုပါဝင်သည်)
     function displayMatches(matches) {
         const container = document.getElementById('matches-display');
         if (!container) return;
@@ -276,25 +334,13 @@
             return;
         }
 
-        const matchesHTML = matches.map(m => {
+        container.innerHTML = matches.map(m => {
             let matchTime = 'စတင်မည့်အချိန် မရှိပါ';
-            
             if (m.match_date) {
-                try {
-                    const safeDateStr = m.match_date.replace(' ', 'T'); 
-                    const parsedDate = new Date(safeDateStr);
-                    
-                    if (!isNaN(parsedDate)) {
-                        matchTime = parsedDate.toLocaleString('en-US', {
-                            month: 'short', 
-                            day: 'numeric', 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true
-                        });
-                    }
-                } catch (e) {
-                    console.error("Date parsing error for match:", m.id, e);
+                const safeDateStr = m.match_date.replace(' ', 'T');
+                const parsedDate = new Date(safeDateStr);
+                if (!isNaN(parsedDate)) {
+                    matchTime = parsedDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                 }
             }
 
@@ -310,43 +356,62 @@
                         <span>${m.team_b || 'Team B'}</span>
                     </div>
                     <div class="odds-container">
-                        <button class="odds-btn" onclick="placeBet('${m.id}', '${m.team_a}', '${m.odds_a || 1.9}')">
-                            <span>${m.team_a || 'Team A'}</span> 
-                            <span class="odds-val">${m.odds_a || '1.9'}</span>
+                        <button class="odds-btn" onclick="openBetslip('${m.id}', '${m.team_a} vs ${m.team_b}', '${m.team_a}', '${m.odds_a || 1.9}')">
+                            <span>${m.team_a}</span> <span class="odds-val">${m.odds_a || '1.9'}</span>
                         </button>
-                        <button class="odds-btn" onclick="placeBet('${m.id}', '${m.team_b}', '${m.odds_b || 1.9}')">
-                            <span>${m.team_b || 'Team B'}</span> 
-                            <span class="odds-val">${m.odds_b || '1.9'}</span>
+                        <button class="odds-btn" onclick="openBetslip('${m.id}', '${m.team_a} vs ${m.team_b}', '${m.team_b}', '${m.odds_b || 1.9}')">
+                            <span>${m.team_b}</span> <span class="odds-val">${m.odds_b || '1.9'}</span>
                         </button>
                     </div>
                 </div>
             `;
         }).join('');
-
-        container.innerHTML = matchesHTML;
     }
 
-    // ၁၁။ လောင်းကြေးထည့်သည့် Function
-    async function placeBet(matchId, selectedTeam, odds) {
+    // ================= NEW: BETSLIP LOGIC =================
+
+    // ၁။ Betslip UI ဖွင့်ခြင်း
+    function openBetslip(matchId, matchName, selectedTeam, odds) {
+        currentActiveBet = { matchId, matchName, selectedTeam, odds: parseFloat(odds) };
+        
+        document.getElementById('slip-match-name').innerText = matchName;
+        document.getElementById('slip-selected-team').innerText = selectedTeam;
+        document.getElementById('slip-odds').innerText = odds;
+        document.getElementById('slip-amount').value = 10; // Default လောင်းကြေး ၁၀
+        
+        calculateReturn();
+        document.getElementById('betslip-popup').style.display = 'flex';
+    }
+
+    // ၂။ Betslip UI ပိတ်ခြင်း
+    function closeBetslip() {
+        document.getElementById('betslip-popup').style.display = 'none';
+        currentActiveBet = null;
+    }
+
+    // ၃။ နိုင်ရင်ရမယ့် ပိုက်ဆံတွက်ချက်ပြခြင်း (Odds * ပမာဏ)
+    function calculateReturn() {
+        if (!currentActiveBet) return;
+        const amountInput = document.getElementById('slip-amount').value;
+        const amount = parseFloat(amountInput) || 0;
+        const estReturn = amount * currentActiveBet.odds;
+        document.getElementById('slip-return').innerText = estReturn.toFixed(2);
+    }
+
+    // ၄။ Backend သို့ လောင်းကြေးပို့ခြင်း
+    async function submitBet() {
         const user = localStorage.getItem('x_user');
-        if (!user) {
-            alert("လောင်းကြေးထည့်ရန် အရင်ဦးဆုံး Login ဝင်ပေးပါဗျာ။");
-            return;
-        }
+        if (!user || !currentActiveBet) return;
 
         const userData = JSON.parse(user);
-        const amountStr = prompt(`[${selectedTeam}] အတွက် Odds ${odds} ဖြင့် လောင်းပါမည်။\nလောင်းမည့် Coins ပမာဏကို ရိုက်ထည့်ပါ (လက်ကျန်: ${userData.balance} Coins):`);
-        
-        if (amountStr === null) return; 
+        const amount = parseFloat(document.getElementById('slip-amount').value);
 
-        const amount = parseFloat(amountStr.trim());
         if (isNaN(amount) || amount <= 0) {
-            alert("မှန်ကန်သော ပမာဏကိုသာ ရိုက်ထည့်ပေးပါဗျာ။");
+            alert("မှန်ကန်သော ပမာဏကို ရိုက်ထည့်ပါဗျာ။");
             return;
         }
-
         if (amount > userData.balance) {
-            alert("သင့်တွင် လုံလောက်သော Balance မရှိပါ။");
+            alert("သင့်တွင် လုံလောက်သော Coins မရှိပါ။");
             return;
         }
 
@@ -356,33 +421,83 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: userData.username,
-                    match_id: matchId,
-                    selected_team: selectedTeam,
+                    match_id: currentActiveBet.matchId,
+                    selected_team: currentActiveBet.selectedTeam,
                     bet_amount: amount,
-                    odds: odds
+                    odds: currentActiveBet.odds
                 })
             });
 
             const result = await res.json();
-
             if (!res.ok) {
                 alert(`Error: ${result.error}`);
                 return;
             }
 
-            // LocalStorage နှင့် UI က Balance ကို ချက်ချင်း Update လုပ်မယ်
+            // Balance ကို UI တွင် ချက်ချင်းပြောင်းလဲခြင်း
             userData.balance = result.newBalance;
             localStorage.setItem('x_user', JSON.stringify(userData));
             document.getElementById('user-balance').innerText = result.newBalance;
 
-            alert(`[${selectedTeam}] ပေါ်တွင် ${amount} Coins အောင်မြင်စွာ လောင်းပြီးပါပြီ!`);
+            alert("လောင်းကြေး တင်သွင်းမှု အောင်မြင်ပါသည်!");
+            closeBetslip();
         } catch (err) {
-            console.error("Betting Connection Error:", err);
-            alert("ချိတ်ဆက်မှု မရရှိပါသဖြင့် ထပ်စမ်းကြည့်ပေးပါဦးဗျာ။");
+            alert("စနစ်ချိတ်ဆက်မှု ချို့ယွင်းသွားပါသည်။");
         }
     }
 
-    // ၁၀။ အကောင့်ထဲမှ ထွက်ခြင်း Logout
+    // ================= NEW: BET HISTORY LOGIC =================
+    async function loadBetHistory() {
+        const user = localStorage.getItem('x_user');
+        if (!user) return;
+        const userData = JSON.parse(user);
+        const display = document.getElementById('history-display');
+
+        try {
+            // backend တွင် user အလိုက် bet history ဆွဲရန် api မရှိသေးပါက တိုက်ရိုက် supabase REST ဖြင့် (သို့မဟုတ်) API ဖြင့် ခေါ်ယူခြင်း
+            // ဤနေရာတွင် လွယ်ကူစေရန် Supabase client သုံးမထားသဖြင့် Client-side မှ backend ဆီ သို့မဟုတ် တိုက်ရိုက် ခေါ်ယူနိုင်ရန် စီစဉ်ခြင်း
+            // မှတ်ချက်- API ကာကွယ်ရေးအရ Backend API သုံးခြင်းက ပိုကောင်းသဖြင့် backend တွင် /api/bets?username=xxx ဟု ခေါ်ယူနိုင်ရန် ရေးပါမည်။
+            
+            const res = await fetch(`/api/bets?username=${userData.username}`);
+            if (!res.ok) {
+                display.innerHTML = "<p style='color:var(--error-red)'>မှတ်တမ်းဆွဲ၍မရပါ။</p>";
+                return;
+            }
+            const bets = await res.json();
+
+            if (bets.length === 0) {
+                display.innerHTML = "<p style='text-align:center; padding:20px; color:var(--text-muted);'>လောင်းထားသည့် မှတ်တမ်းမရှိသေးပါဗျာ။</p>";
+                return;
+            }
+
+            display.innerHTML = bets.map(b => {
+                const estReturn = b.bet_amount * b.odds;
+                let statusTxt = b.status === 'pending' ? 'စောင့်ဆိုင်းဆဲ' : (b.status === 'won' ? 'နိုင်' : 'ရှုံး');
+                
+                return `
+                    <div class="history-card">
+                        <div class="history-header">
+                            <span>ID: #${b.id}</span>
+                            <span class="status-badge status-${b.status}">${statusTxt}</span>
+                        </div>
+                        <div style="font-weight:bold; margin-bottom:5px; font-size:16px; color:var(--primary-neon);">
+                            ရွေးချယ်မှု: ${b.selected_team} (Odds: ${b.odds})
+                        </div>
+                        <div style="font-size:14px; color:var(--text-light); margin-bottom:5px;">
+                            လောင်းကြေး: <b>${b.bet_amount} Coins</b> | ပြန်ရနိုင်ခြေ: <b>${estReturn.toFixed(2)} Coins</b>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted);">
+                            နေ့စွဲ: ${new Date(b.created_at).toLocaleString()}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+        } catch (err) {
+            display.innerHTML = "<p style='color:var(--error-red)'>ချိတ်ဆက်မှု အမှားတက်သွားသည်။</p>";
+        }
+    }
+
     function logout() {
         localStorage.removeItem('x_user');
         checkAuth();
