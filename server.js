@@ -13,72 +13,85 @@ app.use(express.static(__dirname));
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY);
 const FOOTBALL_API_TOKEN = process.env.FOOTBALL_API_TOKEN;
 
-// 🐼 PandaScore API Config
 const PANDASCORE_TOKEN = 'LI8GZXN_LDFTJOKO9EWDo8jJZqSYHopn7OzCLKx0nopEw05b0wI';
 const BASE_MARGIN = 0.05;
 
 // === [၁] FOOTBALL SYNC ENGINE (ဘောလုံးပွဲစဉ်များ သိမ်းဆည်းခြင်း) ===
 async function syncFootballMatches() {
+    console.log("[LOG][FOOTBALL][START] Starting Football matches sync engine...");
     try {
         if (!FOOTBALL_API_TOKEN) {
-            return console.log("❌ Football Token (.env သို့မဟုတ် Render Env) ထဲမှာ မတွေ့ပါ။");
+            return console.log("[LOG][FOOTBALL][WARN] Missing FOOTBALL_API_TOKEN in environment variables.");
         }
         
-        console.log("🔄 Football API (PL) ကနေ ပွဲစဉ်တွေ စတင်ဆွဲယူနေပါတယ်...");
         const response = await axios.get('https://api.football-data.org/v4/competitions/PL/matches', {
             headers: { 'X-Auth-Token': FOOTBALL_API_TOKEN }
         });
 
         const matches = response.data.matches;
-        const leagueName = response.data.competition.name; 
+        const leagueName = response.data.competition ? response.data.competition.name : 'Premier League'; 
         
-        console.log(`📊 Football API ကနေ စုစုပေါင်း ပွဲစဉ် ${matches.length} ပွဲ တွေ့ရှိပါတယ်။`);
+        console.log(`[LOG][FOOTBALL][API_RAW] Total raw matches returned from API: ${matches ? matches.length : 0}`);
 
-        // လက်ရှိအချိန်နဲ့ ကိုက်ညီမယ့် ပွဲစဉ်တွေ (ဥပမာ- Schedule ဖြစ်ထားဆဲ သို့မဟုတ် ကစားနေဆဲပွဲများ) ကိုပဲ ယူရန် Filter ညှိခြင်း
-        // အရင်က ၁၀ ရက်စာ ကန့်သတ်ချက်ကို ဖြုတ်ပြီး ပွဲစဉ်တွေ အားလုံး ဝင်လာအောင် status သို့မဟုတ် date ပေါ်မူတည်ပြီး သွင်းပါမယ်
-        let syncedCount = 0;
-        for (let m of matches) {
-            // FINISHED ဖြစ်သွားတဲ့ ပွဲဟောင်းတွေကို ဖယ်ပြီး လာမယ့်ပွဲစဉ် (SCHEDULED, LIVE, IN_PLAY) တွေကို ယူပါမယ်
-            if (m.status !== 'FINISHED') {
-                let dynamicMargin = BASE_MARGIN - (Math.random() * 0.01); 
-                let calculatedOddsA = (2.00 * (1 - dynamicMargin)).toFixed(2);
-                let calculatedOddsB = (2.00 * (1 - dynamicMargin)).toFixed(2);
-
-                const { error } = await supabase.from('match').upsert({
-                    id: String(m.id), 
-                    team_a: m.homeTeam.name,
-                    team_b: m.awayTeam.name,
-                    match_date: m.utcDate,
-                    league: leagueName, 
-                    odds_a: parseFloat(calculatedOddsA),
-                    odds_b: parseFloat(calculatedOddsB),
-                    game_type: 'Football'
-                });
-
-                if (error) {
-                    console.error(`❌ Match ID ${m.id} သွင်းရဆင် Error:`, error.message);
-                } else {
-                    syncedCount++;
-                }
-            }
+        if (!matches || matches.length === 0) {
+            console.log("[LOG][FOOTBALL][WARN] API response contains empty match list.");
+            return;
         }
-        console.log(`✅ Successfully synced ${syncedCount} Football matches to Supabase!`);
+
+        // ဘာကြောင့် 0 ဖြစ်နေလဲ သိရအောင် ပထမဆုံးပွဲစဉ် ၃ ခုရဲ့ Status ကို Log ထုတ်ကြည့်ခြင်း
+        console.log("[LOG][FOOTBALL][DEBUG] Checking sample match statuses from API:");
+        matches.slice(0, 3).forEach((m, idx) => {
+            console.log(` -> Sample ${idx + 1}: ${m.homeTeam.name} vs ${m.awayTeam.name} | Status: ${m.status} | Date: ${m.utcDate}`);
+        });
+
+        let syncedCount = 0;
+        let finishedCount = 0;
+
+        for (let m of matches) {
+            // အကယ်၍ API က ပွဲဟောင်းတွေပဲ ပေးနေရင် Filter ကြောင့် 0 ဖြစ်နေတတ်လို့ status အားလုံးကို အရင်သွင်းကြည့်ပါမယ်
+            // Status စစ်တာကို ခေတ္တကျော်ပြီး အလုပ်လုပ်၊ မလုပ် အရင်စမ်းသပ်ပါမယ်
+            let dynamicMargin = BASE_MARGIN - (Math.random() * 0.01); 
+            let calculatedOddsA = (2.00 * (1 - dynamicMargin)).toFixed(2);
+            let calculatedOddsB = (2.00 * (1 - dynamicMargin)).toFixed(2);
+
+            const { error } = await supabase.from('match').upsert({
+                id: String(m.id), 
+                team_a: m.homeTeam.name,
+                team_b: m.awayTeam.name,
+                match_date: m.utcDate,
+                league: leagueName, 
+                odds_a: parseFloat(calculatedOddsA),
+                odds_b: parseFloat(calculatedOddsB),
+                game_type: 'Football'
+            });
+
+            if (error) {
+                console.error(`[LOG][FOOTBALL][DB_ERR] Failed to insert match ID ${m.id}: ${error.message}`);
+            } else {
+                syncedCount++;
+            }
+            
+            if (m.status === 'FINISHED') finishedCount++;
+        }
+        
+        console.log(`[LOG][FOOTBALL][SUCCESS] Synced: ${syncedCount} total, (Skipped/Finished in API info: ${finishedCount})`);
     } catch (err) { 
-        console.error("❌ Football Sync Error:", err.response ? JSON.stringify(err.response.data) : err.message); 
+        console.error("[LOG][FOOTBALL][FATAL_ERR]", err.response ? JSON.stringify(err.response.data) : err.message); 
     }
 }
 
 // === [၂] ESPORTS SYNC ENGINE (Esports သီးသန့် Table ထဲသို့ သိမ်းဆည်းခြင်း) ===
 async function syncEsportsMatches() {
+    console.log("[LOG][ESPORTS][START] Starting Esports matches sync engine...");
     try {
-        console.log("🔄 PandaScore API ကနေ Esports ပွဲစဉ်တွေ စတင်ဆွဲယူနေပါတယ်...");
         const response = await axios.get('https://api.pandascore.co/matches/upcoming', {
             params: { token: PANDASCORE_TOKEN, per_page: 20 }
         });
 
         const matches = response.data;
-        let syncedCount = 0;
+        console.log(`[LOG][ESPORTS][API_RAW] Total esports matches returned: ${matches ? matches.length : 0}`);
 
+        let syncedCount = 0;
         for (let m of matches) {
             if (m.opponents && m.opponents.length >= 2) {
                 const teamA = m.opponents[0].opponent.name;
@@ -90,7 +103,7 @@ async function syncEsportsMatches() {
                 let calculatedOddsA = (1.95 * (1 - dynamicMargin)).toFixed(2);
                 let calculatedOddsB = (1.95 * (1 - dynamicMargin)).toFixed(2);
 
-                await supabase.from('esport_matches').upsert({
+                const { error } = await supabase.from('esport_matches').upsert({
                     id: String(m.id), 
                     team_a: teamA,
                     team_b: teamB,
@@ -100,11 +113,16 @@ async function syncEsportsMatches() {
                     odds_b: parseFloat(calculatedOddsB),
                     game_name: gameName
                 });
-                syncedCount++;
+                
+                if (error) {
+                    console.error(`[LOG][ESPORTS][DB_ERR] Failed to insert: ${error.message}`);
+                } else {
+                    syncedCount++;
+                }
             }
         }
-        console.log(`✅ Successfully synced ${syncedCount} Esports matches to esport_matches table!`);
-    } catch (err) { console.error("❌ PandaScore Sync Error:", err.message); }
+        console.log(`[LOG][ESPORTS][SUCCESS] Successfully synced ${syncedCount} Esports matches.`);
+    } catch (err) { console.error("[LOG][ESPORTS][FATAL_ERR]", err.message); }
 }
 
 // ----------------- USER SYSTEM -----------------
@@ -177,6 +195,7 @@ app.post('/api/admin/process-transaction', async (req, res) => {
 // ----------------- BETTING SYSTEM -----------------
 app.post('/api/place-bet', async (req, res) => {
     const { username, match_id, selected_team, bet_amount, odds, team_a, team_b } = req.body;
+    console.log(`[LOG][BET][REQUEST] User ${username} placing bet on match ID ${match_id}`);
     try {
         const { data: user } = await supabase.from('users').select('balance').eq('username', username).single();
         if (!user || user.balance < bet_amount) return res.status(400).json({ error: "လက်ကျန်ငွေ မလုံလောက်ပါ" });
@@ -184,8 +203,13 @@ app.post('/api/place-bet', async (req, res) => {
         await supabase.from('users').update({ balance: user.balance - bet_amount }).eq('username', username);
         const { error } = await supabase.from('bets').insert({ username, match_id, selected_team, bet_amount, odds, team_a, team_b });
         if (error) throw error;
+        
+        console.log(`[LOG][BET][SUCCESS] Bet placed by ${username} successfully.`);
         res.json({ success: true, newBalance: user.balance - bet_amount });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        console.error("[LOG][BET][ERR]", err.message);
+        res.status(500).json({ error: err.message }); 
+    }
 });
 
 app.get('/api/bet-history', async (req, res) => {
@@ -200,15 +224,12 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.get('/api/matches', async (req, res) => {
     try {
-        // ၁။ Football ပွဲစဉ်များ ဆွဲယူခြင်း
         const { data: footballMatches, error: fbErr } = await supabase.from('match').select('*').order('match_date', { ascending: true });
         if (fbErr) throw fbErr;
 
-        // ၂။ Esports ပွဲစဉ်များ ဆွဲယူခြင်း
         const { data: esportsMatches, error: esErr } = await supabase.from('esport_matches').select('*').order('match_date', { ascending: true });
         if (esErr) throw esErr;
 
-        // ၃။ game_type တစ်ပြေးညီ ညှိပြီး ပေါင်းထုတ်ခြင်း
         const formattedEsports = esportsMatches.map(m => ({
             id: m.id,
             team_a: m.team_a,
@@ -226,18 +247,17 @@ app.get('/api/matches', async (req, res) => {
 });
 
 app.get('/api/sync', async (req, res) => {
+    console.log("[LOG][ROUTE] Manual trigger /api/sync called.");
     await syncFootballMatches();
     await syncEsportsMatches();
-    res.send("Football and Esports Tables Sync completed successfully!");
+    res.send("Sync operations completed. Check server terminal logs for details.");
 });
 
 // ----------------- SERVER LISTEN & INITIAL SYNC -----------------
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, async () => {
-    console.log(`🚀 Server live on port ${PORT}`);
-    
-    // Server စတက်တာနဲ့ နောက်ကွယ်ကနေ ဒေတာတွေကို တစ်ခါတည်း Auto-Sync လုပ်ပေးမှာဖြစ်ပါတယ်
-    console.log("⚡ Starting initial match sync engine...");
+    console.log(`[LOG][SERVER] Server is officially live on port ${PORT}`);
+    console.log("[LOG][SERVER] Starting initial sync background processes...");
     await syncFootballMatches();
     await syncEsportsMatches();
 });
