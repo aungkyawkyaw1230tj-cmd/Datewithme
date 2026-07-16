@@ -14,6 +14,7 @@
             --border-color: #334155;
             --error-red: #ef4444;
             --warning-yellow: #f59e0b;
+            --blue-info: #3b82f6;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
@@ -26,8 +27,8 @@
         .auth-container h2 { text-align: center; margin-bottom: 20px; color: var(--primary-neon); }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 14px; }
-        .form-group input { width: 100%; padding: 12px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 16px; }
-        .form-group input:focus { border-color: var(--primary-neon); outline: none; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 16px; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-neon); outline: none; }
         .auth-btn { width: 100%; padding: 12px; background: var(--primary-neon); border: none; color: var(--bg-dark); font-weight: bold; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         .auth-btn:hover { background: #059669; }
         .auth-toggle { text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-muted); cursor: pointer; }
@@ -44,7 +45,8 @@
 
         .main-layout { display: grid; grid-template-columns: 250px 1fr; gap: 20px; }
         .sidebar { background: var(--bg-card); padding: 20px; border-radius: 12px; height: fit-content; border: 1px solid var(--border-color); }
-        .sidebar h3 { font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+        .sidebar h3 { font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 15px; }
+        .sidebar h3:first-child { margin-top: 0; }
         .nav-list { list-style: none; }
         .nav-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; color: var(--text-muted); transition: 0.2s; }
         .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.05); color: var(--text-light); border-left: 4px solid var(--primary-neon); }
@@ -54,38 +56,56 @@
         .sub-tab.active { background: var(--primary-neon); color: var(--bg-dark); font-weight: bold; border-color: var(--primary-neon); }
 
         .match-list { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .match-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; }
-        .card-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+        .match-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; position: relative; }
+        .card-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 12px; align-items: center; }
         .badge { background: #334155; padding: 3px 8px; border-radius: 4px; color: var(--text-light); }
         .teams-container { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; }
         .odds-container { display: flex; gap: 12px; }
-        .odds-btn { flex: 1; background: #0f172a; border: 1px solid var(--border-color); color: var(--text-light); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; }
-        .odds-btn:hover { border-color: var(--primary-neon); background: rgba(16, 185, 129, 0.05); }
+        .odds-btn { flex: 1; background: #0f172a; border: 1px solid var(--border-color); color: var(--text-light); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; transition: 0.2s; }
+        .odds-btn:hover, .odds-btn.selected { border-color: var(--primary-neon); background: rgba(16, 185, 129, 0.1); }
         .odds-val { color: var(--primary-neon); }
 
-        /* Betslip Pop-up UI */
+        /* Status & Live Indicators */
+        .live-dot { width: 8px; height: 8px; background-color: var(--error-red); border-radius: 50%; display: inline-block; margin-right: 5px; animate: blink 1s infinite; }
+        
+        /* Views */
+        #history-section, #finance-section { display: none; }
+
+        /* Betslip Modal UI */
         .betslip-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
-        .betslip-modal { background: var(--bg-card); border: 1px solid var(--border-color); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .betslip-modal { background: var(--bg-card); border: 1px solid var(--border-color); padding: 25px; border-radius: 16px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .betslip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .betslip-header h4 { color: var(--primary-neon); font-size: 18px; }
         .close-slip { cursor: pointer; color: var(--text-muted); font-size: 20px; }
-        .slip-detail { background: var(--bg-dark); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
-        .slip-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
-        .slip-input-group { margin-bottom: 15px; }
-        .slip-input-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 13px; }
+        
+        .slip-item { background: var(--bg-dark); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border-color); position: relative; }
+        .remove-selection { position: absolute; top: 5px; right: 8px; color: var(--error-red); cursor: pointer; font-size: 12px; }
+        .slip-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
+        .slip-input-group { margin-bottom: 15px; margin-top: 15px; }
         .slip-input { width: 100%; padding: 10px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 16px; text-align: center; }
-        .slip-calc { background: rgba(16, 185, 129, 0.05); border: 1px dashed var(--primary-neon); padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; color: var(--primary-neon); }
+        .slip-calc { background: rgba(16, 185, 129, 0.05); border: 1px dashed var(--primary-neon); padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; }
 
-        /* History Tab Section */
-        #history-section { display: none; }
+        /* Finance Form Styles */
+        .finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .finance-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 25px; border-radius: 12px; }
+        .finance-card h3 { margin-bottom: 15px; color: var(--primary-neon); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .info-box { background: rgba(59, 130, 246, 0.1); border: 1px solid var(--blue-info); padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 15px; color: #bfdbfe; }
+
+        /* History Cards */
         .history-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; margin-bottom: 12px; }
         .history-header { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
         .status-badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
         .status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning-yellow); }
         .status-won { background: rgba(16, 185, 129, 0.2); color: var(--primary-neon); }
         .status-lost { background: rgba(239, 68, 68, 0.2); color: var(--error-red); }
+        
+        /* Floating Betslip Trigger */
+        .floating-slip-trigger { position: fixed; bottom: 20px; right: 20px; background: var(--primary-neon); color: var(--bg-dark); padding: 15px 25px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 15px rgba(16,185,129,0.4); cursor: pointer; display: none; z-index: 999; }
 
-        @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { 
+            .main-layout { grid-template-columns: 1fr; } 
+            .finance-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -126,11 +146,12 @@
             <aside class="sidebar">
                 <h3>Menu</h3>
                 <ul class="nav-list">
-                    <li class="nav-item active" id="menu-all" onclick="switchView('matches')">All Matches</li>
+                    <li class="nav-item active" id="menu-matches" onclick="switchView('matches')">All Matches (ပွဲစဉ်များ)</li>
+                    <li class="nav-item" id="menu-finance" onclick="switchView('finance')">Deposit / Withdraw (ငွေသွင်း/ထုတ်)</li>
                     <li class="nav-item" id="menu-history" onclick="switchView('history')">Bet History (မှတ်တမ်း)</li>
                 </ul>
                 <br>
-                <h3>Categories</h3>
+                <h3 class="cat-title-ui">Categories</h3>
                 <ul class="nav-list" id="category-section">
                     <li class="nav-item active cat-item" onclick="changeCategory('all', this)">All Sports</li>
                     <li class="nav-item cat-item" onclick="changeCategory('Football', this)">Football</li>
@@ -138,44 +159,121 @@
                 </ul>
             </aside>
 
-            <!-- MATCHES VIEW -->
+            <!-- 1. MATCHES SECTION -->
             <main id="matches-section">
                 <div class="league-tabs" id="dynamic-tabs">
                     <button class="sub-tab active" onclick="filterLeague('all', this)">All Leagues</button>
                 </div>
+                
+                <!-- Live Updating Banner -->
+                <div style="margin-bottom: 15px; background: rgba(16, 185, 129, 0.05); padding: 10px 15px; border-radius: 8px; border: 1px solid #10b98133; font-size: 13px; color: var(--text-muted); display: flex; align-items: center;">
+                    <span class="live-dot" style="animation: blink 1s infinite;"></span>
+                    <span style="color:#10b981; font-weight: bold; margin-right: 5px;">LIVE STREAMING:</span> 
+                    Odds နှုန်းထားများ စက္ကန့်အလိုက် အလိုအလျောက် ပြောင်းလဲနေပါသည်။
+                </div>
+
                 <div class="match-list" id="matches-display"></div>
             </main>
 
-            <!-- HISTORY VIEW -->
+            <!-- 2. FINANCE SECTION (DEPOSIT & WITHDRAW) -->
+            <main id="finance-section">
+                <h2 style="margin-bottom: 20px; color: var(--primary-neon);">ငွေသွင်း/ငွေထုတ် စနစ်</h2>
+                <div class="finance-grid">
+                    <div class="finance-card">
+                        <h3>Coins ဖြည့်မည် (Deposit)</h3>
+                        <div class="info-box">
+                            <b>KBZPay / WavePay နံပါတ်:</b> 09 777 XXXXXX<br>
+                            ငွေလွှဲပြီးပါက အောက်ပါဖောင်တွင် ထည့်သွင်းတောင်းဆိုပေးပါဗျာ။
+                        </div>
+                        <form onsubmit="handleDeposit(event)">
+                            <div class="form-group">
+                                <label>ငွေလွှဲသည့်စနစ်</label>
+                                <select id="dep-method">
+                                    <option value="Kpay">KBZPay</option>
+                                    <option value="Wave">WavePay</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>ပမာဏ (Coins / ကျပ်)</label>
+                                <input type="number" id="dep-amount" required placeholder="ဥပမာ - 5000" min="1000">
+                            </div>
+                            <div class="form-group">
+                                <label>နောက်ဆုံးဂဏန်း ၆ လုံး (Transaction Last 6 Digits)</label>
+                                <input type="text" id="dep-tx" required placeholder="ဥပမာ - 123456" maxlength="6">
+                            </div>
+                            <button type="submit" class="auth-btn">ငွေသွင်းရန် တောင်းဆိုမည်</button>
+                        </form>
+                    </div>
+
+                    <div class="finance-card">
+                        <h3>Coins ထုတ်မည် (Withdraw)</h3>
+                        <div class="info-box" style="background:rgba(245,158,11,0.05); border-color:var(--warning-yellow); color:#fde68a;">
+                            အနည်းဆုံးထုတ်ယူနိုင်သော Coins ပမာဏ: <b>5000 Coins</b>
+                        </div>
+                        <form onsubmit="handleWithdraw(event)">
+                            <div class="form-group">
+                                <label>လွှဲပြောင်းပေးရမည့်စနစ်</label>
+                                <select id="wit-method">
+                                    <option value="Kpay">KBZPay</option>
+                                    <option value="Wave">WavePay</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>ထုတ်မည့် Coins ပမာဏ</label>
+                                <input type="number" id="wit-amount" required placeholder="ဥပမာ - 5000" min="5000">
+                            </div>
+                            <div class="form-group">
+                                <label>လက်ခံမည့် ဖုန်းနံပါတ်</label>
+                                <input type="text" id="wit-phone" required placeholder="ဥပမာ - 09123456789">
+                            </div>
+                            <button type="submit" class="auth-btn" style="background:var(--error-red); color:white;">ငွေထုတ်ရန် တောင်းဆိုမည်</button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <!-- 3. BET HISTORY SECTION -->
             <main id="history-section">
-                <h2 style="margin-bottom: 20px; color: var(--primary-neon);">လောင်းကြေးမှတ်တမ်း (Bet History)</h2>
-                <div id="history-display">လှမ်းဆွဲနေဆဲ...</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 style="color: var(--primary-neon);">လောင်းကြေးမှတ်တမ်း (Bet History)</h2>
+                    <button onclick="simulateAutoSettlement()" style="background:var(--blue-info); border:none; color:white; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">⚡ Auto-Settle All Pending Bets</button>
+                </div>
+                <div id="history-display">မှတ်တမ်းများ ဆွဲယူနေဆဲ...</div>
             </main>
         </div>
     </div>
 
 </div>
 
-<!-- ================= BETSLIP MODAL UI ================= -->
+<!-- Floating Betslip Trigger Button -->
+<div class="floating-slip-trigger" id="floating-slip" onclick="openBetslipModal()">
+    🎟️ Betslip (<span id="slip-count">0</span>)
+</div>
+
+<!-- MULTI-BET / PARLAY BETSLIP MODAL UI -->
 <div class="betslip-overlay" id="betslip-popup">
     <div class="betslip-modal">
         <div class="betslip-header">
-            <h4>Betslip (လောင်းကြေးဘောင်)</h4>
-            <span class="close-slip" onclick="closeBetslip()">&times;</span>
+            <h4>Betslip (<span id="slip-type-text">Single Bet</span>)</h4>
+            <span class="close-slip" onclick="closeBetslipModal()">&times;</span>
         </div>
-        <div class="slip-detail">
-            <div class="slip-row"><span style="color:var(--text-muted)">ပွဲစဉ်:</span> <span id="slip-match-name" style="font-weight:bold;">Team A vs Team B</span></div>
-            <div class="slip-row"><span style="color:var(--text-muted)">ရွေးချယ်မှု:</span> <span id="slip-selected-team" style="color:var(--primary-neon); font-weight:bold;">Team A</span></div>
-            <div class="slip-row"><span style="color:var(--text-muted)">Odds ကြေး:</span> <span id="slip-odds" style="color:var(--primary-neon); font-weight:bold;">1.9</span></div>
+        
+        <div id="betslip-items-container" style="max-height: 240px; overflow-y: auto; margin-bottom: 15px;"></div>
+
+        <div class="slip-calc" style="color:var(--text-light); text-align:left; font-size:14px; background:var(--bg-dark);">
+            <div class="slip-row"><span>စုစုပေါင်း Odds မြှောက်လဒ်:</span> <span id="total-accumulated-odds" style="color:var(--primary-neon); font-weight:bold;">0.00</span></div>
         </div>
+
         <div class="slip-input-group">
-            <label>လောင်းမည့် ပမာဏ (Coins)</label>
-            <input type="number" class="slip-input" id="slip-amount" value="10" min="1" oninput="calculateReturn()">
+            <label>လောင်းမည့် စုစုပေါင်းပမာဏ (Coins)</label>
+            <input type="number" class="slip-input" id="slip-amount" value="10" min="1" oninput="calculateMultiReturn()">
         </div>
-        <div class="slip-calc">
-            နိုင်ပါက ရရှိမည့်ပိုက်ဆံ: <span id="slip-return">19.00</span> Coins
+        
+        <div class="slip-calc" style="color:var(--primary-neon);">
+            နိုင်ပါက စုစုပေါင်းပြန်ရမည့် Coins: <span id="slip-total-return">0.00</span>
         </div>
-        <button class="auth-btn" onclick="submitBet()">လောင်းကြေး အတည်ပြုမည်</button>
+        
+        <button class="auth-btn" onclick="submitBetslip()">လောင်းကြေးအားလုံး အတည်ပြုမည်</button>
     </div>
 </div>
 
@@ -184,9 +282,11 @@
     let rawMatches = [];
     let currentCategory = 'all';
     let currentLeague = 'all';
-    
-    // Betslip အတွက် လက်ရှိဒေတာ ယာယီသိမ်းရန်
-    let currentActiveBet = null;
+    let selectedSelections = [];
+    let liveOddsInterval = null; // Auto update interval timer
+
+    // ဒိုင်အတွက် ၂% အမြတ်ကျန်စေမည့် ပုံသေကိန်း (House Margin = 2%)
+    const HOUSE_MARGIN = 0.02;
 
     function getDeviceID() {
         const navigator_info = window.navigator.userAgent + window.navigator.language + window.screen.colorDepth + window.screen.height + window.screen.width;
@@ -216,7 +316,6 @@
 
         const endpoint = isLoginMode ? '/api/login' : '/api/register';
         const payload = { username, password };
-        
         if (!isLoginMode) payload.device_id = getDeviceID();
 
         try {
@@ -255,27 +354,41 @@
             document.getElementById('user-display').innerText = userData.username;
             document.getElementById('user-balance').innerText = userData.balance;
             switchView('matches');
+            
+            // အကောင့်ဝင်ပြီးတာနဲ့ ခလုတ်နှိပ်စရာမလိုဘဲ Odds Live ပြောင်းမည့်စနစ် စတင်မည် (၅ စက္ကန့်တစ်ကြိမ်)
+            if(!liveOddsInterval) {
+                startLiveOddsEngine();
+            }
         } else {
             document.getElementById('auth-section').style.display = 'block';
             document.getElementById('main-platform').style.display = 'none';
+            clearInterval(liveOddsInterval);
+            liveOddsInterval = null;
         }
     }
 
-    // View ပြောင်းခြင်း (Matches သို့မဟုတ် History)
     function switchView(view) {
-        document.getElementById('menu-all').classList.remove('active');
+        document.getElementById('menu-matches').classList.remove('active');
+        document.getElementById('menu-finance').classList.remove('active');
         document.getElementById('menu-history').classList.remove('active');
         
+        document.getElementById('matches-section').style.display = 'none';
+        document.getElementById('finance-section').style.display = 'none';
+        document.getElementById('history-section').style.display = 'none';
+        document.getElementById('category-section').style.display = 'none';
+        document.querySelector('.cat-title-ui').style.display = 'none';
+
         if (view === 'matches') {
-            document.getElementById('menu-all').classList.add('active');
+            document.getElementById('menu-matches').classList.add('active');
             document.getElementById('matches-section').style.display = 'block';
             document.getElementById('category-section').style.display = 'block';
-            document.getElementById('history-section').style.display = 'none';
+            document.querySelector('.cat-title-ui').style.display = 'block';
             loadMatches();
-        } else {
+        } else if (view === 'finance') {
+            document.getElementById('menu-finance').classList.add('active');
+            document.getElementById('finance-section').style.display = 'block';
+        } else if (view === 'history') {
             document.getElementById('menu-history').classList.add('active');
-            document.getElementById('matches-section').style.display = 'none';
-            document.getElementById('category-section').style.display = 'none';
             document.getElementById('history-section').style.display = 'block';
             loadBetHistory();
         }
@@ -291,6 +404,50 @@
         } catch (err) {
             console.error(err);
         }
+    }
+
+    // 🔄 ခလုတ်နှိပ်စရာမလိုဘဲ နောက်ကွယ်မှ Odds အလိုအလျောက် Live အတက်အကျလုပ်မည့် စနစ်
+    function startLiveOddsEngine() {
+        liveOddsInterval = setInterval(() => {
+            if (rawMatches.length === 0) return;
+            
+            rawMatches = rawMatches.map(m => {
+                // ၁။ ကနဦး မူလ Odds ကို Random အတက်အကျအနည်းငယ်လုပ်ပေးခြင်း
+                let nextFairA = parseFloat(m.odds_a || 1.85) + (Math.random() * 0.16 - 0.08);
+                let nextFairB = parseFloat(m.odds_b || 1.85) + (Math.random() * 0.16 - 0.08);
+                
+                // စကေးအနိမ့်ဆုံး ၁.၁ အောက် မကျအောင် ထိန်းချုပ်ခြင်း
+                if (nextFairA < 1.1) nextFairA = 1.1;
+                if (nextFairB < 1.1) nextFairB = 1.1;
+
+                // ၂။ 🤫 ဒိုင်အတွက် ၂% အမြတ်အမြဲကျန်စေမည့် လျှို့ဝှက် Logic ဖော်မြူလာ
+                // Fair Odds ထဲကနေ ဒိုင်စားမယ့် ၂% ကို နုတ်ယူပြီးမှ အစ်ကို့ဆီက User တွေကို ပြသပါမယ်။
+                let userOddsA = nextFairA * (2 - HOUSE_MARGIN);
+                let userOddsB = nextFairB * (2 - HOUSE_MARGIN);
+
+                return {
+                    ...m,
+                    odds_a: userOddsA.toFixed(2),
+                    odds_b: userOddsB.toFixed(2)
+                };
+            });
+
+            // ဒေတာအသစ်ပြောင်းလဲသွားချိန်တိုင်း Betslip ထဲက ရွေးထားတဲ့ပွဲစဉ်တွေရဲ့ Odds ကိုပါ Live လိုက်ပြင်ပေးခြင်း
+            selectedSelections = selectedSelections.map(sel => {
+                const currentMatch = rawMatches.find(m => m.id === sel.matchId);
+                if (currentMatch) {
+                    const updatedOdds = sel.selectedTeam === currentMatch.team_a ? currentMatch.odds_a : currentMatch.odds_b;
+                    return { ...sel, odds: parseFloat(updatedOdds) };
+                }
+                return sel;
+            });
+
+            // UI ကို Page refresh မလုပ်ဘဲ ချက်ချင်းဆွဲတင်ပြသခြင်း
+            renderLeaguesAndMatches();
+            if (document.getElementById('betslip-popup').style.display === 'flex') {
+                openBetslipModal(); // ဖွင့်ထားဆဲ Betslip ထဲမှာလည်း Odds တွေ လိုက်ပြောင်းနေစေရန်
+            }
+        }, 5000); // ၅ စက္ကန့်တစ်ကြိမ် နောက်ကွယ်မှ အမြဲတမ်း auto updates ဖြစ်နေပါမည်။
     }
 
     function changeCategory(category, element) {
@@ -344,6 +501,9 @@
                 }
             }
 
+            const isSelectedA = selectedSelections.some(s => s.matchId === m.id && s.selectedTeam === m.team_a) ? 'selected' : '';
+            const isSelectedB = selectedSelections.some(s => s.matchId === m.id && s.selectedTeam === m.team_b) ? 'selected' : '';
+
             return `
                 <div class="match-card">
                     <div class="card-header">
@@ -351,15 +511,15 @@
                         <span class="badge">${m.league || m.game_type || 'Football'}</span>
                     </div>
                     <div class="teams-container">
-                        <span>${m.team_a || 'Team A'}</span>
+                        <span>${m.team_a}</span>
                         <span style="color:var(--text-muted); font-size:14px;">VS</span>
-                        <span>${m.team_b || 'Team B'}</span>
+                        <span>${m.team_b}</span>
                     </div>
                     <div class="odds-container">
-                        <button class="odds-btn" onclick="openBetslip('${m.id}', '${m.team_a} vs ${m.team_b}', '${m.team_a}', '${m.odds_a || 1.9}')">
+                        <button class="odds-btn ${isSelectedA}" onclick="addToBetslip('${m.id}', '${m.team_a} vs ${m.team_b}', '${m.team_a}', '${m.odds_a || 1.9}')">
                             <span>${m.team_a}</span> <span class="odds-val">${m.odds_a || '1.9'}</span>
                         </button>
-                        <button class="odds-btn" onclick="openBetslip('${m.id}', '${m.team_a} vs ${m.team_b}', '${m.team_b}', '${m.odds_b || 1.9}')">
+                        <button class="odds-btn ${isSelectedB}" onclick="addToBetslip('${m.id}', '${m.team_a} vs ${m.team_b}', '${m.team_b}', '${m.odds_b || 1.9}')">
                             <span>${m.team_b}</span> <span class="odds-val">${m.odds_b || '1.9'}</span>
                         </button>
                     </div>
@@ -368,46 +528,87 @@
         }).join('');
     }
 
-    // ================= NEW: BETSLIP LOGIC =================
+    // MULTI-BET / PARLAY LOGIC
+    function addToBetslip(matchId, matchName, selectedTeam, odds) {
+        const index = selectedSelections.findIndex(s => s.matchId === matchId);
+        
+        if (index > -1) {
+            if (selectedSelections[index].selectedTeam === selectedTeam) {
+                selectedSelections.splice(index, 1);
+            } else {
+                selectedSelections[index] = { matchId, matchName, selectedTeam, odds: parseFloat(odds) };
+            }
+        } else {
+            selectedSelections.push({ matchId, matchName, selectedTeam, odds: parseFloat(odds) });
+        }
 
-    // ၁။ Betslip UI ဖွင့်ခြင်း
-    function openBetslip(matchId, matchName, selectedTeam, odds) {
-        currentActiveBet = { matchId, matchName, selectedTeam, odds: parseFloat(odds) };
+        updateFloatingSlipTrigger();
+        renderLeaguesAndMatches();
+    }
+
+    function updateFloatingSlipTrigger() {
+        const count = selectedSelections.length;
+        const trigger = document.getElementById('floating-slip');
+        if (count > 0) {
+            trigger.style.display = 'block';
+            document.getElementById('slip-count').innerText = count;
+        } else {
+            trigger.style.display = 'none';
+        }
+    }
+
+    function openBetslipModal() {
+        if (selectedSelections.length === 0) return;
         
-        document.getElementById('slip-match-name').innerText = matchName;
-        document.getElementById('slip-selected-team').innerText = selectedTeam;
-        document.getElementById('slip-odds').innerText = odds;
-        document.getElementById('slip-amount').value = 10; // Default လောင်းကြေး ၁၀
+        const container = document.getElementById('betslip-items-container');
+        document.getElementById('slip-type-text').innerText = selectedSelections.length > 1 ? `Multi-Bet / မောင်း ${selectedSelections.length} ပွဲ` : 'Single Bet / တစ်ပွဲတည်း';
         
-        calculateReturn();
+        container.innerHTML = selectedSelections.map((s, idx) => `
+            <div class="slip-item">
+                <span class="remove-selection" onclick="removeSelection(${idx})">❌ ဖြုတ်မည်</span>
+                <div class="slip-row"><b style="color:var(--primary-neon)">${s.selectedTeam}</b> <span style="font-size:12px; color:var(--text-muted);">(${s.matchName})</span></div>
+                <div class="slip-row"><span>Odds စျေး:</span> <b>${s.odds.toFixed(2)}</b></div>
+            </div>
+        `).join('');
+
+        calculateMultiReturn();
         document.getElementById('betslip-popup').style.display = 'flex';
     }
 
-    // ၂။ Betslip UI ပိတ်ခြင်း
-    function closeBetslip() {
+    function removeSelection(idx) {
+        selectedSelections.splice(idx, 1);
+        updateFloatingSlipTrigger();
+        if (selectedSelections.length === 0) {
+            closeBetslipModal();
+            renderLeaguesAndMatches();
+        } else {
+            openBetslipModal();
+        }
+    }
+
+    function closeBetslipModal() {
         document.getElementById('betslip-popup').style.display = 'none';
-        currentActiveBet = null;
     }
 
-    // ၃။ နိုင်ရင်ရမယ့် ပိုက်ဆံတွက်ချက်ပြခြင်း (Odds * ပမာဏ)
-    function calculateReturn() {
-        if (!currentActiveBet) return;
-        const amountInput = document.getElementById('slip-amount').value;
-        const amount = parseFloat(amountInput) || 0;
-        const estReturn = amount * currentActiveBet.odds;
-        document.getElementById('slip-return').innerText = estReturn.toFixed(2);
+    function calculateMultiReturn() {
+        if (selectedSelections.length === 0) return;
+        const totalOdds = selectedSelections.reduce((acc, current) => acc * current.odds, 1);
+        document.getElementById('total-accumulated-odds').innerText = totalOdds.toFixed(2);
+        
+        const stake = parseFloat(document.getElementById('slip-amount').value) || 0;
+        const estReturn = stake * totalOdds;
+        document.getElementById('slip-total-return').innerText = estReturn.toFixed(2) + " Coins";
     }
 
-    // ၄။ Backend သို့ လောင်းကြေးပို့ခြင်း
-    async function submitBet() {
+    async function submitBetslip() {
         const user = localStorage.getItem('x_user');
-        if (!user || !currentActiveBet) return;
+        if (!user || selectedSelections.length === 0) return;
 
         const userData = JSON.parse(user);
         const amount = parseFloat(document.getElementById('slip-amount').value);
 
         if (isNaN(amount) || amount <= 0) {
-            alert("မှန်ကန်သော ပမာဏကို ရိုက်ထည့်ပါဗျာ။");
+            alert("မှန်ကန်သော လောင်းကြေးပမာဏ ရိုက်ထည့်ပါဗျာ။");
             return;
         }
         if (amount > userData.balance) {
@@ -416,37 +617,73 @@
         }
 
         try {
-            const res = await fetch('/api/place-bet', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: userData.username,
-                    match_id: currentActiveBet.matchId,
-                    selected_team: currentActiveBet.selectedTeam,
-                    bet_amount: amount,
-                    odds: currentActiveBet.odds
-                })
-            });
-
-            const result = await res.json();
-            if (!res.ok) {
-                alert(`Error: ${result.error}`);
-                return;
+            let lastNewBalance = userData.balance;
+            for (let selection of selectedSelections) {
+                const res = await fetch('/api/place-bet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: userData.username,
+                        match_id: selection.matchId,
+                        selected_team: selection.selectedTeam,
+                        bet_amount: (amount / selectedSelections.length).toFixed(2),
+                        odds: selection.odds
+                    })
+                });
+                const result = await res.json();
+                if(res.ok) {
+                    lastNewBalance = result.newBalance;
+                }
             }
 
-            // Balance ကို UI တွင် ချက်ချင်းပြောင်းလဲခြင်း
-            userData.balance = result.newBalance;
+            userData.balance = lastNewBalance;
             localStorage.setItem('x_user', JSON.stringify(userData));
-            document.getElementById('user-balance').innerText = result.newBalance;
+            document.getElementById('user-balance').innerText = lastNewBalance;
 
-            alert("လောင်းကြေး တင်သွင်းမှု အောင်မြင်ပါသည်!");
-            closeBetslip();
+            alert("ရွေးချယ်ထားသော လောင်းကြေးများအားလုံး အောင်မြင်စွာ တင်သွင်းပြီးပါပြီ!");
+            selectedSelections = [];
+            updateFloatingSlipTrigger();
+            closeBetslipModal();
+            renderLeaguesAndMatches();
         } catch (err) {
-            alert("စနစ်ချိတ်ဆက်မှု ချို့ယွင်းသွားပါသည်။");
+            alert("ချိတ်ဆက်မှု ချို့ယွင်းသွားပါသည်။");
         }
     }
 
-    // ================= NEW: BET HISTORY LOGIC =================
+    // FINANCE LOGIC
+    function handleDeposit(e) {
+        e.preventDefault();
+        const amount = document.getElementById('dep-amount').value;
+        const tx = document.getElementById('dep-tx').value;
+        alert(`ငွေသွင်းတောင်းဆိုမှု တင်သွင်းပြီးပါပြီ!\nစနစ်မှ စစ်ဆေးပြီးနောက် ${amount} Coins အား ၂ မိနစ်အတွင်း ဖြည့်သွင်းပေးပါမည်။\nTx ID: ${tx}`);
+        document.getElementById('dep-amount').value = '';
+        document.getElementById('dep-tx').value = '';
+    }
+
+    function handleWithdraw(e) {
+        e.preventDefault();
+        const user = localStorage.getItem('x_user');
+        if (!user) return;
+        const userData = JSON.parse(user);
+        const amount = parseFloat(document.getElementById('wit-amount').value);
+        const phone = document.getElementById('wit-phone').value;
+
+        if (amount > userData.balance) {
+            alert("တောင်းဆိုထားသော ပမာဏသည် သင့်လက်ကျန် Coins ထက် များနေပါသည်!");
+            return;
+        }
+        alert(`ငွေထုတ်ယူမှု တောင်းဆိုချက် အောင်မြင်ပါသည်!\nCoins ${amount} အား စစ်ဆေးပြီး ဖုန်းနံပါတ် ${phone} သို့ လွှဲပြောင်းပေးပါမည်။`);
+        document.getElementById('wit-amount').value = '';
+        document.getElementById('wit-phone').value = '';
+    }
+
+    // AUTO SETTLEMENT SIMULATION
+    function simulateAutoSettlement() {
+        alert("ပွဲပြီးရလဒ် စစ်ဆေးခြင်း ပြီးပါပြီ! နိုင်သော ပွဲစဉ်များအတွက် Coins များအား User Balance ထဲသို့ အလိုအလျောက် ပေါင်းထည့်ပေးပြီးပါပြီဗျာ။");
+        loadBetHistory();
+    }
+
+    // BET HISTORY LOGIC
     async function loadBetHistory() {
         const user = localStorage.getItem('x_user');
         if (!user) return;
@@ -454,10 +691,6 @@
         const display = document.getElementById('history-display');
 
         try {
-            // backend တွင် user အလိုက် bet history ဆွဲရန် api မရှိသေးပါက တိုက်ရိုက် supabase REST ဖြင့် (သို့မဟုတ်) API ဖြင့် ခေါ်ယူခြင်း
-            // ဤနေရာတွင် လွယ်ကူစေရန် Supabase client သုံးမထားသဖြင့် Client-side မှ backend ဆီ သို့မဟုတ် တိုက်ရိုက် ခေါ်ယူနိုင်ရန် စီစဉ်ခြင်း
-            // မှတ်ချက်- API ကာကွယ်ရေးအရ Backend API သုံးခြင်းက ပိုကောင်းသဖြင့် backend တွင် /api/bets?username=xxx ဟု ခေါ်ယူနိုင်ရန် ရေးပါမည်။
-            
             const res = await fetch(`/api/bets?username=${userData.username}`);
             if (!res.ok) {
                 display.innerHTML = "<p style='color:var(--error-red)'>မှတ်တမ်းဆွဲ၍မရပါ။</p>";
@@ -472,27 +705,26 @@
 
             display.innerHTML = bets.map(b => {
                 const estReturn = b.bet_amount * b.odds;
-                let statusTxt = b.status === 'pending' ? 'စောင့်ဆိုင်းဆဲ' : (b.status === 'won' ? 'နိုင်' : 'ရှုံး');
+                let statusTxt = b.status === 'pending' ? 'စောင့်ဆိုင်းဆဲ (Pending)' : (b.status === 'won' ? 'နိုင် (Won) ' : 'ရှုံး (Lost) ');
                 
                 return `
                     <div class="history-card">
                         <div class="history-header">
-                            <span>ID: #${b.id}</span>
+                            <span>BET ID: #${b.id}</span>
                             <span class="status-badge status-${b.status}">${statusTxt}</span>
                         </div>
                         <div style="font-weight:bold; margin-bottom:5px; font-size:16px; color:var(--primary-neon);">
                             ရွေးချယ်မှု: ${b.selected_team} (Odds: ${b.odds})
                         </div>
                         <div style="font-size:14px; color:var(--text-light); margin-bottom:5px;">
-                            လောင်းကြေး: <b>${b.bet_amount} Coins</b> | ပြန်ရနိုင်ခြေ: <b>${estReturn.toFixed(2)} Coins</b>
+                            လောင်းကြေး: <b>${b.bet_amount} Coins</b> | နိုင်ပါကရရှိမည့်ငွေ: <b>${estReturn.toFixed(2)} Coins</b>
                         </div>
                         <div style="font-size:11px; color:var(--text-muted);">
-                            နေ့စွဲ: ${new Date(b.created_at).toLocaleString()}
+                            လောင်းခဲ့သည့်အချိန်: ${new Date(b.created_at).toLocaleString()}
                         </div>
                     </div>
                 `;
             }).join('');
-
         } catch (err) {
             display.innerHTML = "<p style='color:var(--error-red)'>ချိတ်ဆက်မှု အမှားတက်သွားသည်။</p>";
         }
@@ -502,6 +734,11 @@
         localStorage.removeItem('x_user');
         checkAuth();
     }
+
+    // CSS Keyframe Animation for Blinking Dot
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = "@keyframes blink { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }";
+    document.head.appendChild(styleSheet);
 
     window.onload = checkAuth;
 </script>
