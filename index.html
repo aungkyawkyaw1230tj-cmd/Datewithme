@@ -177,7 +177,6 @@
             }
 
             if (isLoginMode) {
-                // LocalStorage ထဲ သိမ်းပြီး UI ကို ပြောင်းမယ်
                 localStorage.setItem('x_user', JSON.stringify(result.user));
                 checkAuth();
             } else {
@@ -207,48 +206,34 @@
     }
 
     // ၅။ Database မှ ပွဲစဉ်များ ဆွဲယူခြင်း
-async function loadMatches() {
-    try {
-        const res = await fetch('/api/matches');
-        
-        // အကယ်၍ API က ဆွဲမရရင် ဘာလို့လဲဆိုတာ ဖုန်းပေါ်မှာ တန်းပြမယ်
-        if (!res.ok) {
-            alert(`API Error တက်နေပါတယ်: Status ${res.status}`);
-            return;
+    async function loadMatches() {
+        try {
+            const res = await fetch('/api/matches');
+            if (!res.ok) return;
+
+            const data = await res.json();
+            
+            if (Array.isArray(data)) {
+                rawMatches = data;
+            } else if (data && Array.isArray(data.data)) {
+                rawMatches = data.data;
+            } else {
+                rawMatches = [];
+            }
+            
+            renderLeaguesAndMatches();
+        } catch (err) {
+            console.error("Load Matches Error:", err);
+            document.getElementById('matches-display').innerHTML = `<p style="text-align:center; color: red;">Error: ${err.message}</p>`;
         }
-
-        const data = await res.json();
-        
-        // ကွန်ဆိုးမှာလည်း ပြမယ်
-        console.log("မိုဘိုင်းလ် ဒေတာ လက်ခံရရှိမှု စစ်ဆေးခြင်း:", data);
-
-        // ဒေတာ ပုံစံလွဲနေရင် (ဥပမာ Array မဟုတ်ဘဲ Object ဖြစ်နေရင်) အလိုအလျောက် ညှိယူမယ်
-        if (Array.isArray(data)) {
-            rawMatches = data;
-        } else if (data && Array.isArray(data.data)) {
-            rawMatches = data.data; // { success: true, data: [...] } ဖြစ်နေခဲ့ရင်
-        } else {
-            alert("ရလာတဲ့ ဒေတာပုံစံက Array မဟုတ်ဘဲ တခြားပုံစံ ဖြစ်နေပါတယ်!");
-            rawMatches = [];
-        }
-
-        // ဒေတာ ဘယ်နှစ်ခုတောင် ဝင်လာလဲဆိုတာ Alert ပြခိုင်းမယ်
-        alert(`ဒေတာ ချိတ်ဆက်မှု အောင်မြင်သည်။ ပွဲစဉ်ပေါင်း ${rawMatches.length} ခု တွေ့ရှိရပါသည်။`);
-        
-        renderLeaguesAndMatches();
-    } catch (err) {
-        console.error("Load Matches Error:", err);
-        alert(`ချိတ်ဆက်မှု လုံးဝ မရပါ။ Error စာသား: ${err.message}`);
-        document.getElementById('matches-display').innerHTML = `<p style="text-align:center; color: red;">Error: ${err.message}</p>`;
     }
-}
 
     // ၆။ Categories ပြောင်းလဲခြင်း
     function changeCategory(category, element) {
         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
         element.classList.add('active');
         currentCategory = category;
-        currentLeague = 'all'; // Category ပြောင်းရင် League ကို default ပြန်ထားမယ်
+        currentLeague = 'all';
         renderLeaguesAndMatches();
     }
 
@@ -266,7 +251,6 @@ async function loadMatches() {
         });
         tabContainer.innerHTML = tabsHTML;
 
-        // နောက်ဆုံး စစ်ထုတ်ထားတဲ့ ပွဲတွေကို ပြသမယ်
         const finalMatches = currentLeague === 'all' ? filteredByCategory : filteredByCategory.filter(m => m.league === currentLeague);
         displayMatches(finalMatches);
     }
@@ -282,59 +266,120 @@ async function loadMatches() {
         displayMatches(finalMatches);
     }
 
-    // ၉။ ပွဲစဉ်များကို UI ပေါ်တွင် အမြန်ဆုံးဆွဲတင်ခြင်း (Optimization)
+    // ၉။ ပွဲစဉ်များကို UI ပေါ်တွင် အမြန်ဆုံးဆွဲတင်ခြင်း (လောင်းကြေးခလုတ် ချိတ်ဆက်မှုပါဝင်သည်)
     function displayMatches(matches) {
-    const container = document.getElementById('matches-display');
-    if (!container) return;
+        const container = document.getElementById('matches-display');
+        if (!container) return;
 
-    if (!matches || matches.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">ပွဲစဉ်မရှိသေးပါ။</p>';
-        return;
-    }
-
-    const matchesHTML = matches.map(m => {
-        let matchTime = 'စတင်မည့်အချိန် မရှိပါ';
-        
-        if (m.match_date) {
-            try {
-                // ISO String format သို့မဟုတ် standard format ဖြစ်အောင် အစားထိုးပြီးမှ Date ပြောင်းမယ်
-                const safeDateStr = m.match_date.replace(' ', 'T'); 
-                const parsedDate = new Date(safeDateStr);
-                
-                if (!isNaN(parsedDate)) {
-                    matchTime = parsedDate.toLocaleString('en-US', {
-                        month: 'short', 
-                        day: 'numeric', 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                }
-            } catch (e) {
-                console.error("Date parsing error for match:", m.id, e);
-            }
+        if (!matches || matches.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">ပွဲစဉ်မရှိသေးပါ။</p>';
+            return;
         }
 
-        return `
-            <div class="match-card">
-                <div class="card-header">
-                    <span>${matchTime}</span>
-                    <span class="badge">${m.league || m.game_type || 'Football'}</span>
-                </div>
-                <div class="teams-container">
-                    <span>${m.team_a || 'Team A'}</span>
-                    <span style="color:var(--text-muted); font-size:14px;">VS</span>
-                    <span>${m.team_b || 'Team B'}</span>
-                </div>
-                <div class="odds-container">
-                    <button class="odds-btn"><span>${m.team_a || 'Team A'}</span> <span class="odds-val">${m.odds_a || '1.9'}</span></button>
-                    <button class="odds-btn"><span>${m.team_b || 'Team B'}</span> <span class="odds-val">${m.odds_b || '1.9'}</span></button>
-                </div>
-            </div>
-        `;
-    }).join('');
+        const matchesHTML = matches.map(m => {
+            let matchTime = 'စတင်မည့်အချိန် မရှိပါ';
+            
+            if (m.match_date) {
+                try {
+                    const safeDateStr = m.match_date.replace(' ', 'T'); 
+                    const parsedDate = new Date(safeDateStr);
+                    
+                    if (!isNaN(parsedDate)) {
+                        matchTime = parsedDate.toLocaleString('en-US', {
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                    }
+                } catch (e) {
+                    console.error("Date parsing error for match:", m.id, e);
+                }
+            }
 
-    container.innerHTML = matchesHTML;
+            return `
+                <div class="match-card">
+                    <div class="card-header">
+                        <span>${matchTime}</span>
+                        <span class="badge">${m.league || m.game_type || 'Football'}</span>
+                    </div>
+                    <div class="teams-container">
+                        <span>${m.team_a || 'Team A'}</span>
+                        <span style="color:var(--text-muted); font-size:14px;">VS</span>
+                        <span>${m.team_b || 'Team B'}</span>
+                    </div>
+                    <div class="odds-container">
+                        <button class="odds-btn" onclick="placeBet('${m.id}', '${m.team_a}', '${m.odds_a || 1.9}')">
+                            <span>${m.team_a || 'Team A'}</span> 
+                            <span class="odds-val">${m.odds_a || '1.9'}</span>
+                        </button>
+                        <button class="odds-btn" onclick="placeBet('${m.id}', '${m.team_b}', '${m.odds_b || 1.9}')">
+                            <span>${m.team_b || 'Team B'}</span> 
+                            <span class="odds-val">${m.odds_b || '1.9'}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = matchesHTML;
+    }
+
+    // ၁၁။ လောင်းကြေးထည့်သည့် Function
+    async function placeBet(matchId, selectedTeam, odds) {
+        const user = localStorage.getItem('x_user');
+        if (!user) {
+            alert("လောင်းကြေးထည့်ရန် အရင်ဦးဆုံး Login ဝင်ပေးပါဗျာ။");
+            return;
+        }
+
+        const userData = JSON.parse(user);
+        const amountStr = prompt(`[${selectedTeam}] အတွက် Odds ${odds} ဖြင့် လောင်းပါမည်။\nလောင်းမည့် Coins ပမာဏကို ရိုက်ထည့်ပါ (လက်ကျန်: ${userData.balance} Coins):`);
+        
+        if (amountStr === null) return; 
+
+        const amount = parseFloat(amountStr.trim());
+        if (isNaN(amount) || amount <= 0) {
+            alert("မှန်ကန်သော ပမာဏကိုသာ ရိုက်ထည့်ပေးပါဗျာ။");
+            return;
+        }
+
+        if (amount > userData.balance) {
+            alert("သင့်တွင် လုံလောက်သော Balance မရှိပါ။");
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/place-bet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: userData.username,
+                    match_id: matchId,
+                    selected_team: selectedTeam,
+                    bet_amount: amount,
+                    odds: odds
+                })
+            });
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                alert(`Error: ${result.error}`);
+                return;
+            }
+
+            // LocalStorage နှင့် UI က Balance ကို ချက်ချင်း Update လုပ်မယ်
+            userData.balance = result.newBalance;
+            localStorage.setItem('x_user', JSON.stringify(userData));
+            document.getElementById('user-balance').innerText = result.newBalance;
+
+            alert(`[${selectedTeam}] ပေါ်တွင် ${amount} Coins အောင်မြင်စွာ လောင်းပြီးပါပြီ!`);
+        } catch (err) {
+            console.error("Betting Connection Error:", err);
+            alert("ချိတ်ဆက်မှု မရရှိပါသဖြင့် ထပ်စမ်းကြည့်ပေးပါဦးဗျာ။");
+        }
     }
 
     // ၁၀။ အကောင့်ထဲမှ ထွက်ခြင်း Logout
@@ -343,7 +388,6 @@ async function loadMatches() {
         checkAuth();
     }
 
-    // Page စပွင့်တာနဲ့ Auth အခြေအနေကို စစ်ဆေးမယ်
     window.onload = checkAuth;
 </script>
 </body>
