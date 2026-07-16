@@ -13,6 +13,9 @@ app.use(express.static(__dirname));
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY);
 const FOOTBALL_API_TOKEN = process.env.FOOTBALL_API_TOKEN;
 
+// 🤫 ဒိုင်အတွက် ၄% မှ ၅% ကြား အမြဲတမ်း အသားတင်ကျန်စေမည့် Backend Dynamic Margin
+const BASE_MARGIN = 0.05;
+
 // API မှ Data ဆွဲပြီး ရက်ပေါင်း ၄၀ စာ Filter လုပ်၍ Database ထဲ သွင်းခြင်း
 async function syncMatches() {
     try {
@@ -36,20 +39,28 @@ async function syncMatches() {
             const matchDate = new Date(m.utcDate);
 
             if (matchDate >= today && matchDate <= maxDate) {
+                // ကနဦး API ကလာတဲ့ Fair Odds က ၁.၉၅ ကျော်ဝန်းကျင်ရှိတယ်လို့ ယူဆပြီး 
+                // ဒိုင်စားခ ၄% မှ ၅% ကြားကို Dynamic နှိမ်ပြီးမှ Database ထဲ သွင်းပါမယ်။
+                let dynamicMargin = BASE_MARGIN - (Math.random() * 0.01); // 0.04 to 0.05
+                let initialRawOdds = 2.00; // Fair Point
+                
+                let calculatedOddsA = (initialRawOdds * (1 - dynamicMargin)).toFixed(2);
+                let calculatedOddsB = (initialRawOdds * (1 - dynamicMargin)).toFixed(2);
+
                 await supabase.from('match').upsert({
                     id: m.id,
                     team_a: m.homeTeam.name,
                     team_b: m.awayTeam.name,
                     match_date: m.utcDate,
                     league: leagueName, 
-                    odds_a: 1.9,
-                    odds_b: 1.9,
+                    odds_a: parseFloat(calculatedOddsA),
+                    odds_b: parseFloat(calculatedOddsB),
                     game_type: 'Football'
                 });
                 syncedCount++;
             }
         }
-        console.log(`Successfully synced ${syncedCount} matches for the next 40 days!`);
+        console.log(`Successfully synced ${syncedCount} matches with 4%-5% Margin applied!`);
     } catch (err) {
         console.error("Sync Error:", err.message);
     }
@@ -137,25 +148,8 @@ app.post('/api/place-bet', async (req, res) => {
     if (isNaN(amount) || amount <= 0) {
         return res.status(400).json({ error: "လောင်းကြေးပမာဏ မှားယွင်းနေပါသည်။" });
     }
-// server.js ထဲက /api/place-bet အောက်နားတွင် ထည့်ရန်
-app.get('/api/bets', async (req, res) => {
-    const { username } = req.query;
-    if (!username) return res.status(400).json({ error: "Username လိုအပ်ပါသည်။" });
 
     try {
-        const { data, error } = await supabase
-            .from('bets')
-            .select('*')
-            .eq('username', username)
-            .order('created_at', { ascending: false }); // လတ်တလောလောင်းထားတာတွေကို အပေါ်ဆုံးပြမယ်
-
-        if (error) throw error;
-        res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-})
-  try {
         // User Balance စစ်ဆေးခြင်း
         const { data: user, error: userError } = await supabase
             .from('users')
@@ -207,6 +201,25 @@ app.get('/api/bets', async (req, res) => {
     }
 });
 
+// ၄။ Get Bet History API
+app.get('/api/bets', async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: "Username လိုအပ်ပါသည်။" });
+
+    try {
+        const { data, error } = await supabase
+            .from('bets')
+            .select('*')
+            .eq('username', username)
+            .order('created_at', { ascending: false }); 
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ----------------- MATCHES & BLANK ROUTE -----------------
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -236,4 +249,4 @@ app.get('/api/sync', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT} with 4%-5% House Margin Enabled.`));
