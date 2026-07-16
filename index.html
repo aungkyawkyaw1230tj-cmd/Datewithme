@@ -6,19 +6,19 @@
     <title>Sports & Esports Betting Platform</title>
     <style>
         :root {
-            --primary: #1e293b;
-            --secondary: #0f172a;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
+            --primary: #121212; /* အနက်ရောင် Theme */
+            --secondary: #0a0a0a;
+            --accent: #22c55e; /* အပြာအစား အစိမ်းရောင် သုံးထားပါတယ် */
+            --accent-hover: #16a34a;
             --text: #f8fafc;
             --text-muted: #94a3b8;
-            --card-bg: #1e293b;
+            --card-bg: #1a1a1a;
             --danger: #ef4444;
             --success: #22c55e;
             --warning: #eab308;
-            --border: #334155;
-            --tab-active: #3b82f6;
-            --tab-inactive: #334155;
+            --border: #2a2a2a;
+            --tab-active: #22c55e;
+            --tab-inactive: #222222;
         }
 
         * {
@@ -42,7 +42,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
         }
 
         .logo {
@@ -130,9 +130,9 @@
 
         .game-tab-btn.active {
             background-color: var(--tab-active);
-            color: white;
+            color: #000000; /* အစိမ်းရောင်ပေါ်မှာ စာလုံးအနက် ထင်ရှားအောင် စာအနက်ပြောင်းထားပါတယ် */
             border-color: var(--tab-active);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
         }
 
         /* ----- AUTH / LOGIN BOX ----- */
@@ -142,7 +142,7 @@
             background-color: var(--primary);
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             border: 1px solid var(--border);
         }
 
@@ -183,7 +183,7 @@
             padding: 12px;
             background-color: var(--accent);
             border: none;
-            color: white;
+            color: #000000;
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
@@ -232,7 +232,7 @@
             background-color: var(--card-bg);
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
             border: 1px solid var(--border);
         }
 
@@ -264,7 +264,7 @@
 
         .odds-btn {
             background-color: var(--secondary);
-            border: 1px solid #475569;
+            border: 1px solid #333333;
             color: var(--text);
             padding: 8px 20px;
             border-radius: 6px;
@@ -277,13 +277,13 @@
 
         .odds-btn:hover {
             border-color: var(--accent);
-            background-color: rgba(37, 99, 211, 0.1);
+            background-color: rgba(34, 197, 94, 0.1);
         }
 
         .odds-btn.active {
             background-color: var(--accent);
             border-color: var(--accent);
-            color: white;
+            color: #000000;
         }
 
         /* ----- PROFILE (DEPOSIT / WITHDRAW) ----- */
@@ -330,7 +330,7 @@
         }
 
         th {
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 0, 0, 0.4);
             color: var(--text-muted);
             font-weight: 600;
         }
@@ -357,7 +357,7 @@
             margin-right: 5px;
         }
 
-        .btn-approve { background-color: var(--success); color: white; }
+        .btn-approve { background-color: var(--success); color: #000000; }
         .btn-reject { background-color: var(--danger); color: white; }
 
         /* ----- BOTTOM NAVIGATION BAR ----- */
@@ -373,7 +373,7 @@
             align-items: center;
             height: 65px;
             z-index: 999;
-            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.6);
         }
 
         .nav-item {
@@ -399,7 +399,7 @@
 
         .nav-item:hover, .nav-item.active {
             color: var(--accent);
-            background-color: rgba(255, 255, 255, 0.02);
+            background-color: rgba(255, 255, 255, 0.01);
         }
 
         .nav-item.active .nav-icon-text {
@@ -412,12 +412,12 @@
             bottom: 85px;
             right: 20px;
             background-color: var(--accent);
-            color: white;
+            color: #000000;
             padding: 12px 24px;
             border-radius: 30px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
             display: none;
             z-index: 99;
         }
@@ -429,7 +429,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.8);
             display: none;
             justify-content: center;
             align-items: center;
@@ -444,7 +444,8 @@
             border-radius: 12px;
             padding: 25px;
             position: relative;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--border);
         }
 
         .close-modal {
@@ -526,7 +527,7 @@
             padding: 14px;
             background-color: var(--success);
             border: none;
-            color: white;
+            color: #000000;
             border-radius: 6px;
             font-weight: bold;
             font-size: 16px;
@@ -580,16 +581,15 @@
             <section id="tab-home" class="page-section">
                 <h2 class="section-title">Live Sportsbook</h2>
                 
-                <!-- ဂိမ်းအလိုက် စစ်ထုတ်မည့် ခလုတ်အသစ်များ (All မပါဝင်ပါ) -->
+                <!-- ဂိမ်းခလုတ်များမှ ⚽ 🎮 ⚔️ 🔫 🎯 emoji များ ဖယ်ရှားပြီးသား -->
                 <div class="game-tabs-container">
-                    <button class="game-tab-btn active" id="tab-btn-Football" onclick="filterByGame('Football')">⚽ Football</button>
-                    <button class="game-tab-btn" id="tab-btn-MLBB" onclick="filterByGame('Mobile Legends')">🎮 MLBB</button>
-                    <button class="game-tab-btn" id="tab-btn-Dota" onclick="filterByGame('Dota 2')">⚔️ Dota 2</button>
-                    <button class="game-tab-btn" id="tab-btn-CS" onclick="filterByGame('Counter-Strike')">🔫 CS:GO / CS2</button>
-                    <button class="game-tab-btn" id="tab-btn-Valorant" onclick="filterByGame('Valorant')">🎯 Valorant</button>
+                    <button class="game-tab-btn active" id="tab-btn-Football" onclick="filterByGame('Football')">Football</button>
+                    <button class="game-tab-btn" id="tab-btn-MLBB" onclick="filterByGame('Mobile Legends')">MLBB</button>
+                    <button class="game-tab-btn" id="tab-btn-Dota" onclick="filterByGame('Dota 2')">Dota 2</button>
+                    <button class="game-tab-btn" id="tab-btn-CS" onclick="filterByGame('Counter-Strike')">CS:GO / CS2</button>
+                    <button class="game-tab-btn" id="tab-btn-Valorant" onclick="filterByGame('Valorant')">Valorant</button>
                 </div>
 
-                <!-- ပွဲစဉ်များ လာပေါ်မည့် Grid Container -->
                 <div id="leagues-container" class="matches-grid"></div>
             </section>
 
@@ -658,7 +658,7 @@
                             <label>Amount (MMK)</label>
                             <input type="number" id="withdraw-amount" placeholder="Enter amount">
                         </div>
-                        <button class="auth-btn" style="background-color: var(--danger);" onclick="submitTransaction('withdraw')">Request Payout</button>
+                        <button class="auth-btn" style="background-color: var(--danger); color: white;" onclick="submitTransaction('withdraw')">Request Payout</button>
                     </div>
                 </div>
             </section>
@@ -731,11 +731,11 @@
 
     <!-- ----- JAVASCRIPT ENGINE ----- -->
     <script>
-        let authMode = 'LOGIN'; // LOGIN, REGISTER, ADMIN
+        let authMode = 'LOGIN'; 
         let currentUser = null;
         let isAdmin = false;
         let rawMatches = [];
-        let currentSelectedGame = 'Football'; // လက်ရှိရွေးထားသောဂိမ်းကို မှတ်ထားရန်
+        let currentSelectedGame = 'Football'; 
         let selectedSelections = [];
         let liveOddsInterval = null;
 
@@ -894,25 +894,19 @@
             if (tabName === 'history') fetchBetHistory();
         }
 
-        /* ----- MATCHES FETCH & FILTERING (NEW ENGINE) ----- */
+        /* ----- MATCHES FETCH & FILTERING ----- */
         async function fetchMatches() {
             try {
                 const res = await fetch('/api/matches');
                 rawMatches = await res.json();
-                
-                // စစချင်းမှာ ရွေးထားတဲ့ ဂိမ်းအလိုက် (ဥပမာ Football) UI ထုတ်ပြမည်
                 renderFilteredMatches();
             } catch (e) { console.error("Error fetching matches", e); }
         }
 
-        // ခလုတ်နှိပ်လိုက်တဲ့အခါ Active ခလုတ်အရောင်ပြောင်းပြီး FilterLogic ခေါ်မည့် Function
         function filterByGame(gameType) {
             currentSelectedGame = gameType;
-            
-            // ခလုတ်အားလုံးကို Active ပုံစံဖြုတ်
             document.querySelectorAll('.game-tab-btn').forEach(btn => btn.classList.remove('active'));
             
-            // နှိပ်လိုက်သော ခလုတ်တစ်ခုတည်းကိုပဲ လင်းစေခြင်း
             const activeBtnIds = {
                 'Football': 'tab-btn-Football',
                 'Mobile Legends': 'tab-btn-MLBB',
@@ -926,7 +920,6 @@
             renderFilteredMatches();
         }
 
-        // UI ထဲသို့ သက်ဆိုင်ရာဂိမ်းအလိုက် တိတိကျကျ စစ်ထုတ်ပြီး ရိုက်ထုတ်ပေးခြင်း
         function renderFilteredMatches() {
             const container = document.getElementById('leagues-container');
             container.innerHTML = '';
@@ -941,7 +934,7 @@
             }
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">လတ်တလော ဤအမျိုးအစားတွင် ပွဲစဉ်များမရှိသေးပါ။</div>`;
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">လတ်တလော ပွဲစဉ်များမရှိသေးပါ။</div>`;
                 return;
             }
 
@@ -952,8 +945,8 @@
                 card.className = 'match-card';
                 card.innerHTML = `
                     <div class="match-meta">
-                        <span>🏆 ${match.league || 'Tournament'}</span>
-                        <span>⏰ ${dateStr}</span>
+                        <span>${match.league || 'Tournament'}</span>
+                        <span>${dateStr}</span>
                     </div>
                     <div class="match-teams">
                         <div class="team-row">
@@ -969,7 +962,6 @@
                 container.appendChild(card);
             });
 
-            // အကယ်၍ Betslip ထဲမှာ ရွေးထားပြီးသားပွဲရှိရင် Odds ခလုတ်ကို active တန်းပြထားရန်
             syncOddsButtonStates();
         }
 
@@ -982,12 +974,9 @@
         }
 
         function selectBet(matchId, pick, teamA, teamB, odds) {
-            // လောလောဆယ် single bet ပုံစံပဲထားထားလို့ အသစ်နှိပ်ရင် အရင်ဟာကို ရှင်းပစ်ပါမယ်
             selectedSelections = [{ matchId, pick, teamA, teamB, odds }];
             syncOddsButtonStates();
             updateBetslipUI();
-            
-            // Betslip floating ခလုတ်ကို ဖွင့်ပေးခြင်း
             document.getElementById('betslip-btn').style.display = 'block';
         }
 
@@ -1010,8 +999,8 @@
                     <div class="betslip-item">
                         <div class="slip-teams">${sel.teamA} VS ${sel.teamB}</div>
                         <div class="slip-pick">
-                            <span>🎯 ရွေးချယ်မှု: ${pickTeam}</span>
-                            <span style="color:var(--accent);">Odds: ${sel.odds}</span>
+                            <span>ရွေးချယ်မှု: ${pickTeam}</span>
+                            <span style="color:var(--accent); font-weight:bold;">Odds: ${sel.odds}</span>
                         </div>
                     </div>
                 `;
@@ -1072,10 +1061,9 @@
             if(liveOddsInterval) clearInterval(liveOddsInterval);
             liveOddsInterval = setInterval(() => {
                 fetchMatches();
-            }, 30000); // ၃၀ စက္ကန့်တစ်ခါ ပွဲစဉ်အသစ်တွေ ထပ်ဆွဲယူရန်
+            }, 30000);
         }
 
-        /* ----- TRANSACTIONS MECHANISM ----- */
         async function submitTransaction(type) {
             const method = document.getElementById(`${type}-method`).value;
             const amount = parseFloat(document.getElementById(`${type}-amount`).value);
