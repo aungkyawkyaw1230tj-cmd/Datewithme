@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sports Betting Platform</title>
+    <title>Sports & Esports Betting Platform</title>
     <style>
         :root {
             --primary: #1e293b;
@@ -17,6 +17,8 @@
             --success: #22c55e;
             --warning: #eab308;
             --border: #334155;
+            --tab-active: #3b82f6;
+            --tab-inactive: #334155;
         }
 
         * {
@@ -96,6 +98,41 @@
             max-width: 1200px;
             margin: 20px auto;
             padding: 0 20px;
+        }
+
+        /* ----- GAME TYPE SELECTOR TABS ----- */
+        .game-tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: thin;
+        }
+
+        .game-tab-btn {
+            background-color: var(--tab-inactive);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .game-tab-btn:hover {
+            color: white;
+            border-color: var(--text-muted);
+        }
+
+        .game-tab-btn.active {
+            background-color: var(--tab-active);
+            color: white;
+            border-color: var(--tab-active);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         /* ----- AUTH / LOGIN BOX ----- */
@@ -185,18 +222,6 @@
         }
 
         /* ----- HOME (MATCHES) ----- */
-        .league-section {
-            margin-bottom: 30px;
-        }
-
-        .league-title {
-            font-size: 16px;
-            margin-bottom: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
         .matches-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -366,7 +391,6 @@
             gap: 4px;
         }
 
-        /* Text UI icons replacement layout */
         .nav-icon-text {
             font-size: 16px;
             font-weight: bold;
@@ -555,7 +579,18 @@
             <!-- ----- HOME TAB ----- -->
             <section id="tab-home" class="page-section">
                 <h2 class="section-title">Live Sportsbook</h2>
-                <div id="leagues-container"></div>
+                
+                <!-- ဂိမ်းအလိုက် စစ်ထုတ်မည့် ခလုတ်အသစ်များ (All မပါဝင်ပါ) -->
+                <div class="game-tabs-container">
+                    <button class="game-tab-btn active" id="tab-btn-Football" onclick="filterByGame('Football')">⚽ Football</button>
+                    <button class="game-tab-btn" id="tab-btn-MLBB" onclick="filterByGame('Mobile Legends')">🎮 MLBB</button>
+                    <button class="game-tab-btn" id="tab-btn-Dota" onclick="filterByGame('Dota 2')">⚔️ Dota 2</button>
+                    <button class="game-tab-btn" id="tab-btn-CS" onclick="filterByGame('Counter-Strike')">🔫 CS:GO / CS2</button>
+                    <button class="game-tab-btn" id="tab-btn-Valorant" onclick="filterByGame('Valorant')">🎯 Valorant</button>
+                </div>
+
+                <!-- ပွဲစဉ်များ လာပေါ်မည့် Grid Container -->
+                <div id="leagues-container" class="matches-grid"></div>
             </section>
 
             <!-- ----- HISTORY TAB ----- -->
@@ -700,6 +735,7 @@
         let currentUser = null;
         let isAdmin = false;
         let rawMatches = [];
+        let currentSelectedGame = 'Football'; // လက်ရှိရွေးထားသောဂိမ်းကို မှတ်ထားရန်
         let selectedSelections = [];
         let liveOddsInterval = null;
 
@@ -840,7 +876,7 @@
             document.getElementById('app-nav-bar').classList.add('hidden');
             document.getElementById('auth-section').classList.remove('hidden');
             
-            authMode = 'ADMIN'; toggleAdminMode(); // reset to normal login
+            authMode = 'ADMIN'; toggleAdminMode();
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
         }
@@ -856,6 +892,187 @@
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
 
             if (tabName === 'history') fetchBetHistory();
+        }
+
+        /* ----- MATCHES FETCH & FILTERING (NEW ENGINE) ----- */
+        async function fetchMatches() {
+            try {
+                const res = await fetch('/api/matches');
+                rawMatches = await res.json();
+                
+                // စစချင်းမှာ ရွေးထားတဲ့ ဂိမ်းအလိုက် (ဥပမာ Football) UI ထုတ်ပြမည်
+                renderFilteredMatches();
+            } catch (e) { console.error("Error fetching matches", e); }
+        }
+
+        // ခလုတ်နှိပ်လိုက်တဲ့အခါ Active ခလုတ်အရောင်ပြောင်းပြီး FilterLogic ခေါ်မည့် Function
+        function filterByGame(gameType) {
+            currentSelectedGame = gameType;
+            
+            // ခလုတ်အားလုံးကို Active ပုံစံဖြုတ်
+            document.querySelectorAll('.game-tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // နှိပ်လိုက်သော ခလုတ်တစ်ခုတည်းကိုပဲ လင်းစေခြင်း
+            const activeBtnIds = {
+                'Football': 'tab-btn-Football',
+                'Mobile Legends': 'tab-btn-MLBB',
+                'Dota 2': 'tab-btn-Dota',
+                'Counter-Strike': 'tab-btn-CS',
+                'Valorant': 'tab-btn-Valorant'
+            };
+            const activeBtn = document.getElementById(activeBtnIds[gameType]);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            renderFilteredMatches();
+        }
+
+        // UI ထဲသို့ သက်ဆိုင်ရာဂိမ်းအလိုက် တိတိကျကျ စစ်ထုတ်ပြီး ရိုက်ထုတ်ပေးခြင်း
+        function renderFilteredMatches() {
+            const container = document.getElementById('leagues-container');
+            container.innerHTML = '';
+
+            let filtered = [];
+            if (currentSelectedGame === 'Football') {
+                filtered = rawMatches.filter(m => m.game_type === 'Football');
+            } else {
+                filtered = rawMatches.filter(m => 
+                    m.game_type && m.game_type.toLowerCase().includes(currentSelectedGame.toLowerCase())
+                );
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">လတ်တလော ဤအမျိုးအစားတွင် ပွဲစဉ်များမရှိသေးပါ။</div>`;
+                return;
+            }
+
+            filtered.forEach(match => {
+                const dateStr = new Date(match.match_date).toLocaleString();
+                
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.innerHTML = `
+                    <div class="match-meta">
+                        <span>🏆 ${match.league || 'Tournament'}</span>
+                        <span>⏰ ${dateStr}</span>
+                    </div>
+                    <div class="match-teams">
+                        <div class="team-row">
+                            <span class="team-name">${match.team_a}</span>
+                            <button class="odds-btn" id="odds-${match.id}-A" onclick="selectBet('${match.id}', 'A', '${match.team_a}', '${match.team_b}', ${match.odds_a})">${match.odds_a}</button>
+                        </div>
+                        <div class="team-row">
+                            <span class="team-name">${match.team_b}</span>
+                            <button class="odds-btn" id="odds-${match.id}-B" onclick="selectBet('${match.id}', 'B', '${match.team_a}', '${match.team_b}', ${match.odds_b})">${match.odds_b}</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // အကယ်၍ Betslip ထဲမှာ ရွေးထားပြီးသားပွဲရှိရင် Odds ခလုတ်ကို active တန်းပြထားရန်
+            syncOddsButtonStates();
+        }
+
+        function syncOddsButtonStates() {
+            document.querySelectorAll('.odds-btn').forEach(btn => btn.classList.remove('active'));
+            selectedSelections.forEach(sel => {
+                const btn = document.getElementById(`odds-${sel.matchId}-${sel.pick}`);
+                if (btn) btn.classList.add('active');
+            });
+        }
+
+        function selectBet(matchId, pick, teamA, teamB, odds) {
+            // လောလောဆယ် single bet ပုံစံပဲထားထားလို့ အသစ်နှိပ်ရင် အရင်ဟာကို ရှင်းပစ်ပါမယ်
+            selectedSelections = [{ matchId, pick, teamA, teamB, odds }];
+            syncOddsButtonStates();
+            updateBetslipUI();
+            
+            // Betslip floating ခလုတ်ကို ဖွင့်ပေးခြင်း
+            document.getElementById('betslip-btn').style.display = 'block';
+        }
+
+        function updateBetslipUI() {
+            document.getElementById('betslip-count').innerText = selectedSelections.length;
+            if (selectedSelections.length === 0) {
+                document.getElementById('betslip-btn').style.display = 'none';
+                closeBetslipModal();
+            }
+        }
+
+        function openBetslipModal() {
+            if (selectedSelections.length === 0) return;
+            const container = document.getElementById('slip-items-container');
+            container.innerHTML = '';
+
+            selectedSelections.forEach(sel => {
+                const pickTeam = sel.pick === 'A' ? sel.teamA : sel.teamB;
+                container.innerHTML = `
+                    <div class="betslip-item">
+                        <div class="slip-teams">${sel.teamA} VS ${sel.teamB}</div>
+                        <div class="slip-pick">
+                            <span>🎯 ရွေးချယ်မှု: ${pickTeam}</span>
+                            <span style="color:var(--accent);">Odds: ${sel.odds}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('betslip-popup').style.display = 'flex';
+            calculateReturns();
+        }
+
+        function closeBetslipModal() {
+            document.getElementById('betslip-popup').style.display = 'none';
+        }
+
+        function calculateReturns() {
+            const amount = parseFloat(document.getElementById('bet-amount').value) || 0;
+            if (selectedSelections.length === 0) return;
+            const totalOdds = selectedSelections[0].odds;
+            document.getElementById('est-return-val').innerText = (amount * totalOdds).toFixed(2) + " K";
+        }
+
+        async function submitBet() {
+            const amount = parseFloat(document.getElementById('bet-amount').value);
+            if (!amount || amount <= 0) return alert("Please enter a valid bet amount.");
+            if (selectedSelections.length === 0) return alert("No match selected.");
+
+            const sel = selectedSelections[0];
+            const pickTeam = sel.pick === 'A' ? sel.teamA : sel.teamB;
+
+            try {
+                const res = await fetch('/api/place-bet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentUser.username,
+                        match_id: sel.matchId,
+                        selected_team: pickTeam,
+                        bet_amount: amount,
+                        odds: sel.odds,
+                        team_a: sel.teamA,
+                        team_b: sel.teamB
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) return alert(data.error || "Bet placement failed.");
+
+                alert("Bet Placed Successfully!");
+                currentUser.balance = data.newBalance;
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                document.getElementById('display-balance').innerText = `Balance: ${parseFloat(currentUser.balance).toFixed(2)} K`;
+                
+                selectedSelections = [];
+                document.getElementById('bet-amount').value = '';
+                updateBetslipUI();
+            } catch (e) { alert("Bet Server connection error."); }
+        }
+
+        function startLiveOddsEngine() {
+            if(liveOddsInterval) clearInterval(liveOddsInterval);
+            liveOddsInterval = setInterval(() => {
+                fetchMatches();
+            }, 30000); // ၃၀ စက္ကန့်တစ်ခါ ပွဲစဉ်အသစ်တွေ ထပ်ဆွဲယူရန်
         }
 
         /* ----- TRANSACTIONS MECHANISM ----- */
@@ -903,9 +1120,9 @@
                 data.forEach(bet => {
                     tbody.innerHTML += `
                         <tr>
-                            <td>${bet.team_a} vs ${bet.team_b}</td>
+                            <td>${bet.team_a} VS ${bet.team_b}</td>
                             <td>${bet.selected_team}</td>
-                            <td>${parseFloat(bet.odds).toFixed(2)}</td>
+                            <td>${bet.odds}</td>
                             <td>${bet.bet_amount} K</td>
                             <td><span class="status-badge status-${bet.status.toLowerCase()}">${bet.status}</span></td>
                         </tr>
@@ -914,7 +1131,6 @@
             } catch(e) { console.error(e); }
         }
 
-        /* ----- ADMIN PROCESSES ----- */
         async function fetchAdminTransactions() {
             try {
                 const res = await fetch('/api/admin/transactions');
@@ -923,7 +1139,7 @@
                 tbody.innerHTML = '';
 
                 if(!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending requests found</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending financial requests</td></tr>`;
                     return;
                 }
 
@@ -931,12 +1147,12 @@
                     tbody.innerHTML += `
                         <tr>
                             <td>${tx.username}</td>
-                            <td style="color:${tx.type === 'deposit' ? 'var(--success)' : 'var(--danger)'}">${tx.type.toUpperCase()}</td>
+                            <td><span style="text-transform:uppercase; color:${tx.type==='deposit'?'var(--success)':'var(--danger)'}">${tx.type}</span></td>
                             <td>${tx.amount} MMK</td>
-                            <td>${tx.method} (${tx.details})</td>
+                            <td><b>${tx.method}</b> (${tx.details})</td>
                             <td>
-                                <button class="admin-action-btn btn-approve" onclick="processAdminTx('${tx.id}', 'APPROVED')">Approve</button>
-                                <button class="admin-action-btn btn-reject" onclick="processAdminTx('${tx.id}', 'REJECTED')">Reject</button>
+                                <button class="admin-action-btn btn-approve" onclick="processTx('${tx.id}', 'APPROVED')">Approve</button>
+                                <button class="admin-action-btn btn-reject" onclick="processTx('${tx.id}', 'REJECTED')">Reject</button>
                             </td>
                         </tr>
                     `;
@@ -944,7 +1160,7 @@
             } catch(e) { console.error(e); }
         }
 
-        async function processAdminTx(txId, action) {
+        async function processTx(txId, action) {
             try {
                 const res = await fetch('/api/admin/process-transaction', {
                     method: 'POST',
@@ -952,181 +1168,10 @@
                     body: JSON.stringify({ txId, action })
                 });
                 if(res.ok) {
-                    alert(`Transaction marked as ${action}`);
+                    alert(`Request ${action} successfully!`);
                     fetchAdminTransactions();
                 }
-            } catch(e) { alert("Failed processing transaction."); }
-        }
-
-        /* ----- ENGINE ODDS AND BETS ----- */
-        async function fetchMatches() {
-            try {
-                const res = await fetch('/api/matches');
-                const data = await res.json();
-                rawMatches = Array.isArray(data) ? data : (data.data || []);
-                renderLeaguesAndMatches();
-            } catch (err) { console.error(err); }
-        }
-
-        function startLiveOddsEngine() {
-            liveOddsInterval = setInterval(async () => {
-                if (rawMatches.length === 0) return;
-                try {
-                    const res = await fetch('/api/matches');
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    rawMatches = Array.isArray(data) ? data : (data.data || []);
-
-                    selectedSelections = selectedSelections.map(sel => {
-                        const currentMatch = rawMatches.find(m => m.id === sel.matchId);
-                        if (currentMatch) {
-                            const updatedOdds = sel.selectedTeam === currentMatch.team_a ? currentMatch.odds_a : currentMatch.odds_b;
-                            return { ...sel, odds: parseFloat(updatedOdds) };
-                        }
-                        return sel;
-                    });
-
-                    renderLeaguesAndMatches();
-                    if (document.getElementById('betslip-popup').style.display === 'flex') openBetslipModal();
-                } catch (err) { console.error(err); }
-            }, 5000);
-        }
-
-        function renderLeaguesAndMatches() {
-            const container = document.getElementById('leagues-container');
-            container.innerHTML = '';
-            const leagues = {};
-            rawMatches.forEach(m => {
-                if (!leagues[m.league]) leagues[m.league] = [];
-                leagues[m.league].push(m);
-            });
-
-            for (let leagueName in leagues) {
-                const section = document.createElement('div');
-                section.className = 'league-section';
-                section.innerHTML = `<h3 class="league-title">${leagueName}</h3>`;
-                const grid = document.createElement('div');
-                grid.className = 'matches-grid';
-
-                leagues[leagueName].forEach(match => {
-                    const card = document.createElement('div');
-                    card.className = 'match-card';
-                    const dateObj = new Date(match.match_date);
-                    const formattedDate = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-                    const isAActive = selectedSelections.some(s => s.matchId === match.id && s.selectedTeam === match.team_a) ? 'active' : '';
-                    const isBActive = selectedSelections.some(s => s.matchId === match.id && s.selectedTeam === match.team_b) ? 'active' : '';
-
-                    card.innerHTML = `
-                        <div class="match-meta"><span>${match.game_type || 'Football'}</span><span>${formattedDate}</span></div>
-                        <div class="match-teams">
-                            <div class="team-row">
-                                <span class="team-name">${match.team_a}</span>
-                                <button class="odds-btn ${isAActive}" onclick="selectBet('${match.id}', '${match.team_a}', ${match.odds_a})">${parseFloat(match.odds_a).toFixed(2)}</button>
-                            </div>
-                            <div class="team-row">
-                                <span class="team-name">${match.team_b}</span>
-                                <button class="odds-btn ${isBActive}" onclick="selectBet('${match.id}', '${match.team_b}', ${match.odds_b})">${parseFloat(match.odds_b).toFixed(2)}</button>
-                            </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-                section.appendChild(grid);
-                container.appendChild(section);
-            }
-        }
-
-        function selectBet(matchId, teamName, odds) {
-            const currentMatch = rawMatches.find(m => m.id == matchId);
-            const alreadySelected = selectedSelections.some(s => s.matchId === matchId && s.selectedTeam === teamName);
-            
-            if (alreadySelected) {
-                selectedSelections = [];
-            } else {
-                selectedSelections = [{
-                    matchId: matchId,
-                    teamA: currentMatch.team_a,
-                    teamB: currentMatch.team_b,
-                    selectedTeam: teamName,
-                    odds: parseFloat(odds)
-                }];
-            }
-            renderLeaguesAndMatches();
-            updateBetslipUI();
-        }
-
-        function updateBetslipUI() {
-            const btn = document.getElementById('betslip-btn');
-            const countSpan = document.getElementById('betslip-count');
-            if (selectedSelections.length > 0) {
-                btn.style.display = 'block';
-                countSpan.innerText = selectedSelections.length;
-            } else {
-                btn.style.display = 'none';
-                closeBetslipModal();
-            }
-        }
-
-        function openBetslipModal() {
-            if (selectedSelections.length === 0) return;
-            const container = document.getElementById('slip-items-container');
-            container.innerHTML = '';
-            selectedSelections.forEach(sel => {
-                container.innerHTML = `
-                    <div class="betslip-item">
-                        <div class="slip-teams">${sel.teamA} vs ${sel.teamB}</div>
-                        <div class="slip-pick"><span>To Win: ${sel.selectedTeam}</span><span>@ ${sel.odds.toFixed(2)}</span></div>
-                    </div>
-                `;
-            });
-            document.getElementById('betslip-popup').style.display = 'flex';
-            calculateReturns();
-        }
-
-        function closeBetslipModal() { document.getElementById('betslip-popup').style.display = 'none'; }
-
-        function calculateReturns() {
-            const amtInput = document.getElementById('bet-amount').value;
-            const amount = parseFloat(amtInput) || 0;
-            if (selectedSelections.length === 0 || amount <= 0) {
-                document.getElementById('est-return-val').innerText = '0.00 K';
-                return;
-            }
-            document.getElementById('est-return-val').innerText = (amount * selectedSelections[0].odds).toFixed(2) + ' K';
-        }
-
-        async function submitBet() {
-            if (selectedSelections.length === 0) return;
-            const amount = parseFloat(document.getElementById('bet-amount').value);
-            if (!amount || amount <= 0) return alert("Please enter valid bet amount.");
-
-            const activeSelection = selectedSelections[0];
-            try {
-                const res = await fetch('/api/place-bet', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: currentUser.username,
-                        match_id: activeSelection.matchId,
-                        selected_team: activeSelection.selectedTeam,
-                        bet_amount: amount,
-                        odds: activeSelection.odds
-                    })
-                });
-                const data = await res.json();
-                if (!res.ok || data.error) return alert(data.error || "Failed to place bet.");
-
-                alert("Bet placed successfully!");
-                currentUser.balance = data.newBalance;
-                localStorage.setItem('user', JSON.stringify(currentUser));
-                document.getElementById('display-balance').innerText = `Balance: ${parseFloat(currentUser.balance).toFixed(2)} K`;
-                
-                selectedSelections = [];
-                document.getElementById('bet-amount').value = '';
-                updateBetslipUI();
-                renderLeaguesAndMatches();
-            } catch (err) { alert("Error connecting to server."); }
+            } catch(e) { alert("Admin action error"); }
         }
     </script>
 </body>
