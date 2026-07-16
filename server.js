@@ -13,8 +13,7 @@ app.use(express.static(__dirname));
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY);
 const FOOTBALL_API_TOKEN = process.env.FOOTBALL_API_TOKEN;
 
-// API မှ Data ဆွဲခြင်း
-// API မှ Data ဆွဲပြီး ၅ ရက်စာပဲ Filter လုပ်ပြီး Database ထဲ သွင်းခြင်း
+// API မှ Data ဆွဲပြီး ရက်ပေါင်း ၄၀ စာ Filter လုပ်၍ Database ထဲ သွင်းခြင်း
 async function syncMatches() {
     try {
         const response = await axios.get('https://api.football-data.org/v4/competitions/PL/matches', {
@@ -24,11 +23,9 @@ async function syncMatches() {
         const matches = response.data.matches;
         const leagueName = response.data.competition.name; 
 
-        // ဒီနေ့ ရက်စွဲကို ယူမယ် (ဇူလိုင်လ)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // ဩဂုတ်လကုန်အထိ ပွဲစဉ်တွေ မြင်ရအောင် ရက်ပေါင်း ၄၀ စာအထိ ယူထားလိုက်မယ်
         const maxDate = new Date();
         maxDate.setDate(today.getDate() + 40);
         maxDate.setHours(23, 59, 59, 999);
@@ -38,7 +35,6 @@ async function syncMatches() {
         for (let m of matches) {
             const matchDate = new Date(m.utcDate);
 
-            // ရက်စွဲသည် ယနေ့မှစ၍ ရက်ပေါင်း ၄၀ (သြဂုတ်လကုန်) အတွင်း ဖြစ်မှသာ သွင်းမည်
             if (matchDate >= today && matchDate <= maxDate) {
                 await supabase.from('match').upsert({
                     id: m.id,
@@ -61,7 +57,7 @@ async function syncMatches() {
 
 // ----------------- USER SYSTEM (REGISTER & LOGIN) -----------------
 
-// ၁။ Register API (One Device, One Account စစ်ဆေးခြင်း)
+// ၁။ Register API
 app.post('/api/register', async (req, res) => {
     const { username, password, device_id } = req.body;
 
@@ -70,8 +66,7 @@ app.post('/api/register', async (req, res) => {
     }
 
     try {
-        // Device ID ရှိပြီးသားလား အရင်စစ်မယ်
-        const { data: existingDevice, error: deviceError } = await supabase
+        const { data: existingDevice } = await supabase
             .from('users')
             .select('id')
             .eq('device_id', device_id)
@@ -81,8 +76,7 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: "ဤဖုန်းဖြင့် အကောင့်တစ်ခု ဖွင့်ထားပြီးဖြစ်၍ ထပ်မံဖွင့်ခွင့်မရှိပါ။" });
         }
 
-        // Username ရှိပြီးသားလား ထပ်စစ်မယ်
-        const { data: existingUser, error: userError } = await supabase
+        const { data: existingUser } = await supabase
             .from('users')
             .select('id')
             .eq('username', username)
@@ -92,8 +86,7 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: "ဤ Username သည် ရှိပြီးသားဖြစ်ပါသည်။" });
         }
 
-        // အကောင့်အသစ်သွင်းမယ်
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('users')
             .insert([{ username, password, device_id, balance: 0 }]);
 
@@ -130,24 +123,89 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// -----------------------------------------------------------------
+// ----------------- BETTING SYSTEM -----------------
 
+// ၃။ Betting Place API
+app.post('/api/place-bet', async (req, res) => {
+    const { username, match_id, selected_team, bet_amount, odds } = req.body;
+
+    if (!username || !match_id || !selected_team || !bet_amount || !odds) {
+        return res.status(400).json({ error: "သတင်းအချက်အလက် မပြည့်စုံပါ။" });
+    }
+
+    const amount = parseFloat(bet_amount);
+    if (isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ error: "လောင်းကြေးပမာဏ မှားယွင်းနေပါသည်။" });
+    }
+
+    try {
+        // User Balance စစ်ဆေးခြင်း
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('balance')
+            .eq('username', username)
+            .single();
+
+        if (userError || !user) {
+            return res.status(400).json({ error: "အသုံးပြုသူအား မတွေ့ရှိပါ။" });
+        }
+
+        if (user.balance < amount) {
+            return res.status(400).json({ error: "လောင်းကြေးထည့်ရန် balance မလုံလောက်ပါ။" });
+        }
+
+        // Balance နှုတ်ယူခြင်း
+        const newBalance = user.balance - amount;
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ balance: newBalance })
+            .eq('username', username);
+
+        if (updateError) {
+            return res.status(500).json({ error: "Balance နှုတ်ယူရာတွင် အမှားတက်သွားသည်။" });
+        }
+
+        // Bets Table ထဲသို့ ဒေတာသွင်းခြင်း
+        const { error: betError } = await supabase
+            .from('bets')
+            .insert({
+                username,
+                match_id,
+                selected_team,
+                bet_amount: amount,
+                odds: parseFloat(odds)
+            });
+
+        if (betError) {
+            // Error တက်ပါက ပိုက်ဆံပြန်အမ်းပေးခြင်း (Rollback)
+            await supabase.from('users').update({ balance: user.balance }).eq('username', username);
+            return res.status(500).json({ error: "လောင်းကြေးမှတ်တမ်း တင်ရာတွင် အမှားတက်သွားသည်။" });
+        }
+
+        res.json({ success: true, newBalance });
+
+    } catch (err) {
+        console.error("Betting Error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ----------------- MATCHES & BLANK ROUTE -----------------
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-// server.js ထဲက /api/matches API ကို ဒီအတိုင်း အစားထိုးပါ
+
 app.get('/api/matches', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('match')
             .select('*')
-            .order('match_date', { ascending: true }); // Database ထဲက ပွဲတွေကို အကုန် ဆွဲထုတ်မယ်
+            .order('match_date', { ascending: true });
 
         if (error) {
             console.error("Supabase Fetch Error:", error.message);
             return res.status(500).json({ error: error.message });
         }
 
-        // Frontend သို့ Data အကုန် ပို့ပေးလိုက်မယ်
         res.json(data);
     } catch (err) {
         console.error("API Fetch Error:", err.message);
