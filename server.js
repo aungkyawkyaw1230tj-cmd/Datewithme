@@ -137,8 +137,25 @@ app.post('/api/place-bet', async (req, res) => {
     if (isNaN(amount) || amount <= 0) {
         return res.status(400).json({ error: "လောင်းကြေးပမာဏ မှားယွင်းနေပါသည်။" });
     }
+// server.js ထဲက /api/place-bet အောက်နားတွင် ထည့်ရန်
+app.get('/api/bets', async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: "Username လိုအပ်ပါသည်။" });
 
     try {
+        const { data, error } = await supabase
+            .from('bets')
+            .select('*')
+            .eq('username', username)
+            .order('created_at', { ascending: false }); // လတ်တလောလောင်းထားတာတွေကို အပေါ်ဆုံးပြမယ်
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+})
+  try {
         // User Balance စစ်ဆေးခြင်း
         const { data: user, error: userError } = await supabase
             .from('users')
