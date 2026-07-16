@@ -15,6 +15,8 @@
             --card-bg: #1e293b;
             --danger: #ef4444;
             --success: #22c55e;
+            --warning: #eab308;
+            --border: #334155;
         }
 
         * {
@@ -27,7 +29,7 @@
         body {
             background-color: var(--secondary);
             color: var(--text);
-            padding-bottom: 60px;
+            padding-bottom: 80px; /* Space for Bottom Navigation */
         }
 
         /* ----- HEADER STYLES ----- */
@@ -37,7 +39,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid var(--border);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
@@ -48,11 +50,10 @@
             letter-spacing: 1px;
         }
 
-        /* နာမည်နှင့် Logout ခလုတ် အရမ်းပူးမနေစေရန် ပြင်ဆင်ထားသည့် Profile Area */
         .user-profile-area {
             display: flex;
             align-items: center;
-            gap: 20px; /* နာမည်နှင့် ခလုတ်ကြား အကွာအဝေး */
+            gap: 20px;
         }
 
         .user-info {
@@ -90,20 +91,22 @@
             color: white;
         }
 
-        /* ----- MAIN LAYOUT ----- */
+        /* ----- MAIN CONTAINER ----- */
         .container {
             max-width: 1200px;
-            margin: 30px auto;
+            margin: 20px auto;
             padding: 0 20px;
         }
 
+        /* ----- AUTH / LOGIN BOX ----- */
         .auth-box {
             max-width: 400px;
-            margin: 80px auto;
+            margin: 60px auto;
             background-color: var(--primary);
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
         }
 
         .auth-box h2 {
@@ -123,11 +126,11 @@
             color: var(--text-muted);
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
             background-color: var(--secondary);
-            border: 1px solid #334155;
+            border: 1px solid var(--border);
             border-radius: 6px;
             color: white;
             font-size: 15px;
@@ -168,17 +171,30 @@
             text-decoration: underline;
         }
 
-        /* ----- MATCH CARDS ----- */
-        .league-section {
+        /* ----- SECTION GENERAL STYLES ----- */
+        .page-section {
             margin-bottom: 40px;
         }
 
-        .league-title {
-            font-size: 18px;
-            margin-bottom: 15px;
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
             padding-left: 10px;
             border-left: 4px solid var(--accent);
             color: var(--text);
+        }
+
+        /* ----- HOME (MATCHES) ----- */
+        .league-section {
+            margin-bottom: 30px;
+        }
+
+        .league-title {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .matches-grid {
@@ -192,7 +208,7 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-            border: 1px solid #334155;
+            border: 1px solid var(--border);
         }
 
         .match-meta {
@@ -207,7 +223,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .team-row {
@@ -245,14 +261,135 @@
             color: white;
         }
 
+        /* ----- PROFILE (DEPOSIT / WITHDRAW) ----- */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .action-card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .action-card h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        /* ----- TABLES (HISTORY & ADMIN) ----- */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending { background-color: rgba(234, 179, 8, 0.2); color: var(--warning); }
+        .status-approved { background-color: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .status-rejected { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .admin-action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-approve { background-color: var(--success); color: white; }
+        .btn-reject { background-color: var(--danger); color: white; }
+
+        /* ----- BOTTOM NAVIGATION BAR ----- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--primary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 65px;
+            z-index: 999;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            width: 33.33%;
+            height: 100%;
+            transition: all 0.2s ease;
+            gap: 4px;
+        }
+
+        /* Text UI icons replacement layout */
+        .nav-icon-text {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--accent);
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .nav-item.active .nav-icon-text {
+            border-bottom: 2px solid var(--accent);
+        }
+
         /* ----- FLOATING BETSLIP TRIGGER ----- */
         .betslip-trigger {
             position: fixed;
-            bottom: 20px;
+            bottom: 85px;
             right: 20px;
             background-color: var(--accent);
             color: white;
-            padding: 15px 25px;
+            padding: 12px 24px;
             border-radius: 30px;
             font-weight: bold;
             cursor: pointer;
@@ -339,7 +476,7 @@
             width: 100%;
             padding: 12px;
             background-color: var(--secondary);
-            border: 1px solid #334155;
+            border: 1px solid var(--border);
             color: white;
             font-size: 16px;
             font-weight: bold;
@@ -372,10 +509,6 @@
             cursor: pointer;
         }
 
-        .place-bet-btn:hover {
-            opacity: 0.9;
-        }
-
         .hidden { display: none !important; }
     </style>
 </head>
@@ -394,9 +527,12 @@
     </header>
 
     <div class="container">
-        <!-- ----- AUTH SECTION ----- -->
+        <!-- ----- REGULAR / ADMIN AUTH SECTION ----- -->
         <section id="auth-section" class="auth-box">
-            <h2 id="auth-title">Login</h2>
+            <h2 id="auth-title">User Login</h2>
+            <div class="form-group" id="admin-indicator" style="display:none; color: var(--warning); font-size:13px; text-align:center; margin-bottom:10px;">
+                Secured Administrator Panel Access
+            </div>
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" placeholder="Enter username">
@@ -409,17 +545,117 @@
             <div class="auth-toggle" id="auth-toggle-text" onclick="toggleAuthMode()">
                 Don't have an account? <span>Register here</span>
             </div>
+            <div class="auth-toggle" id="admin-toggle-text" style="margin-top: 10px; font-size:12px;" onclick="toggleAdminMode()">
+                Switch to <span>Admin Mode</span>
+            </div>
         </section>
 
-        <!-- ----- SPORTSBOOK DASHBOARD ----- -->
-        <main id="sportsbook-section" class="hidden">
-            <div id="leagues-container">
-                <!-- Data will be dynamically loaded here -->
-            </div>
-        </main>
+        <!-- ==================== USER MAIN VIEW ==================== -->
+        <div id="user-dashboard-view" class="hidden">
+            <!-- ----- HOME TAB ----- -->
+            <section id="tab-home" class="page-section">
+                <h2 class="section-title">Live Sportsbook</h2>
+                <div id="leagues-container"></div>
+            </section>
+
+            <!-- ----- HISTORY TAB ----- -->
+            <section id="tab-history" class="page-section hidden">
+                <h2 class="section-title">Betting History</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Match</th>
+                                <th>Selection</th>
+                                <th>Odds</th>
+                                <th>Stake</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bet-history-table-body">
+                            <!-- Populated dynamically via API -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ----- PROFILE TAB (DEPOSIT / WITHDRAW) ----- -->
+            <section id="tab-profile" class="page-section hidden">
+                <h2 class="section-title">Account Management</h2>
+                <div class="profile-grid">
+                    <!-- Deposit Card -->
+                    <div class="action-card">
+                        <h3>Deposit Funds</h3>
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select id="deposit-method">
+                                <option value="KBZPay">KBZPay</option>
+                                <option value="WavePay">WavePay</option>
+                                <option value="CBPay">CBPay</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (MMK)</label>
+                            <input type="number" id="deposit-amount" placeholder="Enter amount">
+                        </div>
+                        <div class="form-group">
+                            <label>Transaction Last 4 Digits</label>
+                            <input type="text" id="deposit-txid" placeholder="e.g. 1234">
+                        </div>
+                        <button class="auth-btn" style="background-color: var(--success);" onclick="submitTransaction('deposit')">Submit Request</button>
+                    </div>
+
+                    <!-- Withdraw Card -->
+                    <div class="action-card">
+                        <h3>Withdraw Funds</h3>
+                        <div class="form-group">
+                            <label>Payout Method</label>
+                            <select id="withdraw-method">
+                                <option value="KBZPay">KBZPay</option>
+                                <option value="WavePay">WavePay</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Account Number</label>
+                            <input type="text" id="withdraw-account" placeholder="09xxxxxxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (MMK)</label>
+                            <input type="number" id="withdraw-amount" placeholder="Enter amount">
+                        </div>
+                        <button class="auth-btn" style="background-color: var(--danger);" onclick="submitTransaction('withdraw')">Request Payout</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== ADMIN DASHBOARD VIEW ==================== -->
+        <div id="admin-dashboard-view" class="hidden">
+            <section class="page-section">
+                <h2 class="section-title">Admin Management Console</h2>
+                <div style="margin-bottom: 20px; font-weight:600; color:var(--warning);">Pending Financial Requests</div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Method/Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-tx-table-body">
+                            <!-- Financial requests flow here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </div>
 
-    <!-- ----- FLOATING BETSLIP BUTTON ----- -->
+    <!-- ----- FLOATING BETSLIP TRIGGER ----- -->
     <div id="betslip-btn" class="betslip-trigger" onclick="openBetslipModal()">
         Betslip (<span id="betslip-count">0</span>)
     </div>
@@ -429,9 +665,7 @@
         <div class="modal-content">
             <button class="close-modal" onclick="closeBetslipModal()">×</button>
             <div class="modal-title">Your Selection</div>
-            <div id="slip-items-container">
-                <!-- Selected match info inside slip -->
-            </div>
+            <div id="slip-items-container"></div>
             <div class="bet-input-group">
                 <label>Bet Amount</label>
                 <input type="number" id="bet-amount" class="bet-amount-input" placeholder="0" oninput="calculateReturns()">
@@ -444,15 +678,31 @@
         </div>
     </div>
 
+    <!-- ----- BOTTOM NAV BAR ----- -->
+    <nav id="app-nav-bar" class="bottom-nav hidden">
+        <div class="nav-item active" id="nav-home" onclick="switchTab('home')">
+            <span class="nav-icon-text">[ H ]</span>
+            <span>HOME</span>
+        </div>
+        <div class="nav-item" id="nav-history" onclick="switchTab('history')">
+            <span class="nav-icon-text">[ L ]</span>
+            <span>HISTORY</span>
+        </div>
+        <div class="nav-item" id="nav-profile" onclick="switchTab('profile')">
+            <span class="nav-icon-text">[ P ]</span>
+            <span>PROFILE</span>
+        </div>
+    </nav>
+
     <!-- ----- JAVASCRIPT ENGINE ----- -->
     <script>
-        let isLoginMode = true;
+        let authMode = 'LOGIN'; // LOGIN, REGISTER, ADMIN
         let currentUser = null;
+        let isAdmin = false;
         let rawMatches = [];
-        let selectedSelections = []; // Only 1 selection allowed per bet
+        let selectedSelections = [];
         let liveOddsInterval = null;
 
-        // Device ID fingerprinting
         function getDeviceId() {
             let id = localStorage.getItem('device_id');
             if (!id) {
@@ -464,33 +714,74 @@
 
         window.onload = function() {
             const savedUser = localStorage.getItem('user');
-            if (savedUser) {
+            const savedAdmin = localStorage.getItem('admin_session');
+            if (savedAdmin) {
+                isAdmin = true;
+                showAdminDashboard();
+            } else if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 showDashboard();
             }
         };
 
         function toggleAuthMode() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('auth-title').innerText = isLoginMode ? 'Login' : 'Register Account';
-            document.getElementById('auth-submit-btn').innerText = isLoginMode ? 'Sign In' : 'Create Account';
-            document.getElementById('auth-toggle-text').innerHTML = isLoginMode ? 
-                `Don't have an account? <span>Register here</span>` : 
-                `Already have an account? <span>Login here</span>`;
+            if (authMode === 'ADMIN') return;
+            if (authMode === 'LOGIN') {
+                authMode = 'REGISTER';
+                document.getElementById('auth-title').innerText = 'Register Account';
+                document.getElementById('auth-submit-btn').innerText = 'Create Account';
+                document.getElementById('auth-toggle-text').innerHTML = `Already have an account? <span>Login here</span>`;
+            } else {
+                authMode = 'LOGIN';
+                document.getElementById('auth-title').innerText = 'User Login';
+                document.getElementById('auth-submit-btn').innerText = 'Sign In';
+                document.getElementById('auth-toggle-text').innerHTML = `Don't have an account? <span>Register here</span>`;
+            }
+        }
+
+        function toggleAdminMode() {
+            if (authMode !== 'ADMIN') {
+                authMode = 'ADMIN';
+                document.getElementById('auth-title').innerText = 'Admin Portal';
+                document.getElementById('auth-submit-btn').innerText = 'Secure Login';
+                document.getElementById('admin-indicator').style.display = 'block';
+                document.getElementById('auth-toggle-text').classList.add('hidden');
+                document.getElementById('admin-toggle-text').innerHTML = `Switch to <span>User Mode</span>`;
+            } else {
+                authMode = 'LOGIN';
+                document.getElementById('auth-title').innerText = 'User Login';
+                document.getElementById('auth-submit-btn').innerText = 'Sign In';
+                document.getElementById('admin-indicator').style.display = 'none';
+                document.getElementById('auth-toggle-text').classList.remove('hidden');
+                document.getElementById('auth-toggle-text').innerHTML = `Don't have an account? <span>Register here</span>`;
+                document.getElementById('admin-toggle-text').innerHTML = `Switch to <span>Admin Mode</span>`;
+            }
         }
 
         async function handleAuth() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
-            const device_id = getDeviceId();
+            if (!username || !password) return alert("Please fill all fields.");
 
-            if (!username || !password) {
-                alert("Please fill in all fields.");
+            if (authMode === 'ADMIN') {
+                try {
+                    const res = await fetch('/api/admin/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || data.error) return alert(data.error || "Invalid Admin Credentials.");
+                    
+                    isAdmin = true;
+                    localStorage.setItem('admin_session', 'true');
+                    showAdminDashboard();
+                } catch(e) { alert("Server connectivity error."); }
                 return;
             }
 
-            const url = isLoginMode ? '/api/login' : '/api/register';
-            const payload = isLoginMode ? { username, password } : { username, password, device_id };
+            const url = authMode === 'LOGIN' ? '/api/login' : '/api/register';
+            const payload = authMode === 'LOGIN' ? { username, password } : { username, password, device_id: getDeviceId() };
 
             try {
                 const response = await fetch(url, {
@@ -499,63 +790,184 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await response.json();
+                if (!response.ok || data.error) return alert(data.error || "Authentication failed.");
 
-                if (!response.ok || data.error) {
-                    alert(data.error || "Authentication failed.");
-                    return;
-                }
-
-                if (isLoginMode) {
+                if (authMode === 'LOGIN') {
                     currentUser = data.user;
                     localStorage.setItem('user', JSON.stringify(currentUser));
                     showDashboard();
                 } else {
-                    alert("Registration successful! Please login.");
-                    toggleAuthMode();
+                    alert("Registration successful! Login now.");
+                    authMode = 'REGISTER'; toggleAuthMode();
                 }
-            } catch (err) {
-                alert("Server connection error.");
-            }
+            } catch (err) { alert("Server connection error."); }
         }
 
         function showDashboard() {
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('main-header').classList.remove('hidden');
-            document.getElementById('sportsbook-section').classList.remove('hidden');
+            document.getElementById('user-dashboard-view').classList.remove('hidden');
+            document.getElementById('app-nav-bar').classList.remove('hidden');
             
             document.getElementById('display-username').innerText = currentUser.username;
             document.getElementById('display-balance').innerText = `Balance: ${parseFloat(currentUser.balance).toFixed(2)} K`;
-
+            switchTab('home');
             fetchMatches();
             startLiveOddsEngine();
         }
 
+        function showAdminDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
+            document.getElementById('admin-dashboard-view').classList.remove('hidden');
+            
+            document.getElementById('display-username').innerText = "System Administrator";
+            document.getElementById('display-balance').innerText = "Status: Live Console";
+            fetchAdminTransactions();
+        }
+
         function logout() {
             clearInterval(liveOddsInterval);
-            localStorage.removeItem('user');
+            localStorage.clear();
             currentUser = null;
+            isAdmin = false;
             selectedSelections = [];
             updateBetslipUI();
 
             document.getElementById('main-header').classList.add('hidden');
-            document.getElementById('sportsbook-section').classList.add('hidden');
+            document.getElementById('user-dashboard-view').classList.add('hidden');
+            document.getElementById('admin-dashboard-view').classList.add('hidden');
+            document.getElementById('app-nav-bar').classList.add('hidden');
             document.getElementById('auth-section').classList.remove('hidden');
+            
+            authMode = 'ADMIN'; toggleAdminMode(); // reset to normal login
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
         }
 
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${tabName}`).classList.add('active');
+
+            document.getElementById('tab-home').classList.add('hidden');
+            document.getElementById('tab-history').classList.add('hidden');
+            document.getElementById('tab-profile').classList.add('hidden');
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            if (tabName === 'history') fetchBetHistory();
+        }
+
+        /* ----- TRANSACTIONS MECHANISM ----- */
+        async function submitTransaction(type) {
+            const method = document.getElementById(`${type}-method`).value;
+            const amount = parseFloat(document.getElementById(`${type}-amount`).value);
+            const extra = type === 'deposit' ? document.getElementById('deposit-txid').value.trim() : document.getElementById('withdraw-account').value.trim();
+
+            if (!amount || amount <= 0 || !extra) return alert("Please fill up transaction forms correctly.");
+
+            try {
+                const res = await fetch('/api/transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentUser.username,
+                        type: type,
+                        amount: amount,
+                        method: method,
+                        details: extra
+                    })
+                });
+                const data = await res.json();
+                if(!res.ok || data.error) return alert(data.error || "Transaction submission failed.");
+
+                alert("Request sent to Admin verification panel successfully!");
+                document.getElementById(`${type}-amount`).value = '';
+                if(type === 'deposit') document.getElementById('deposit-txid').value = '';
+                if(type === 'withdraw') document.getElementById('withdraw-account').value = '';
+            } catch(e) { alert("Server update failure."); }
+        }
+
+        async function fetchBetHistory() {
+            try {
+                const res = await fetch(`/api/bet-history?username=${currentUser.username}`);
+                const data = await res.json();
+                const tbody = document.getElementById('bet-history-table-body');
+                tbody.innerHTML = '';
+
+                if(!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No records found</td></tr>`;
+                    return;
+                }
+
+                data.forEach(bet => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${bet.team_a} vs ${bet.team_b}</td>
+                            <td>${bet.selected_team}</td>
+                            <td>${parseFloat(bet.odds).toFixed(2)}</td>
+                            <td>${bet.bet_amount} K</td>
+                            <td><span class="status-badge status-${bet.status.toLowerCase()}">${bet.status}</span></td>
+                        </tr>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        /* ----- ADMIN PROCESSES ----- */
+        async function fetchAdminTransactions() {
+            try {
+                const res = await fetch('/api/admin/transactions');
+                const data = await res.json();
+                const tbody = document.getElementById('admin-tx-table-body');
+                tbody.innerHTML = '';
+
+                if(!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending requests found</td></tr>`;
+                    return;
+                }
+
+                data.forEach(tx => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${tx.username}</td>
+                            <td style="color:${tx.type === 'deposit' ? 'var(--success)' : 'var(--danger)'}">${tx.type.toUpperCase()}</td>
+                            <td>${tx.amount} MMK</td>
+                            <td>${tx.method} (${tx.details})</td>
+                            <td>
+                                <button class="admin-action-btn btn-approve" onclick="processAdminTx('${tx.id}', 'APPROVED')">Approve</button>
+                                <button class="admin-action-btn btn-reject" onclick="processAdminTx('${tx.id}', 'REJECTED')">Reject</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function processAdminTx(txId, action) {
+            try {
+                const res = await fetch('/api/admin/process-transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ txId, action })
+                });
+                if(res.ok) {
+                    alert(`Transaction marked as ${action}`);
+                    fetchAdminTransactions();
+                }
+            } catch(e) { alert("Failed processing transaction."); }
+        }
+
+        /* ----- ENGINE ODDS AND BETS ----- */
         async function fetchMatches() {
             try {
                 const res = await fetch('/api/matches');
                 const data = await res.json();
                 rawMatches = Array.isArray(data) ? data : (data.data || []);
                 renderLeaguesAndMatches();
-            } catch (err) {
-                console.error("Error loading matches:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Fix: Odds တွေ ပျံမတက်အောင် ကာကွယ်ပေးထားသည့် Fetch Only Engine
         function startLiveOddsEngine() {
             liveOddsInterval = setInterval(async () => {
                 if (rawMatches.length === 0) return;
@@ -565,7 +977,6 @@
                     const data = await res.json();
                     rawMatches = Array.isArray(data) ? data : (data.data || []);
 
-                    // Update prices inside dynamic selection
                     selectedSelections = selectedSelections.map(sel => {
                         const currentMatch = rawMatches.find(m => m.id === sel.matchId);
                         if (currentMatch) {
@@ -576,20 +987,14 @@
                     });
 
                     renderLeaguesAndMatches();
-                    if (document.getElementById('betslip-popup').style.display === 'flex') {
-                        openBetslipModal(); 
-                    }
-                } catch (err) {
-                    console.error("Live sync failed:", err);
-                }
+                    if (document.getElementById('betslip-popup').style.display === 'flex') openBetslipModal();
+                } catch (err) { console.error(err); }
             }, 5000);
         }
 
         function renderLeaguesAndMatches() {
             const container = document.getElementById('leagues-container');
             container.innerHTML = '';
-
-            // Group matches by league name
             const leagues = {};
             rawMatches.forEach(m => {
                 if (!leagues[m.league]) leagues[m.league] = [];
@@ -599,19 +1004,13 @@
             for (let leagueName in leagues) {
                 const section = document.createElement('div');
                 section.className = 'league-section';
-
-                const title = document.createElement('h3');
-                title.className = 'league-title';
-                title.innerText = leagueName;
-                section.appendChild(title);
-
+                section.innerHTML = `<h3 class="league-title">${leagueName}</h3>`;
                 const grid = document.createElement('div');
                 grid.className = 'matches-grid';
 
                 leagues[leagueName].forEach(match => {
                     const card = document.createElement('div');
                     card.className = 'match-card';
-
                     const dateObj = new Date(match.match_date);
                     const formattedDate = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
@@ -619,10 +1018,7 @@
                     const isBActive = selectedSelections.some(s => s.matchId === match.id && s.selectedTeam === match.team_b) ? 'active' : '';
 
                     card.innerHTML = `
-                        <div class="match-meta">
-                            <span>${match.game_type || 'Football'}</span>
-                            <span>${formattedDate}</span>
-                        </div>
+                        <div class="match-meta"><span>${match.game_type || 'Football'}</span><span>${formattedDate}</span></div>
                         <div class="match-teams">
                             <div class="team-row">
                                 <span class="team-name">${match.team_a}</span>
@@ -636,7 +1032,6 @@
                     `;
                     grid.appendChild(card);
                 });
-
                 section.appendChild(grid);
                 container.appendChild(section);
             }
@@ -644,8 +1039,6 @@
 
         function selectBet(matchId, teamName, odds) {
             const currentMatch = rawMatches.find(m => m.id == matchId);
-            
-            // Toggle selection logic
             const alreadySelected = selectedSelections.some(s => s.matchId === matchId && s.selectedTeam === teamName);
             
             if (alreadySelected) {
@@ -659,7 +1052,6 @@
                     odds: parseFloat(odds)
                 }];
             }
-
             renderLeaguesAndMatches();
             updateBetslipUI();
         }
@@ -667,7 +1059,6 @@
         function updateBetslipUI() {
             const btn = document.getElementById('betslip-btn');
             const countSpan = document.getElementById('betslip-count');
-            
             if (selectedSelections.length > 0) {
                 btn.style.display = 'block';
                 countSpan.innerText = selectedSelections.length;
@@ -679,93 +1070,63 @@
 
         function openBetslipModal() {
             if (selectedSelections.length === 0) return;
-            
             const container = document.getElementById('slip-items-container');
             container.innerHTML = '';
-
             selectedSelections.forEach(sel => {
-                const item = document.createElement('div');
-                item.className = 'betslip-item';
-                item.innerHTML = `
-                    <div class="slip-teams">${sel.teamA} vs ${sel.teamB}</div>
-                    <div class="slip-pick">
-                        <span>To Win: ${sel.selectedTeam}</span>
-                        <span>@ ${sel.odds.toFixed(2)}</span>
+                container.innerHTML = `
+                    <div class="betslip-item">
+                        <div class="slip-teams">${sel.teamA} vs ${sel.teamB}</div>
+                        <div class="slip-pick"><span>To Win: ${sel.selectedTeam}</span><span>@ ${sel.odds.toFixed(2)}</span></div>
                     </div>
                 `;
-                container.appendChild(item);
             });
-
             document.getElementById('betslip-popup').style.display = 'flex';
             calculateReturns();
         }
 
-        function closeBetslipModal() {
-            document.getElementById('betslip-popup').style.display = 'none';
-        }
+        function closeBetslipModal() { document.getElementById('betslip-popup').style.display = 'none'; }
 
         function calculateReturns() {
             const amtInput = document.getElementById('bet-amount').value;
             const amount = parseFloat(amtInput) || 0;
-            
             if (selectedSelections.length === 0 || amount <= 0) {
                 document.getElementById('est-return-val').innerText = '0.00 K';
                 return;
             }
-
-            const potentialReturn = amount * selectedSelections[0].odds;
-            document.getElementById('est-return-val').innerText = potentialReturn.toFixed(2) + ' K';
+            document.getElementById('est-return-val').innerText = (amount * selectedSelections[0].odds).toFixed(2) + ' K';
         }
 
         async function submitBet() {
             if (selectedSelections.length === 0) return;
-            
-            const amountInput = document.getElementById('bet-amount').value;
-            const amount = parseFloat(amountInput);
-
-            if (!amount || amount <= 0) {
-                alert("Please enter a valid bet amount.");
-                return;
-            }
+            const amount = parseFloat(document.getElementById('bet-amount').value);
+            if (!amount || amount <= 0) return alert("Please enter valid bet amount.");
 
             const activeSelection = selectedSelections[0];
-            const payload = {
-                username: currentUser.username,
-                match_id: activeSelection.matchId,
-                selected_team: activeSelection.selectedTeam,
-                bet_amount: amount,
-                odds: activeSelection.odds
-            };
-
             try {
                 const res = await fetch('/api/place-bet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        username: currentUser.username,
+                        match_id: activeSelection.matchId,
+                        selected_team: activeSelection.selectedTeam,
+                        bet_amount: amount,
+                        odds: activeSelection.odds
+                    })
                 });
                 const data = await res.json();
-
-                if (!res.ok || data.error) {
-                    alert(data.error || "Failed to place bet.");
-                    return;
-                }
+                if (!res.ok || data.error) return alert(data.error || "Failed to place bet.");
 
                 alert("Bet placed successfully!");
-                
-                // Update balance local and visual
                 currentUser.balance = data.newBalance;
                 localStorage.setItem('user', JSON.stringify(currentUser));
                 document.getElementById('display-balance').innerText = `Balance: ${parseFloat(currentUser.balance).toFixed(2)} K`;
                 
-                // Reset slip
                 selectedSelections = [];
                 document.getElementById('bet-amount').value = '';
                 updateBetslipUI();
                 renderLeaguesAndMatches();
-
-            } catch (err) {
-                alert("Error connecting to server.");
-            }
+            } catch (err) { alert("Error connecting to server."); }
         }
     </script>
 </body>
