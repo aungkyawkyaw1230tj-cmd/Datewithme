@@ -1,25 +1,96 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  background-color: #1a1a1a;
+  background-color: #121212;
   color: white;
   font-family: sans-serif;
 }
 
-.controls {
-  margin: 20px;
+.app-container {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 15px;
+}
+
+.game-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1e1e1e;
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid #333;
+}
+
+.game-header h2 {
+  font-size: 1.1rem;
+}
+
+.controls select {
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: white;
+  border: 1px solid #444;
+}
+
+.player-card {
+  width: 100%;
+  background: #1e1e1e;
+  padding: 10px 15px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #333;
+}
+
+.player-card.active {
+  border-color: #6366f1;
+}
+
+.player-avatar {
+  font-size: 1.5rem;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.board-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* စစ်တုရင်ခုံ Container */
 .chess-board {
   width: 90vw;
-  max-width: 480px;
-  aspect-ratio: 1 / 1;
+  height: 90vw;
+  max-width: 440px;
+  max-height: 440px;
   position: relative;
-  background-size: 100% 100%;
+  background-size: 100% 100% !important;
   background-repeat: no-repeat;
   background-position: center;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.7);
 }
 
 /* Skins */
@@ -43,7 +114,6 @@ body {
   background: transparent !important;
 }
 
-/* အကွက်များ - အောက်မှ ပုံပေါ်စေရန် Transparent လုပ်ရပါမည် */
 .square {
   width: 100%;
   height: 100%;
@@ -61,7 +131,6 @@ body {
   pointer-events: none;
 }
 
-/* ရွေးထားသည့် အကွက် Highlight ပြရန် */
 .square.selected {
   background-color: rgba(255, 235, 59, 0.4) !important;
 }
