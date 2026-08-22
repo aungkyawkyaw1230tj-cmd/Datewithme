@@ -24,10 +24,10 @@ body {
 
 /* Skins */
 .chess-board.wood {
-  background-image: url('assets/images/boards/wood.png');
+  background-image: url('assets/images/wood.png');
 }
 .chess-board.marble {
-  background-image: url('assets/images/boards/marble.png');
+  background-image: url('assets/images/marble.png');
 }
 
 /* 8x8 Grid (ဘောင်အကျယ် 10% ထားတွက်ထားသည်) */
