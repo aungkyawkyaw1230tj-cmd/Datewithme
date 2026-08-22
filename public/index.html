@@ -3,73 +3,186 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multiplayer Chess</title>
+  <title>Chess Arena</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-  <div class="app-container">
-    
-    <!-- Auth Screen -->
-    <div id="authScreen" class="glass-card">
-      <div class="brand">
-        <h1>⚔️ CHESS ARENA</h1>
-        <p>Online Realtime Chess</p>
-      </div>
-      <h2 id="authTitle">Sign In</h2>
-      <div class="input-group">
-        <input type="text" id="authUsername" placeholder="Username" autocomplete="off">
-        <input type="password" id="authPassword" placeholder="Password">
-      </div>
-      <button id="authBtn" class="primary-btn" onclick="handleAuth()">Sign In</button>
-      <p class="toggle-text" onclick="toggleAuthMode()">
-        <span id="toggleText">အကောင့်မရှိသေးပါက Sign Up လုပ်ပါ</span>
-      </p>
-      <div id="authError" class="error-msg"></div>
-    </div>
+  <div class="app-mobile-frame">
 
-    <!-- Lobby Screen -->
-    <div id="lobbyScreen" class="glass-card" style="display: none;">
-      <div class="user-header">
-        <span>👋 <strong id="displayUsername"></strong></span>
-        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    <!-- Auth Screen (Login / Sign Up) -->
+    <div id="authScreen" class="screen active">
+      <div class="auth-header">
+        <div class="chess-logo">♟️</div>
+        <h1>Chess Arena</h1>
+        <p>Play Chess Online with Friends</p>
       </div>
-      <div class="lobby-content">
-        <h2>Ready for a Match?</h2>
-        <button id="findMatchBtn" class="primary-btn pulse" onclick="findMatch()">Find Match 🔍</button>
-        <div id="matchStatus" class="status-msg"></div>
+
+      <div class="auth-box">
+        <div class="auth-tabs">
+          <button id="tabLoginBtn" class="auth-tab active" onclick="switchAuthTab(true)">Sign In</button>
+          <button id="tabSignupBtn" class="auth-tab" onclick="switchAuthTab(false)">Sign Up</button>
+        </div>
+
+        <div class="input-field">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" id="authUsername" placeholder="Username" autocomplete="off">
+        </div>
+        <div class="input-field">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="authPassword" placeholder="Password">
+        </div>
+
+        <button id="authSubmitBtn" class="green-btn" onclick="handleAuth()">Sign In</button>
+        <div id="authError" class="error-text"></div>
       </div>
     </div>
 
-    <!-- Game Screen -->
-    <div id="gameScreen" style="display: none;">
-      <div class="game-header">
-        <div id="turnBadge" class="turn-badge">Your Turn</div>
-        <button class="logout-btn" onclick="showLobby()">Leave</button>
-      </div>
-
-      <!-- Opponent Card -->
-      <div class="player-card">
-        <div class="avatar">♟️</div>
-        <div class="info">
-          <span id="opponentName" class="name">Opponent</span>
+    <!-- Main App Screen (With Bottom Navigation) -->
+    <div id="mainApp" class="screen">
+      
+      <!-- Top App Header -->
+      <div class="app-top-bar">
+        <div class="mini-profile">
+          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=User" id="topAvatar" alt="Avatar">
+          <span id="topUsername" class="username">Player</span>
+        </div>
+        <div class="coin-pill">
+          🪙 <span id="topCoins">500</span>
         </div>
       </div>
 
-      <!-- Board Container -->
+      <!-- Tab 1: Play View -->
+      <div id="viewPlay" class="tab-view active">
+        <div class="mode-card play-online" onclick="findMatch()">
+          <div class="mode-icon">⚔️</div>
+          <div class="mode-info">
+            <h3>Play Online</h3>
+            <p>Match with live players worldwide</p>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+
+        <div id="matchSearchStatus" class="search-status-box" style="display: none;">
+          <div class="spinner"></div>
+          <span id="matchStatusText">Searching for Opponent...</span>
+        </div>
+
+        <div class="mode-card play-bot">
+          <div class="mode-icon">🤖</div>
+          <div class="mode-info">
+            <h3>Play vs Computer</h3>
+            <p>Practice against stockfish engine</p>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+      </div>
+
+      <!-- Tab 2: Puzzles View -->
+      <div id="viewPuzzles" class="tab-view">
+        <div class="puzzle-banner">
+          <h2>🧩 Daily Puzzle</h2>
+          <p>Rating: 1250 • Solve to earn +50 🪙</p>
+          <button class="green-btn">Solve Puzzle</button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Shop View -->
+      <div id="viewShop" class="tab-view">
+        <h3 class="section-title">🛒 Board Store</h3>
+        <div id="shopGrid" class="shop-grid"></div>
+      </div>
+
+      <!-- Tab 4: Profile View -->
+      <div id="viewProfile" class="tab-view">
+        <div class="profile-card">
+          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=User" id="profileAvatar" class="large-avatar" alt="User Avatar">
+          <h2 id="profileName">Username</h2>
+          <span class="elo-badge">🏆 Blitz Elo: <strong id="userElo">1200</strong></span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-value" id="statGames">0</span>
+            <span class="stat-label">Played</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value green" id="statWins">0</span>
+            <span class="stat-label">Wins</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value red" id="statLosses">0</span>
+            <span class="stat-label">Losses</span>
+          </div>
+        </div>
+
+        <button class="logout-btn-full" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</button>
+      </div>
+
+      <!-- Bottom Navigation Bar -->
+      <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchNav('Play')">
+          <i class="fa-solid fa-gamepad"></i>
+          <span>Play</span>
+        </div>
+        <div class="nav-item" onclick="switchNav('Puzzles')">
+          <i class="fa-solid fa-puzzle-piece"></i>
+          <span>Puzzles</span>
+        </div>
+        <div class="nav-item" onclick="switchNav('Shop')">
+          <i class="fa-solid fa-store"></i>
+          <span>Shop</span>
+        </div>
+        <div class="nav-item" onclick="switchNav('Profile')">
+          <i class="fa-solid fa-user"></i>
+          <span>Profile</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Game Screen (In-Game Arena) -->
+    <div id="gameScreen" class="screen">
+      <div class="game-top-nav">
+        <button class="icon-btn" onclick="leaveGame()"><i class="fa-solid fa-arrow-left"></i></button>
+        <div id="turnBadge" class="turn-badge">White's Turn</div>
+        <button class="icon-btn"><i class="fa-solid fa-flag"></i></button>
+      </div>
+
+      <!-- Opponent Header Card -->
+      <div class="player-strip">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Opponent" class="player-avatar" alt="Opponent">
+        <div class="player-meta">
+          <span id="opponentName" class="p-name">Opponent (1200)</span>
+        </div>
+      </div>
+
+      <!-- Chess Board Wrapper -->
       <div class="board-wrapper">
         <div id="board" class="chess-board wood">
           <div id="board-grid" class="board-grid"></div>
         </div>
       </div>
 
-      <!-- Your Card -->
-      <div class="player-card active">
-        <div class="avatar">♙</div>
-        <div class="info">
-          <span id="yourName" class="name">You</span>
+      <!-- You Header Card -->
+      <div class="player-strip active-strip">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=User" id="gameYourAvatar" class="player-avatar" alt="You">
+        <div class="player-meta">
+          <span id="yourName" class="p-name">You (1200)</span>
         </div>
+      </div>
+
+      <!-- Move History Navigation Bar (Screenshot 2 Style) -->
+      <div class="move-history-bar">
+        <button class="nav-arrow"><i class="fa-solid fa-chevron-left"></i></button>
+        <div id="moveList" class="move-list-scroll">
+          <span class="move-item">1. e4</span>
+          <span class="move-item">e5</span>
+          <span class="move-item active">2. Nf3</span>
+        </div>
+        <button class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </div>
 
