@@ -3,29 +3,23 @@ const game = new Chess();
 
 let currentUser = null;
 let currentRoom = null;
+let currentOpponent = null;
 let playerColor = 'w';
-let isAuthModeLogin = true;
 let selectedSquare = null;
+let selectedTimeLimit = 5;
 
 let userCoins = 500;
-let userElo = 1200;
 let friendsList = [];
+let pendingRequests = [];
+let gameHistory = [];
 let ownedBoards = ['wood', 'marble'];
 let equippedBoard = 'wood';
-
-const SHOP_BOARDS = [
-  { id: 'wood', name: 'Classic Wood', price: 0, img: '/assets/images/wood.png' },
-  { id: 'marble', name: 'Royal Marble', price: 0, img: '/assets/images/marble.png' },
-  { id: 'gxw', name: 'Emerald Green', price: 150, img: '/assets/images/gxw.png' },
-  { id: 'dxw', name: 'Dark Walnut', price: 250, img: '/assets/images/dxw.png' },
-  { id: 'bxw', name: 'Ocean Blue', price: 350, img: '/assets/images/bxw.png' },
-  { id: 'bxb', name: 'Cyber Blue', price: 500, img: '/assets/images/bxb.png' }
-];
 
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('chess_username');
   if (savedUser) {
     currentUser = savedUser;
+    socket.emit('registerUser', currentUser);
     loadUserData();
     showMainApp();
   }
@@ -37,11 +31,13 @@ function loadUserData() {
   const savedOwned = localStorage.getItem(`owned_${currentUser}`);
   const savedEquipped = localStorage.getItem(`equipped_${currentUser}`);
   const savedFriends = localStorage.getItem(`friends_${currentUser}`);
+  const savedHistory = localStorage.getItem(`history_${currentUser}`);
 
   if (savedCoins !== null) userCoins = parseInt(savedCoins);
   if (savedOwned !== null) ownedBoards = JSON.parse(savedOwned);
   if (savedEquipped !== null) equippedBoard = savedEquipped;
   if (savedFriends !== null) friendsList = JSON.parse(savedFriends);
+  if (savedHistory !== null) gameHistory = JSON.parse(savedHistory);
 
   updateProfileUI();
 }
@@ -56,8 +52,9 @@ function updateProfileUI() {
   if (document.getElementById('profileName')) document.getElementById('profileName').innerText = currentUser;
   if (document.getElementById('topCoins')) document.getElementById('topCoins').innerText = userCoins;
 
-  const boardElem = document.getElementById('board');
-  if (boardElem) boardElem.className = `chess-board ${equippedBoard}`;
+  renderFriends();
+  renderPendingRequests();
+  renderGameHistory();
 }
 
 function switchNav(tabName) {
@@ -68,24 +65,17 @@ function switchNav(tabName) {
   document.querySelectorAll('.nav-item')[indexMap[tabName]].classList.add('active');
   document.getElementById(`view${tabName}`).classList.add('active');
 
-  if (tabName === 'Shop') renderShop();
+  if (tabName === 'Profile') renderGameHistory();
   if (tabName === 'Friends') renderFriends();
-}
-
-function switchAuthTab(isLogin) {
-  isAuthModeLogin = isLogin;
-  document.getElementById('tabLoginBtn').className = `auth-tab ${isLogin ? 'active' : ''}`;
-  document.getElementById('tabSignupBtn').className = `auth-tab ${!isLogin ? 'active' : ''}`;
-  document.getElementById('authSubmitBtn').innerText = isLogin ? 'Sign In' : 'Sign Up';
 }
 
 async function handleAuth() {
   const username = document.getElementById('authUsername').value.trim();
-  const password = document.getElementById('authPassword').value.trim();
-  if (!username || !password) return alert('Username/Password ဖြည့်ပါ။');
+  if (!username) return alert('Username ဖြည့်ပါ။');
 
   currentUser = username;
   localStorage.setItem('chess_username', currentUser);
+  socket.emit('registerUser', currentUser);
   loadUserData();
   showMainApp();
 }
@@ -105,7 +95,7 @@ function showMainApp() {
   updateProfileUI();
 }
 
-// Matchmaking System
+// Matchmaking
 function findMatch() {
   document.getElementById('matchSearchStatus').style.display = 'block';
   document.getElementById('searchMsg').innerText = 'Match searching...';
@@ -117,14 +107,23 @@ function cancelMatch() {
   document.getElementById('matchSearchStatus').style.display = 'none';
 }
 
-// Custom Room System
-function createCustomRoom() {
-  socket.emit('createCustomRoom', { username: currentUser });
+function openCustomRoomModal() { document.getElementById('customModal').style.display = 'flex'; }
+function closeCustomModal() { document.getElementById('customModal').style.display = 'none'; }
+
+function selectTime(mins, btn) {
+  selectedTimeLimit = mins;
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function createCustomRoomSubmit() {
+  closeCustomModal();
+  socket.emit('createCustomRoom', { username: currentUser, minutes: selectedTimeLimit });
 }
 
 socket.on('customRoomCreated', (data) => {
   document.getElementById('matchSearchStatus').style.display = 'block';
-  document.getElementById('searchMsg').innerText = `Your Lobby Code: ${data.roomCode}\nWaiting for opponent...`;
+  document.getElementById('searchMsg').innerText = `Your Code: ${data.roomCode}\nWaiting for opponent...`;
 });
 
 function promptJoinRoom() {
@@ -137,6 +136,7 @@ socket.on('roomError', (msg) => alert(msg));
 socket.on('matchFound', (data) => {
   currentRoom = data.roomId;
   playerColor = data.color;
+  currentOpponent = data.opponent;
 
   document.getElementById('matchSearchStatus').style.display = 'none';
   document.getElementById('mainApp').classList.remove('active');
@@ -153,19 +153,22 @@ socket.on('matchFound', (data) => {
 socket.on('opponentMove', (move) => {
   game.move(move);
   renderBoard();
+  checkGameStatus();
 });
 
 socket.on('opponentLeft', () => {
-  alert('Opponent ထွက်သွားသည်/လိုင်းကျသွားသည်။ သင်နိုင်ပါပြီ!');
+  alert('Opponent ထွက်သွားသည်။ သင်နိုင်ပါပြီ!');
+  saveGameHistory(currentOpponent, 'WIN', 'Opponent Left');
   leaveGame();
 });
 
 socket.on('gameOver', (data) => {
+  const result = data.winner === playerColor ? 'WIN' : 'LOSS';
   alert(`Game Over! Winner: ${data.winner === playerColor ? 'You' : 'Opponent'} (${data.reason})`);
+  saveGameHistory(currentOpponent, result, data.reason);
   leaveGame();
 });
 
-// Timer Updates
 socket.on('timeUpdate', (data) => {
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
@@ -198,6 +201,11 @@ function renderBoard() {
   const rows = playerColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
   const cols = playerColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
 
+  let legalMoves = [];
+  if (selectedSquare) {
+    legalMoves = game.moves({ square: selectedSquare, verbose: true }).map(m => m.to);
+  }
+
   for (let rIdx = 0; rIdx < 8; rIdx++) {
     for (let cIdx = 0; cIdx < 8; cIdx++) {
       const r = rows[rIdx];
@@ -218,6 +226,12 @@ function renderBoard() {
         squareDiv.appendChild(img);
       }
 
+      if (legalMoves.includes(squareName)) {
+        const dotDiv = document.createElement('div');
+        dotDiv.className = piece ? 'legal-capture' : 'legal-dot';
+        squareDiv.appendChild(dotDiv);
+      }
+
       squareDiv.addEventListener('click', () => handleSquareClick(squareName));
       boardGrid.appendChild(squareDiv);
     }
@@ -225,6 +239,34 @@ function renderBoard() {
 
   document.getElementById('turnBadge').innerText = (game.turn() === playerColor) ? "Your Turn" : "Opponent's Turn";
   updateMoveHistory();
+}
+
+function handleSquareClick(square) {
+  if (game.turn() !== playerColor) return;
+
+  if (!selectedSquare) {
+    const piece = game.get(square);
+    if (piece && piece.color === playerColor) selectedSquare = square;
+  } else {
+    const moveData = { from: selectedSquare, to: square, promotion: 'q' };
+    const move = game.move(moveData);
+    if (move) {
+      socket.emit('makeMove', { roomId: currentRoom, move: moveData });
+      checkGameStatus();
+    }
+    selectedSquare = null;
+  }
+  renderBoard();
+}
+
+function checkGameStatus() {
+  if (game.in_checkmate()) {
+    const winner = game.turn() === 'w' ? 'b' : 'w';
+    const isWin = winner === playerColor;
+    alert(isWin ? 'Checkmate! သင်နိုင်ပါပြီ!' : 'Checkmate! Opponent နိုင်သွားပါပြီ!');
+    saveGameHistory(currentOpponent, isWin ? 'WIN' : 'LOSS', 'Checkmate');
+    leaveGame();
+  }
 }
 
 function updateMoveHistory() {
@@ -240,22 +282,121 @@ function updateMoveHistory() {
   moveList.scrollLeft = moveList.scrollWidth;
 }
 
-function handleSquareClick(square) {
-  if (game.turn() !== playerColor) return;
-
-  if (!selectedSquare) {
-    const piece = game.get(square);
-    if (piece && piece.color === playerColor) selectedSquare = square;
-  } else {
-    const moveData = { from: selectedSquare, to: square, promotion: 'q' };
-    const move = game.move(moveData);
-    if (move) socket.emit('makeMove', { roomId: currentRoom, move: moveData });
-    selectedSquare = null;
-  }
-  renderBoard();
+// Save & Render Game History
+function saveGameHistory(opponent, result, reason) {
+  if (!currentUser || !opponent) return;
+  const record = {
+    opponent,
+    result,
+    reason,
+    date: new Date().toLocaleDateString()
+  };
+  gameHistory.unshift(record); // Add to beginning
+  if (gameHistory.length > 20) gameHistory.pop(); // Keep last 20
+  localStorage.setItem(`history_${currentUser}`, JSON.stringify(gameHistory));
 }
 
-// Chat System
+function renderGameHistory() {
+  const container = document.getElementById('gameHistoryList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (gameHistory.length === 0) {
+    container.innerHTML = '<p style="color:#888; text-align:center;">ကစားခဲ့သော ပွဲစဉ်မှတ်တမ်း မရှိသေးပါ။</p>';
+    return;
+  }
+
+  gameHistory.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-card';
+    const isWin = item.result === 'WIN';
+    div.innerHTML = `
+      <div>
+        <div style="font-weight:bold;">vs ${item.opponent}</div>
+        <div style="font-size:0.75rem; color:#888;">${item.reason} • ${item.date}</div>
+      </div>
+      <span class="history-badge ${isWin ? 'badge-win' : 'badge-loss'}">${item.result}</span>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// Friend Requests Logic (Accept / Reject)
+function sendFriendRequest() {
+  const input = document.getElementById('friendInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (name === currentUser) return alert('မိမိကိုယ်ကို Request ပို့၍မရပါ။');
+
+  socket.emit('sendFriendRequest', { sender: currentUser, target: name });
+  alert(`${name} သို့ Friend Request ပို့လိုက်ပါပြီ။`);
+  input.value = '';
+}
+
+socket.on('updatePendingRequests', (requests) => {
+  pendingRequests = requests || [];
+  renderPendingRequests();
+});
+
+function respondRequest(sender, accept) {
+  socket.emit('respondFriendRequest', { sender, target: currentUser, accept });
+}
+
+socket.on('friendRequestAccepted', (data) => {
+  if (!friendsList.includes(data.friendName)) {
+    friendsList.push(data.friendName);
+    localStorage.setItem(`friends_${currentUser}`, JSON.stringify(friendsList));
+    renderFriends();
+  }
+});
+
+function renderPendingRequests() {
+  const container = document.getElementById('pendingRequestsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (pendingRequests.length === 0) {
+    container.innerHTML = '<p style="color:#666; font-size:0.85rem;">Pending Request မရှိပါ။</p>';
+    return;
+  }
+
+  pendingRequests.forEach(sender => {
+    const div = document.createElement('div');
+    div.className = 'req-card';
+    div.innerHTML = `
+      <span><b>${sender}</b></span>
+      <div style="display:flex; gap:6px;">
+        <button class="accept-btn" onclick="respondRequest('${sender}', true)">Accept</button>
+        <button class="red-btn" onclick="respondRequest('${sender}', false)">Reject</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderFriends() {
+  const container = document.getElementById('friendsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (friendsList.length === 0) {
+    container.innerHTML = '<p style="color:#666; font-size:0.85rem;">Friends မရှိသေးပါ။</p>';
+    return;
+  }
+
+  friendsList.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'mode-card';
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${name}" style="width:32px; height:32px; border-radius:50%;">
+      <div class="mode-info"><h3>${name}</h3></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// Chat
 function toggleChat() {
   const overlay = document.getElementById('chatOverlay');
   overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
@@ -278,88 +419,3 @@ socket.on('receiveChatMessage', (data) => {
   chatBox.appendChild(p);
   chatBox.scrollTop = chatBox.scrollHeight;
 });
-
-// Friends System
-function addFriend() {
-  const input = document.getElementById('friendInput');
-  const name = input.value.trim();
-  if (!name) return;
-  if (name === currentUser) return alert('မိမိကိုယ်ကို Friend Add ဟု မပြုလုပ်နိုင်ပါ။');
-
-  if (!friendsList.includes(name)) {
-    friendsList.push(name);
-    localStorage.setItem(`friends_${currentUser}`, JSON.stringify(friendsList));
-    input.value = '';
-    renderFriends();
-  }
-}
-
-function renderFriends() {
-  const container = document.getElementById('friendsList');
-  if (!container) return;
-  container.innerHTML = '';
-
-  if (friendsList.length === 0) {
-    container.innerHTML = '<p style="color:#888;">Friends မရှိသေးပါ။</p>';
-    return;
-  }
-
-  friendsList.forEach(name => {
-    const div = document.createElement('div');
-    div.className = 'mode-card';
-    div.style.marginBottom = '10px';
-    div.innerHTML = `
-      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${name}" style="width:36px; height:36px; border-radius:50%;">
-      <div class="mode-info"><h3>${name}</h3></div>
-    `;
-    container.appendChild(div);
-  });
-}
-
-// Shop System
-function renderShop() {
-  const shopGrid = document.getElementById('shopGrid');
-  if (!shopGrid) return;
-  shopGrid.innerHTML = '';
-
-  SHOP_BOARDS.forEach(item => {
-    const isOwned = ownedBoards.includes(item.id);
-    const isEquipped = equippedBoard === item.id;
-
-    const div = document.createElement('div');
-    div.className = 'mode-card';
-    div.style.marginBottom = '10px';
-
-    let btnText = isEquipped ? 'Equipped' : (isOwned ? 'Equip' : `Buy 🪙${item.price}`);
-    let btnStyle = isEquipped ? 'background: #363431; color: #989795; cursor: default;' : '';
-
-    div.innerHTML = `
-      <div style="width: 44px; height: 44px; background-image: url('${item.img}'); background-size: cover; border-radius: 8px;"></div>
-      <div class="mode-info"><h3>${item.name}</h3></div>
-      <button class="green-btn" style="padding: 6px 14px; font-size: 0.85rem; ${btnStyle}" onclick="handleShopClick('${item.id}', ${item.price})">${btnText}</button>
-    `;
-    shopGrid.appendChild(div);
-  });
-}
-
-function handleShopClick(id, price) {
-  if (equippedBoard === id) return;
-  if (ownedBoards.includes(id)) {
-    equippedBoard = id;
-  } else if (userCoins >= price) {
-    userCoins -= price;
-    ownedBoards.push(id);
-    equippedBoard = id;
-  } else {
-    alert('Coin မလုံလောက်ပါ!');
-    return;
-  }
-
-  if (currentUser) {
-    localStorage.setItem(`coins_${currentUser}`, userCoins);
-    localStorage.setItem(`owned_${currentUser}`, JSON.stringify(ownedBoards));
-    localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
-  }
-  updateProfileUI();
-  renderShop();
-}
