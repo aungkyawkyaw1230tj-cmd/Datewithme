@@ -9,17 +9,33 @@ let selectedSquare = null;
 
 const boardGrid = document.getElementById('board-grid');
 
-// Login / Register တလှည့်စီပြောင်းရန်
+// Page Reload လုပ်ပါက Auto Login စစ်ပေးခြင်း
+window.addEventListener('DOMContentLoaded', () => {
+  const savedUser = localStorage.getItem('chess_username');
+  if (savedUser) {
+    currentUser = savedUser;
+    showLobby();
+  }
+});
+
+// Logout လုပ်ရန်
+function handleLogout() {
+  localStorage.removeItem('chess_username');
+  currentUser = null;
+  document.getElementById('lobbyScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'block';
+}
+
 function toggleAuthMode() {
   isAuthModeLogin = !isAuthModeLogin;
   document.getElementById('authTitle').innerText = isAuthModeLogin ? 'Sign In' : 'Sign Up';
   document.getElementById('authBtn').innerText = isAuthModeLogin ? 'Sign In' : 'Sign Up';
   document.getElementById('toggleText').innerText = isAuthModeLogin 
-    ? 'အကောင့်မရှိသေးပါက ဒီမှာနှိပ်ပြီး Sign Up လုပ်ပါ' 
-    : 'အကောင့်ရှိပြီးသားပါက ဒီမှာနှိပ်ပြီး Sign In လုပ်ပါ';
+    ? 'အကောင့်မရှိသေးပါက Sign Up လုပ်ပါ' 
+    : 'အကောင့်ရှိပြီးသားပါက Sign In လုပ်ပါ';
 }
 
-// Auth API ခေါ်ယူခြင်း
 async function handleAuth() {
   const username = document.getElementById('authUsername').value.trim();
   const password = document.getElementById('authPassword').value.trim();
@@ -41,6 +57,7 @@ async function handleAuth() {
   } else {
     if (isAuthModeLogin) {
       currentUser = data.username;
+      localStorage.setItem('chess_username', currentUser); // LocalStorage တွင် မှတ်ထားခြင်း
       showLobby();
     } else {
       alert('Sign Up အောင်မြင်ပါသည်။ Sign In ပြန်ဝင်ပါ။');
@@ -51,18 +68,17 @@ async function handleAuth() {
 
 function showLobby() {
   document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'none';
   document.getElementById('lobbyScreen').style.display = 'block';
   document.getElementById('displayUsername').innerText = currentUser;
 }
 
-// Match Finding စတင်ခြင်း
 function findMatch() {
   document.getElementById('findMatchBtn').disabled = true;
   document.getElementById('matchStatus').innerText = 'ပြိုင်ဘက် ရှာဖွေနေပါသည်... ⏳';
   socket.emit('findMatch', { username: currentUser });
 }
 
-// Socket Events
 socket.on('waitingForOpponent', () => {
   document.getElementById('matchStatus').innerText = 'ပြိုင်ဘက် စောင့်ဆိုင်းနေပါသည်...';
 });
@@ -74,7 +90,7 @@ socket.on('matchFound', (data) => {
   document.getElementById('lobbyScreen').style.display = 'none';
   document.getElementById('gameScreen').style.display = 'block';
   document.getElementById('yourName').innerText = `${currentUser} (${playerColor === 'w' ? 'White' : 'Black'})`;
-  document.getElementById('opponentName').innerText = data.opponent;
+  document.getElementById('opponentName').innerText = `${data.opponent} (${playerColor === 'w' ? 'Black' : 'White'})`;
 
   renderBoard();
 });
@@ -84,19 +100,26 @@ socket.on('opponentMove', (move) => {
   renderBoard();
 });
 
-// Board Rendering & Move Logic
 function getSquareNotation(row, col) {
   const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
   const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
   return files[col] + ranks[row];
 }
 
+// Board ရေးဆွဲခြင်း (Black ဖြစ်ပါက Board ကို လှည့်ဆွဲပေးမည်)
 function renderBoard() {
   boardGrid.innerHTML = '';
   const boardState = game.board();
 
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
+  // White ဆိုရင် 0->7 ၊ Black ဆိုရင် 7->0 လှည့်မည်
+  const rows = playerColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+  const cols = playerColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+
+  for (let rIdx = 0; rIdx < 8; rIdx++) {
+    for (let cIdx = 0; cIdx < 8; cIdx++) {
+      const r = rows[rIdx];
+      const c = cols[cIdx];
+
       const squareDiv = document.createElement('div');
       const squareName = getSquareNotation(r, c);
       squareDiv.className = 'square';
@@ -114,10 +137,14 @@ function renderBoard() {
       boardGrid.appendChild(squareDiv);
     }
   }
+
+  // Turn Indicator ပြရန်
+  const isMyTurn = game.turn() === playerColor;
+  document.getElementById('turnBadge').innerText = isMyTurn ? "Your Turn" : "Opponent's Turn";
+  document.getElementById('turnBadge').className = `turn-badge ${isMyTurn ? 'my-turn' : 'op-turn'}`;
 }
 
 function handleSquareClick(square) {
-  // မိမိ အလှည့်ဟုတ်မဟုတ် စစ်ဆေးခြင်း
   if (game.turn() !== playerColor) return;
 
   if (!selectedSquare) {
@@ -135,4 +162,4 @@ function handleSquareClick(square) {
     selectedSquare = null;
   }
   renderBoard();
-        }
+}
