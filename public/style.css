@@ -1,0 +1,57 @@
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #1a1a1a;
+  color: white;
+  font-family: sans-serif;
+}
+
+.controls {
+  margin: 20px;
+}
+
+/* စစ်တုရင်ခုံ Container */
+.chess-board {
+  width: 90vw;
+  max-width: 480px;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Skins */
+.chess-board.wood {
+  background-image: url('assets/images/boards/wood.png');
+}
+.chess-board.marble {
+  background-image: url('assets/images/boards/marble.png');
+}
+
+/* 8x8 Grid (ဘောင်အကျယ် 10% ထားတွက်ထားသည်) */
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 10%;
+  right: 10%;
+}
+
+.square {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.square img {
+  width: 80%;
+  height: 80%;
+}
