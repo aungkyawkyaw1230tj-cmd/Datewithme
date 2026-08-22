@@ -7,10 +7,9 @@ let playerColor = 'w';
 let isAuthModeLogin = true;
 let selectedSquare = null;
 
-// User Data & Profile State
 let userCoins = 500;
 let userElo = 1200;
-let userStats = { played: 0, wins: 0, losses: 0 };
+let friendsList = [];
 let ownedBoards = ['wood', 'marble'];
 let equippedBoard = 'wood';
 
@@ -35,21 +34,20 @@ window.addEventListener('DOMContentLoaded', () => {
 function loadUserData() {
   if (!currentUser) return;
   const savedCoins = localStorage.getItem(`coins_${currentUser}`);
-  const savedStats = localStorage.getItem(`stats_${currentUser}`);
   const savedOwned = localStorage.getItem(`owned_${currentUser}`);
   const savedEquipped = localStorage.getItem(`equipped_${currentUser}`);
+  const savedFriends = localStorage.getItem(`friends_${currentUser}`);
 
   if (savedCoins !== null) userCoins = parseInt(savedCoins);
-  if (savedStats !== null) userStats = JSON.parse(savedStats);
   if (savedOwned !== null) ownedBoards = JSON.parse(savedOwned);
   if (savedEquipped !== null) equippedBoard = savedEquipped;
+  if (savedFriends !== null) friendsList = JSON.parse(savedFriends);
 
   updateProfileUI();
 }
 
 function updateProfileUI() {
   const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser}`;
-  
   if (document.getElementById('topAvatar')) document.getElementById('topAvatar').src = avatarUrl;
   if (document.getElementById('profileAvatar')) document.getElementById('profileAvatar').src = avatarUrl;
   if (document.getElementById('gameYourAvatar')) document.getElementById('gameYourAvatar').src = avatarUrl;
@@ -57,32 +55,23 @@ function updateProfileUI() {
   if (document.getElementById('topUsername')) document.getElementById('topUsername').innerText = currentUser;
   if (document.getElementById('profileName')) document.getElementById('profileName').innerText = currentUser;
   if (document.getElementById('topCoins')) document.getElementById('topCoins').innerText = userCoins;
-  if (document.getElementById('userElo')) document.getElementById('userElo').innerText = userElo;
 
-  if (document.getElementById('statGames')) document.getElementById('statGames').innerText = userStats.played;
-  if (document.getElementById('statWins')) document.getElementById('statWins').innerText = userStats.wins;
-  if (document.getElementById('statLosses')) document.getElementById('statLosses').innerText = userStats.losses;
-
-  // Board Element Class Name ကို equippedBoard အတိုင်း တိုက်ရိုက်ပြောင်းလဲပေးခြင်း
   const boardElem = document.getElementById('board');
-  if (boardElem) {
-    boardElem.className = `chess-board ${equippedBoard}`;
-  }
+  if (boardElem) boardElem.className = `chess-board ${equippedBoard}`;
 }
 
-// Navigation Bar Switcher
 function switchNav(tabName) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
 
-  const indexMap = { 'Play': 0, 'Puzzles': 1, 'Shop': 2, 'Profile': 3 };
+  const indexMap = { 'Play': 0, 'Friends': 1, 'Shop': 2, 'Profile': 3 };
   document.querySelectorAll('.nav-item')[indexMap[tabName]].classList.add('active');
   document.getElementById(`view${tabName}`).classList.add('active');
 
   if (tabName === 'Shop') renderShop();
+  if (tabName === 'Friends') renderFriends();
 }
 
-// Auth Handlers
 function switchAuthTab(isLogin) {
   isAuthModeLogin = isLogin;
   document.getElementById('tabLoginBtn').className = `auth-tab ${isLogin ? 'active' : ''}`;
@@ -93,32 +82,12 @@ function switchAuthTab(isLogin) {
 async function handleAuth() {
   const username = document.getElementById('authUsername').value.trim();
   const password = document.getElementById('authPassword').value.trim();
-  const errorDiv = document.getElementById('authError');
-  errorDiv.innerText = '';
+  if (!username || !password) return alert('Username/Password ဖြည့်ပါ။');
 
-  if (!username || !password) return errorDiv.innerText = 'အချက်အလက်များ ဖြည့်သွင်းပါ';
-
-  const endpoint = isAuthModeLogin ? '/api/login' : '/api/signup';
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    errorDiv.innerText = data.error;
-  } else {
-    if (isAuthModeLogin) {
-      currentUser = data.username;
-      localStorage.setItem('chess_username', currentUser);
-      loadUserData();
-      showMainApp();
-    } else {
-      alert('Sign Up အောင်မြင်ပါသည်။ Sign In ပြန်ဝင်ပါ။');
-      switchAuthTab(true);
-    }
-  }
+  currentUser = username;
+  localStorage.setItem('chess_username', currentUser);
+  loadUserData();
+  showMainApp();
 }
 
 function handleLogout() {
@@ -136,11 +105,34 @@ function showMainApp() {
   updateProfileUI();
 }
 
-// Matchmaking
+// Matchmaking System
 function findMatch() {
-  document.getElementById('matchSearchStatus').style.display = 'flex';
+  document.getElementById('matchSearchStatus').style.display = 'block';
+  document.getElementById('searchMsg').innerText = 'Match searching...';
   socket.emit('findMatch', { username: currentUser });
 }
+
+function cancelMatch() {
+  socket.emit('cancelMatch');
+  document.getElementById('matchSearchStatus').style.display = 'none';
+}
+
+// Custom Room System
+function createCustomRoom() {
+  socket.emit('createCustomRoom', { username: currentUser });
+}
+
+socket.on('customRoomCreated', (data) => {
+  document.getElementById('matchSearchStatus').style.display = 'block';
+  document.getElementById('searchMsg').innerText = `Your Lobby Code: ${data.roomCode}\nWaiting for opponent...`;
+});
+
+function promptJoinRoom() {
+  const code = prompt('6-Digit Lobby Code ရိုက်ထည့်ပါ:');
+  if (code) socket.emit('joinCustomRoom', { roomCode: code.trim(), username: currentUser });
+}
+
+socket.on('roomError', (msg) => alert(msg));
 
 socket.on('matchFound', (data) => {
   currentRoom = data.roomId;
@@ -150,9 +142,11 @@ socket.on('matchFound', (data) => {
   document.getElementById('mainApp').classList.remove('active');
   document.getElementById('gameScreen').classList.add('active');
 
-  document.getElementById('yourName').innerText = `${currentUser} (${playerColor === 'w' ? 'White' : 'Black'})`;
-  document.getElementById('opponentName').innerText = `${data.opponent} (${playerColor === 'w' ? 'Black' : 'White'})`;
+  document.getElementById('yourName').innerText = currentUser;
+  document.getElementById('opponentName').innerText = data.opponent;
+  document.getElementById('gameOpponentAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${data.opponent}`;
 
+  game.reset();
   renderBoard();
 });
 
@@ -161,22 +155,41 @@ socket.on('opponentMove', (move) => {
   renderBoard();
 });
 
+socket.on('opponentLeft', () => {
+  alert('Opponent ထွက်သွားသည်/လိုင်းကျသွားသည်။ သင်နိုင်ပါပြီ!');
+  leaveGame();
+});
+
+socket.on('gameOver', (data) => {
+  alert(`Game Over! Winner: ${data.winner === playerColor ? 'You' : 'Opponent'} (${data.reason})`);
+  leaveGame();
+});
+
+// Timer Updates
+socket.on('timeUpdate', (data) => {
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  if (playerColor === 'w') {
+    document.getElementById('yourTimer').innerText = formatTime(data.whiteTime);
+    document.getElementById('opponentTimer').innerText = formatTime(data.blackTime);
+  } else {
+    document.getElementById('yourTimer').innerText = formatTime(data.blackTime);
+    document.getElementById('opponentTimer').innerText = formatTime(data.whiteTime);
+  }
+});
+
 function leaveGame() {
+  if (currentRoom) socket.emit('leaveGame', { roomId: currentRoom });
   showMainApp();
 }
 
-function getSquareNotation(row, col) {
-  const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-  const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-  return files[col] + ranks[row];
-}
-
-// Board ရေးဆွဲချိန်တွင် လက်ရှိ Equip လုပ်ထားသော Skin ကို အမြဲတမ်း ယူသုံးရန်
 function renderBoard() {
   const boardElem = document.getElementById('board');
-  if (boardElem) {
-    boardElem.className = `chess-board ${equippedBoard}`;
-  }
+  if (boardElem) boardElem.className = `chess-board ${equippedBoard}`;
 
   const boardGrid = document.getElementById('board-grid');
   boardGrid.innerHTML = '';
@@ -191,9 +204,11 @@ function renderBoard() {
       const c = cols[cIdx];
 
       const squareDiv = document.createElement('div');
-      const squareName = getSquareNotation(r, c);
-      squareDiv.className = 'square';
+      const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+      const squareName = files[c] + ranks[r];
 
+      squareDiv.className = 'square';
       if (selectedSquare === squareName) squareDiv.classList.add('selected');
 
       const piece = boardState[r][c];
@@ -208,8 +223,7 @@ function renderBoard() {
     }
   }
 
-  const isMyTurn = game.turn() === playerColor;
-  document.getElementById('turnBadge').innerText = isMyTurn ? "Your Turn" : "Opponent's Turn";
+  document.getElementById('turnBadge').innerText = (game.turn() === playerColor) ? "Your Turn" : "Opponent's Turn";
   updateMoveHistory();
 }
 
@@ -217,11 +231,9 @@ function updateMoveHistory() {
   const moveList = document.getElementById('moveList');
   if (!moveList) return;
   moveList.innerHTML = '';
-  const history = game.history();
-
-  history.forEach((m, idx) => {
+  game.history().forEach((m, idx) => {
     const span = document.createElement('span');
-    span.className = `move-item ${idx === history.length - 1 ? 'active' : ''}`;
+    span.className = `move-item ${idx === game.history().length - 1 ? 'active' : ''}`;
     span.innerText = m;
     moveList.appendChild(span);
   });
@@ -237,16 +249,74 @@ function handleSquareClick(square) {
   } else {
     const moveData = { from: selectedSquare, to: square, promotion: 'q' };
     const move = game.move(moveData);
-
-    if (move) {
-      socket.emit('makeMove', { roomId: currentRoom, move: moveData });
-    }
+    if (move) socket.emit('makeMove', { roomId: currentRoom, move: moveData });
     selectedSquare = null;
   }
   renderBoard();
 }
 
-// Shop Rendering & Buying Logic
+// Chat System
+function toggleChat() {
+  const overlay = document.getElementById('chatOverlay');
+  overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (text && currentRoom) {
+    socket.emit('sendChatMessage', { roomId: currentRoom, sender: currentUser, text });
+    input.value = '';
+  }
+}
+
+socket.on('receiveChatMessage', (data) => {
+  const chatBox = document.getElementById('chatBox');
+  const p = document.createElement('p');
+  p.style.margin = '4px 0';
+  p.innerHTML = `<b style="color:${data.sender === currentUser ? '#81b64c' : '#faac42'}">${data.sender}:</b> ${data.text}`;
+  chatBox.appendChild(p);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+// Friends System
+function addFriend() {
+  const input = document.getElementById('friendInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (name === currentUser) return alert('မိမိကိုယ်ကို Friend Add ဟု မပြုလုပ်နိုင်ပါ။');
+
+  if (!friendsList.includes(name)) {
+    friendsList.push(name);
+    localStorage.setItem(`friends_${currentUser}`, JSON.stringify(friendsList));
+    input.value = '';
+    renderFriends();
+  }
+}
+
+function renderFriends() {
+  const container = document.getElementById('friendsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (friendsList.length === 0) {
+    container.innerHTML = '<p style="color:#888;">Friends မရှိသေးပါ။</p>';
+    return;
+  }
+
+  friendsList.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'mode-card';
+    div.style.marginBottom = '10px';
+    div.innerHTML = `
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${name}" style="width:36px; height:36px; border-radius:50%;">
+      <div class="mode-info"><h3>${name}</h3></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// Shop System
 function renderShop() {
   const shopGrid = document.getElementById('shopGrid');
   if (!shopGrid) return;
@@ -264,10 +334,8 @@ function renderShop() {
     let btnStyle = isEquipped ? 'background: #363431; color: #989795; cursor: default;' : '';
 
     div.innerHTML = `
-      <div style="width: 44px; height: 44px; background-image: url('${item.img}'); background-size: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"></div>
-      <div class="mode-info">
-        <h3>${item.name}</h3>
-      </div>
+      <div style="width: 44px; height: 44px; background-image: url('${item.img}'); background-size: cover; border-radius: 8px;"></div>
+      <div class="mode-info"><h3>${item.name}</h3></div>
       <button class="green-btn" style="padding: 6px 14px; font-size: 0.85rem; ${btnStyle}" onclick="handleShopClick('${item.id}', ${item.price})">${btnText}</button>
     `;
     shopGrid.appendChild(div);
@@ -276,7 +344,6 @@ function renderShop() {
 
 function handleShopClick(id, price) {
   if (equippedBoard === id) return;
-
   if (ownedBoards.includes(id)) {
     equippedBoard = id;
   } else if (userCoins >= price) {
@@ -288,13 +355,11 @@ function handleShopClick(id, price) {
     return;
   }
 
-  // LocalStorage ထဲ သိမ်းဆည်းခြင်း
   if (currentUser) {
     localStorage.setItem(`coins_${currentUser}`, userCoins);
     localStorage.setItem(`owned_${currentUser}`, JSON.stringify(ownedBoards));
     localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
   }
-
   updateProfileUI();
   renderShop();
-  }
+}
