@@ -8,12 +8,20 @@ let playerColor = 'w';
 let selectedSquare = null;
 let selectedTimeLimit = 5;
 
+// User Data State
 let userCoins = 500;
+let userElo = 1200;
 let friendsList = [];
 let pendingRequests = [];
 let gameHistory = [];
-let ownedBoards = ['wood', 'marble'];
+let ownedBoards = ['wood'];
 let equippedBoard = 'wood';
+
+// Shop Items List
+const shopItems = [
+  { id: 'wood', name: 'Classic Wood Board', price: 0 },
+  { id: 'marble', name: 'Royal Marble Board', price: 300 }
+];
 
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('chess_username');
@@ -28,12 +36,14 @@ window.addEventListener('DOMContentLoaded', () => {
 function loadUserData() {
   if (!currentUser) return;
   const savedCoins = localStorage.getItem(`coins_${currentUser}`);
+  const savedElo = localStorage.getItem(`elo_${currentUser}`);
   const savedOwned = localStorage.getItem(`owned_${currentUser}`);
   const savedEquipped = localStorage.getItem(`equipped_${currentUser}`);
   const savedFriends = localStorage.getItem(`friends_${currentUser}`);
   const savedHistory = localStorage.getItem(`history_${currentUser}`);
 
   if (savedCoins !== null) userCoins = parseInt(savedCoins);
+  if (savedElo !== null) userElo = parseInt(savedElo);
   if (savedOwned !== null) ownedBoards = JSON.parse(savedOwned);
   if (savedEquipped !== null) equippedBoard = savedEquipped;
   if (savedFriends !== null) friendsList = JSON.parse(savedFriends);
@@ -44,17 +54,20 @@ function loadUserData() {
 
 function updateProfileUI() {
   const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser}`;
+  
   if (document.getElementById('topAvatar')) document.getElementById('topAvatar').src = avatarUrl;
   if (document.getElementById('profileAvatar')) document.getElementById('profileAvatar').src = avatarUrl;
   if (document.getElementById('gameYourAvatar')) document.getElementById('gameYourAvatar').src = avatarUrl;
 
   if (document.getElementById('topUsername')) document.getElementById('topUsername').innerText = currentUser;
   if (document.getElementById('profileName')) document.getElementById('profileName').innerText = currentUser;
+  if (document.getElementById('userElo')) document.getElementById('userElo').innerText = userElo;
   if (document.getElementById('topCoins')) document.getElementById('topCoins').innerText = userCoins;
 
   renderFriends();
   renderPendingRequests();
   renderGameHistory();
+  renderShop();
 }
 
 function switchNav(tabName) {
@@ -65,11 +78,13 @@ function switchNav(tabName) {
   document.querySelectorAll('.nav-item')[indexMap[tabName]].classList.add('active');
   document.getElementById(`view${tabName}`).classList.add('active');
 
+  if (tabName === 'Shop') renderShop();
   if (tabName === 'Profile') renderGameHistory();
   if (tabName === 'Friends') renderFriends();
 }
 
-async function handleAuth() {
+// Authentication
+function handleAuth() {
   const username = document.getElementById('authUsername').value.trim();
   if (!username) return alert('Username ဖြည့်ပါ။');
 
@@ -95,7 +110,7 @@ function showMainApp() {
   updateProfileUI();
 }
 
-// Matchmaking
+// Matchmaking & Custom Room
 function findMatch() {
   document.getElementById('matchSearchStatus').style.display = 'block';
   document.getElementById('searchMsg').innerText = 'Match searching...';
@@ -150,6 +165,7 @@ socket.on('matchFound', (data) => {
   renderBoard();
 });
 
+// Game Logic & Socket Listeners
 socket.on('opponentMove', (move) => {
   game.move(move);
   renderBoard();
@@ -158,14 +174,14 @@ socket.on('opponentMove', (move) => {
 
 socket.on('opponentLeft', () => {
   alert('Opponent ထွက်သွားသည်။ သင်နိုင်ပါပြီ!');
-  saveGameHistory(currentOpponent, 'WIN', 'Opponent Left');
+  saveGameResult(currentOpponent, 'WIN', 'Opponent Left', 25, 50);
   leaveGame();
 });
 
 socket.on('gameOver', (data) => {
-  const result = data.winner === playerColor ? 'WIN' : 'LOSS';
-  alert(`Game Over! Winner: ${data.winner === playerColor ? 'You' : 'Opponent'} (${data.reason})`);
-  saveGameHistory(currentOpponent, result, data.reason);
+  const isWin = data.winner === playerColor;
+  alert(`Game Over! Winner: ${isWin ? 'You' : 'Opponent'} (${data.reason})`);
+  saveGameResult(currentOpponent, isWin ? 'WIN' : 'LOSS', data.reason, isWin ? 25 : -15, isWin ? 50 : 10);
   leaveGame();
 });
 
@@ -264,7 +280,7 @@ function checkGameStatus() {
     const winner = game.turn() === 'w' ? 'b' : 'w';
     const isWin = winner === playerColor;
     alert(isWin ? 'Checkmate! သင်နိုင်ပါပြီ!' : 'Checkmate! Opponent နိုင်သွားပါပြီ!');
-    saveGameHistory(currentOpponent, isWin ? 'WIN' : 'LOSS', 'Checkmate');
+    saveGameResult(currentOpponent, isWin ? 'WIN' : 'LOSS', 'Checkmate', isWin ? 25 : -15, isWin ? 50 : 10);
     leaveGame();
   }
 }
@@ -282,18 +298,84 @@ function updateMoveHistory() {
   moveList.scrollLeft = moveList.scrollWidth;
 }
 
-// Save & Render Game History
-function saveGameHistory(opponent, result, reason) {
+// Shop System (Buy & Equip)
+function renderShop() {
+  const grid = document.getElementById('shopGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  shopItems.forEach(item => {
+    const isOwned = ownedBoards.includes(item.id);
+    const isEquipped = equippedBoard === item.id;
+
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#32302c; padding:15px; border-radius:10px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;';
+
+    let btnHtml = '';
+    if (isEquipped) {
+      btnHtml = `<button class="green-btn" disabled style="opacity:0.6;">Equipped</button>`;
+    } else if (isOwned) {
+      btnHtml = `<button class="green-btn" onclick="equipBoard('${item.id}')">Equip</button>`;
+    } else {
+      btnHtml = `<button class="green-btn" onclick="buyBoard('${item.id}', ${item.price})">🪙 ${item.price} Buy</button>`;
+    }
+
+    div.innerHTML = `
+      <div>
+        <h4 style="margin-bottom:4px; font-size:1rem;">${item.name}</h4>
+        <p style="font-size:0.8rem; color:#aaa;">${isOwned ? 'Owned' : `Price: 🪙 ${item.price}`}</p>
+      </div>
+      ${btnHtml}
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function buyBoard(boardId, price) {
+  if (userCoins < price) return alert('Coin မလုံလောက်ပါ။');
+  userCoins -= price;
+  ownedBoards.push(boardId);
+  equippedBoard = boardId;
+
+  saveShopData();
+  updateProfileUI();
+  alert('Shop မှ အောင်မြင်စွာ ဝယ်ယူပြီးပါပြီ။');
+}
+
+function equipBoard(boardId) {
+  equippedBoard = boardId;
+  saveShopData();
+  updateProfileUI();
+}
+
+function saveShopData() {
+  localStorage.setItem(`coins_${currentUser}`, userCoins);
+  localStorage.setItem(`owned_${currentUser}`, JSON.stringify(ownedBoards));
+  localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
+}
+
+// Profile & History System
+function saveGameResult(opponent, result, reason, eloChange, coinReward) {
   if (!currentUser || !opponent) return;
+
+  userElo = Math.max(0, userElo + eloChange);
+  userCoins += coinReward;
+
   const record = {
     opponent,
     result,
     reason,
     date: new Date().toLocaleDateString()
   };
-  gameHistory.unshift(record); // Add to beginning
-  if (gameHistory.length > 20) gameHistory.pop(); // Keep last 20
+
+  gameHistory.unshift(record);
+  if (gameHistory.length > 20) gameHistory.pop();
+
+  localStorage.setItem(`elo_${currentUser}`, userElo);
+  localStorage.setItem(`coins_${currentUser}`, userCoins);
   localStorage.setItem(`history_${currentUser}`, JSON.stringify(gameHistory));
+
+  updateProfileUI();
 }
 
 function renderGameHistory() {
@@ -321,7 +403,7 @@ function renderGameHistory() {
   });
 }
 
-// Friend Requests Logic (Accept / Reject)
+// Friend Requests (Send, Accept, Reject)
 function sendFriendRequest() {
   const input = document.getElementById('friendInput');
   const name = input.value.trim();
@@ -396,7 +478,7 @@ function renderFriends() {
   });
 }
 
-// Chat
+// In-Game Chat
 function toggleChat() {
   const overlay = document.getElementById('chatOverlay');
   overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
