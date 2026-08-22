@@ -9,40 +9,45 @@
 <body>
 
   <div class="app-container">
-    <!-- Header UI -->
-    <header class="game-header">
-      <h2>Chess Myanmar</h2>
-      <div class="controls">
-        <label for="skinSelect">Skin: </label>
-        <select id="skinSelect">
-          <option value="wood">Wood</option>
-          <option value="marble">Marble</option>
-        </select>
-      </div>
-    </header>
+    
+    <!-- Auth Screen (Login / Register) -->
+    <div id="authScreen" class="auth-box">
+      <h2 id="authTitle">Sign In</h2>
+      <input type="text" id="authUsername" placeholder="Username">
+      <input type="password" id="authPassword" placeholder="Password">
+      <button id="authBtn" onclick="handleAuth()">Sign In</button>
+      <p class="toggle-text" onclick="toggleAuthMode()">
+        <span id="toggleText">အကောင့်မရှိသေးပါက ဒီမှာနှိပ်ပြီး Sign Up လုပ်ပါ</span>
+      </p>
+      <div id="authError" class="error-msg"></div>
+    </div>
 
-    <!-- Top Player (Opponent) -->
-    <div class="player-card">
-      <div class="player-avatar">♟️</div>
-      <div class="player-info">
-        <span class="player-name">Opponent (Black)</span>
+    <!-- Lobby / Matchfinding Screen -->
+    <div id="lobbyScreen" class="lobby-box" style="display: none;">
+      <h2>Welcome, <span id="displayUsername"></span>!</h2>
+      <button id="findMatchBtn" onclick="findMatch()">Find Match 🔍</button>
+      <div id="matchStatus" class="status-msg"></div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" style="display: none;">
+      <div class="player-card">
+        <span class="player-avatar">♟️</span>
+        <span id="opponentName">Opponent</span>
+      </div>
+
+      <div class="board-wrapper">
+        <div id="board" class="chess-board wood">
+          <div id="board-grid" class="board-grid"></div>
+        </div>
+      </div>
+
+      <div class="player-card active">
+        <span class="player-avatar">♙</span>
+        <span id="yourName">You</span>
       </div>
     </div>
 
-    <!-- Centered Chess Board Wrapper -->
-    <div class="board-wrapper">
-      <div id="board" class="chess-board wood">
-        <div id="board-grid" class="board-grid"></div>
-      </div>
-    </div>
-
-    <!-- Bottom Player (You) -->
-    <div class="player-card active">
-      <div class="player-avatar">♙</div>
-      <div class="player-info">
-        <span class="player-name">You (White)</span>
-      </div>
-    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
