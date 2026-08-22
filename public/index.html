@@ -5,46 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Multiplayer Chess</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <div class="app-container">
     
-    <!-- Auth Screen (Login / Register) -->
-    <div id="authScreen" class="auth-box">
+    <!-- Auth Screen -->
+    <div id="authScreen" class="glass-card">
+      <div class="brand">
+        <h1>⚔️ CHESS ARENA</h1>
+        <p>Online Realtime Chess</p>
+      </div>
       <h2 id="authTitle">Sign In</h2>
-      <input type="text" id="authUsername" placeholder="Username">
-      <input type="password" id="authPassword" placeholder="Password">
-      <button id="authBtn" onclick="handleAuth()">Sign In</button>
+      <div class="input-group">
+        <input type="text" id="authUsername" placeholder="Username" autocomplete="off">
+        <input type="password" id="authPassword" placeholder="Password">
+      </div>
+      <button id="authBtn" class="primary-btn" onclick="handleAuth()">Sign In</button>
       <p class="toggle-text" onclick="toggleAuthMode()">
-        <span id="toggleText">အကောင့်မရှိသေးပါက ဒီမှာနှိပ်ပြီး Sign Up လုပ်ပါ</span>
+        <span id="toggleText">အကောင့်မရှိသေးပါက Sign Up လုပ်ပါ</span>
       </p>
       <div id="authError" class="error-msg"></div>
     </div>
 
-    <!-- Lobby / Matchfinding Screen -->
-    <div id="lobbyScreen" class="lobby-box" style="display: none;">
-      <h2>Welcome, <span id="displayUsername"></span>!</h2>
-      <button id="findMatchBtn" onclick="findMatch()">Find Match 🔍</button>
-      <div id="matchStatus" class="status-msg"></div>
+    <!-- Lobby Screen -->
+    <div id="lobbyScreen" class="glass-card" style="display: none;">
+      <div class="user-header">
+        <span>👋 <strong id="displayUsername"></strong></span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+      <div class="lobby-content">
+        <h2>Ready for a Match?</h2>
+        <button id="findMatchBtn" class="primary-btn pulse" onclick="findMatch()">Find Match 🔍</button>
+        <div id="matchStatus" class="status-msg"></div>
+      </div>
     </div>
 
     <!-- Game Screen -->
     <div id="gameScreen" style="display: none;">
-      <div class="player-card">
-        <span class="player-avatar">♟️</span>
-        <span id="opponentName">Opponent</span>
+      <div class="game-header">
+        <div id="turnBadge" class="turn-badge">Your Turn</div>
+        <button class="logout-btn" onclick="showLobby()">Leave</button>
       </div>
 
+      <!-- Opponent Card -->
+      <div class="player-card">
+        <div class="avatar">♟️</div>
+        <div class="info">
+          <span id="opponentName" class="name">Opponent</span>
+        </div>
+      </div>
+
+      <!-- Board Container -->
       <div class="board-wrapper">
         <div id="board" class="chess-board wood">
           <div id="board-grid" class="board-grid"></div>
         </div>
       </div>
 
+      <!-- Your Card -->
       <div class="player-card active">
-        <span class="player-avatar">♙</span>
-        <span id="yourName">You</span>
+        <div class="avatar">♙</div>
+        <div class="info">
+          <span id="yourName" class="name">You</span>
+        </div>
       </div>
     </div>
 
