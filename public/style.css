@@ -134,3 +134,52 @@ body {
 .square.selected {
   background-color: rgba(255, 235, 59, 0.4) !important;
 }
+.auth-box, .lobby-box {
+  width: 100%;
+  max-width: 380px;
+  background: #1e1e1e;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  text-align: center;
+}
+
+.auth-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2a2a2a;
+  color: white;
+}
+
+.auth-box button, .lobby-box button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: none;
+  background: #6366f1;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.toggle-text {
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  margin-top: 15px;
+  cursor: pointer;
+}
+
+.error-msg {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+
+.status-msg {
+  margin-top: 15px;
+  color: #eab308;
+}
