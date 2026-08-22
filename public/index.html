@@ -5,29 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Chess Arena</title>
   <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Socket.io & Chess.js -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 </head>
 <body>
   <div class="app-container">
     
-    <!-- Auth Screen -->
+    <!-- 1. Auth Screen (Login / Signup) -->
     <div id="authScreen" class="screen active">
       <div class="auth-box">
-        <h2>Chess Arena</h2>
+        <h2><i class="fa-solid fa-chess-king"></i> Chess Arena</h2>
+        
         <div class="auth-tabs">
           <button id="tabLoginBtn" class="auth-tab active" onclick="switchAuthTab(true)">Sign In</button>
           <button id="tabSignupBtn" class="auth-tab" onclick="switchAuthTab(false)">Sign Up</button>
         </div>
-        <div class="input-field"><i class="fa-solid fa-user"></i><input type="text" id="authUsername" placeholder="Username"></div>
-        <div class="input-field"><i class="fa-solid fa-lock"></i><input type="password" id="authPassword" placeholder="Password"></div>
+
+        <div class="input-field">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" id="authUsername" placeholder="Username">
+        </div>
+        <div class="input-field">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="authPassword" placeholder="Password">
+        </div>
+
         <button id="authSubmitBtn" class="green-btn" onclick="handleAuth()">Sign In</button>
       </div>
     </div>
 
-    <!-- Main App Screen -->
+    <!-- 2. Main App Screen -->
     <div id="mainApp" class="screen">
+      <!-- App Top Bar -->
       <div class="app-top-bar">
         <div class="mini-profile">
           <img id="topAvatar" src="" alt="Avatar">
@@ -36,7 +48,7 @@
         <div class="coin-pill">🪙 <span id="topCoins">500</span></div>
       </div>
 
-      <!-- Play View -->
+      <!-- Play Tab View -->
       <div id="viewPlay" class="tab-view active">
         <div class="mode-card" onclick="findMatch()">
           <i class="fa-solid fa-bolt mode-icon"></i>
@@ -68,66 +80,81 @@
         </div>
       </div>
 
-      <!-- Custom Room Time Modal -->
-      <div id="customModal" class="modal-overlay" style="display:none;">
-        <div class="modal-box">
-          <h3>Select Game Duration</h3>
-          <div class="time-options">
-            <button class="time-btn active" onclick="selectTime(5, this)">5 Mins</button>
-            <button class="time-btn" onclick="selectTime(10, this)">10 Mins</button>
-            <button class="time-btn" onclick="selectTime(15, this)">15 Mins</button>
-            <button class="time-btn" onclick="selectTime(20, this)">20 Mins</button>
-          </div>
-          <button class="green-btn" onclick="createCustomRoomSubmit()" style="margin-top:15px;">Create Room</button>
-          <button class="logout-btn" onclick="closeCustomModal()" style="margin-top:8px;">Cancel</button>
-        </div>
-      </div>
-
-      <!-- Friends View -->
+      <!-- Friends Tab View -->
       <div id="viewFriends" class="tab-view">
-        <div style="padding:10px;">
-          <h3>Add Friend</h3>
-          <div style="display:flex; gap:8px; margin-top:8px; margin-bottom:15px;">
-            <input type="text" id="friendInput" placeholder="Friend's Username..." style="flex:1; padding:10px; border-radius:6px; border:1px solid #333; background:#222; color:#fff;">
+        <div style="padding: 5px;">
+          <h3><i class="fa-solid fa-user-plus"></i> Add Friend</h3>
+          <div style="display:flex; gap:8px; margin-top:10px; margin-bottom:20px;">
+            <input type="text" id="friendInput" placeholder="Friend's Username..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:#fff;">
             <button class="green-btn" onclick="sendFriendRequest()" style="width: auto;">Send</button>
           </div>
 
-          <h4 style="margin-bottom:8px; color:#81b64c;">Pending Requests</h4>
-          <div id="pendingRequestsList" style="margin-bottom:15px;"></div>
+          <h4 style="margin-bottom:10px; color:#81b64c;"><i class="fa-solid fa-envelope-open-text"></i> Pending Requests</h4>
+          <div id="pendingRequestsList" style="margin-bottom:20px;"></div>
 
-          <h4 style="margin-bottom:8px; color:#aaa;">My Friends</h4>
+          <h4 style="margin-bottom:10px; color:#aaa;"><i class="fa-solid fa-users"></i> My Friends</h4>
           <div id="friendsList"></div>
         </div>
       </div>
 
-      <!-- Shop View -->
-      <div id="viewShop" class="tab-view"><div id="shopGrid"></div></div>
+      <!-- Shop Tab View -->
+      <div id="viewShop" class="tab-view">
+        <h3 style="margin-bottom:15px;"><i class="fa-solid fa-store"></i> Board Themes Shop</h3>
+        <div id="shopGrid"></div>
+      </div>
 
-      <!-- Profile & History View -->
+      <!-- Profile & History Tab View -->
       <div id="viewProfile" class="tab-view">
-        <div style="text-align:center; padding: 15px;">
-          <img id="profileAvatar" src="" style="width: 70px; height: 70px; border-radius: 50%;">
-          <h2 id="profileName">User</h2>
-          <p style="color:#aaa; font-size:0.9rem;">Rating: <span id="userElo">1200</span></p>
+        <div style="text-align:center; padding: 15px; background: #32302c; border-radius: 12px; margin-bottom: 15px;">
+          <img id="profileAvatar" src="" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid #81b64c;">
+          <h2 id="profileName" style="margin-top: 8px;">User</h2>
+          <p style="color:#aaa; font-size:0.9rem; margin-top: 4px;">Rating (Elo): <span id="userElo" style="color:#81b64c; font-weight:bold;">1200</span></p>
         </div>
 
-        <div style="padding: 10px;">
+        <div>
           <h3 style="margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left"></i> Game History</h3>
           <div id="gameHistoryList"></div>
-          <button class="logout-btn" onclick="handleLogout()" style="margin-top:20px;">Log Out</button>
+          <button class="logout-btn" onclick="handleLogout()" style="margin-top:20px;"><i class="fa-solid fa-right-from-bracket"></i> Log Out</button>
         </div>
       </div>
 
-      <!-- Bottom Nav -->
+      <!-- Bottom Navigation Bar -->
       <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchNav('Play')"><i class="fa-solid fa-gamepad"></i><span>Play</span></div>
-        <div class="nav-item" onclick="switchNav('Friends')"><i class="fa-solid fa-user-group"></i><span>Friends</span></div>
-        <div class="nav-item" onclick="switchNav('Shop')"><i class="fa-solid fa-store"></i><span>Shop</span></div>
-        <div class="nav-item" onclick="switchNav('Profile')"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+        <div class="nav-item active" onclick="switchNav('Play')">
+          <i class="fa-solid fa-gamepad"></i>
+          <span>Play</span>
+        </div>
+        <div class="nav-item" onclick="switchNav('Friends')">
+          <i class="fa-solid fa-user-group"></i>
+          <span>Friends</span>
+        </div>
+        <div class="nav-item" onclick="switchNav('Shop')">
+          <i class="fa-solid fa-store"></i>
+          <span>Shop</span>
+        </div>
+        <div class="nav-item" onclick="switchNav('Profile')">
+          <i class="fa-solid fa-user"></i>
+          <span>Profile</span>
+        </div>
       </div>
     </div>
 
-    <!-- Game Screen (Arena) -->
+    <!-- 3. Custom Room Duration Selection Modal -->
+    <div id="customModal" class="modal-overlay" style="display:none;">
+      <div class="modal-box">
+        <h3>Select Game Duration</h3>
+        <div class="time-options">
+          <button class="time-btn active" onclick="selectTime(5, this)">5 Mins</button>
+          <button class="time-btn" onclick="selectTime(10, this)">10 Mins</button>
+          <button class="time-btn" onclick="selectTime(15, this)">15 Mins</button>
+          <button class="time-btn" onclick="selectTime(20, this)">20 Mins</button>
+        </div>
+        <button class="green-btn" onclick="createCustomRoomSubmit()" style="margin-top:15px;">Create Room</button>
+        <button class="logout-btn" onclick="closeCustomModal()" style="margin-top:8px;">Cancel</button>
+      </div>
+    </div>
+
+    <!-- 4. Game Arena Screen -->
     <div id="gameScreen" class="screen">
       <div class="game-top-nav">
         <button class="icon-btn" onclick="leaveGame()"><i class="fa-solid fa-arrow-left"></i></button>
@@ -135,29 +162,33 @@
         <button class="icon-btn" onclick="toggleChat()"><i class="fa-solid fa-comment"></i></button>
       </div>
 
+      <!-- Opponent Info -->
       <div class="player-strip">
         <img id="gameOpponentAvatar" src="" class="player-avatar">
         <div class="player-meta"><span id="opponentName" class="p-name">Opponent</span></div>
         <div id="opponentTimer" class="timer-box">05:00</div>
       </div>
 
+      <!-- Chess Board -->
       <div class="board-wrapper">
         <div id="board" class="chess-board wood">
           <div id="board-grid" class="board-grid"></div>
         </div>
       </div>
 
+      <!-- Player Info -->
       <div class="player-strip active-strip">
         <img id="gameYourAvatar" src="" class="player-avatar">
         <div class="player-meta"><span id="yourName" class="p-name">You</span></div>
         <div id="yourTimer" class="timer-box">05:00</div>
       </div>
 
+      <!-- Move History -->
       <div class="move-history-bar">
         <div id="moveList" class="move-list-scroll"></div>
       </div>
 
-      <!-- Chat Drawer -->
+      <!-- In-Game Chat Drawer -->
       <div id="chatOverlay" class="chat-overlay" style="display:none;">
         <div class="chat-header">
           <h3>In-Game Chat</h3>
@@ -172,6 +203,7 @@
     </div>
 
   </div>
+
   <script src="client.js"></script>
 </body>
 </html>
