@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Chess Arena</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,7 +23,6 @@
         <div class="input-field"><i class="fa-solid fa-user"></i><input type="text" id="authUsername" placeholder="Username"></div>
         <div class="input-field"><i class="fa-solid fa-lock"></i><input type="password" id="authPassword" placeholder="Password"></div>
         <button id="authSubmitBtn" class="green-btn" onclick="handleAuth()">Sign In</button>
-        <div id="authError" class="error-msg"></div>
       </div>
     </div>
 
@@ -37,21 +36,21 @@
         <div class="coin-pill">🪙 <span id="topCoins">500</span></div>
       </div>
 
-      <!-- Tab 1: Play View -->
+      <!-- Play View -->
       <div id="viewPlay" class="tab-view active">
         <div class="mode-card" onclick="findMatch()">
           <i class="fa-solid fa-bolt mode-icon"></i>
           <div class="mode-info">
-            <h3>Quick Match</h3>
+            <h3>Quick Match (5 Mins)</h3>
             <p>Play with random online player</p>
           </div>
         </div>
 
-        <div class="mode-card" onclick="createCustomRoom()" style="margin-top: 10px;">
+        <div class="mode-card" onclick="openCustomRoomModal()" style="margin-top: 10px;">
           <i class="fa-solid fa-plus mode-icon"></i>
           <div class="mode-info">
             <h3>Create Custom Room</h3>
-            <p>Generate lobby code for friend</p>
+            <p>Select Time (5, 10, 15, 20 mins) & Play with Friends</p>
           </div>
         </div>
 
@@ -69,32 +68,57 @@
         </div>
       </div>
 
-      <!-- Tab 2: Friends View -->
-      <div id="viewFriends" class="tab-view">
-        <div style="padding:15px;">
-          <h3>Friends List</h3>
-          <div style="display:flex; gap:8px; margin-bottom:15px;">
-            <input type="text" id="friendInput" placeholder="Friend's Username..." style="flex:1; padding:8px; border-radius:6px; border:1px solid #333; background:#222; color:#fff;">
-            <button class="green-btn" onclick="addFriend()">Add Friend</button>
+      <!-- Custom Room Time Modal -->
+      <div id="customModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+          <h3>Select Game Duration</h3>
+          <div class="time-options">
+            <button class="time-btn active" onclick="selectTime(5, this)">5 Mins</button>
+            <button class="time-btn" onclick="selectTime(10, this)">10 Mins</button>
+            <button class="time-btn" onclick="selectTime(15, this)">15 Mins</button>
+            <button class="time-btn" onclick="selectTime(20, this)">20 Mins</button>
           </div>
+          <button class="green-btn" onclick="createCustomRoomSubmit()" style="margin-top:15px;">Create Room</button>
+          <button class="logout-btn" onclick="closeCustomModal()" style="margin-top:8px;">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Friends View -->
+      <div id="viewFriends" class="tab-view">
+        <div style="padding:10px;">
+          <h3>Add Friend</h3>
+          <div style="display:flex; gap:8px; margin-top:8px; margin-bottom:15px;">
+            <input type="text" id="friendInput" placeholder="Friend's Username..." style="flex:1; padding:10px; border-radius:6px; border:1px solid #333; background:#222; color:#fff;">
+            <button class="green-btn" onclick="sendFriendRequest()" style="width: auto;">Send</button>
+          </div>
+
+          <h4 style="margin-bottom:8px; color:#81b64c;">Pending Requests</h4>
+          <div id="pendingRequestsList" style="margin-bottom:15px;"></div>
+
+          <h4 style="margin-bottom:8px; color:#aaa;">My Friends</h4>
           <div id="friendsList"></div>
         </div>
       </div>
 
-      <!-- Tab 3: Shop View -->
+      <!-- Shop View -->
       <div id="viewShop" class="tab-view"><div id="shopGrid"></div></div>
 
-      <!-- Tab 4: Profile View -->
+      <!-- Profile & History View -->
       <div id="viewProfile" class="tab-view">
-        <div style="text-align:center; padding: 20px;">
-          <img id="profileAvatar" src="" style="width: 80px; height: 80px; border-radius: 50%;">
+        <div style="text-align:center; padding: 15px;">
+          <img id="profileAvatar" src="" style="width: 70px; height: 70px; border-radius: 50%;">
           <h2 id="profileName">User</h2>
-          <p>Rating: <span id="userElo">1200</span></p>
-          <button class="logout-btn" onclick="handleLogout()">Log Out</button>
+          <p style="color:#aaa; font-size:0.9rem;">Rating: <span id="userElo">1200</span></p>
+        </div>
+
+        <div style="padding: 10px;">
+          <h3 style="margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left"></i> Game History</h3>
+          <div id="gameHistoryList"></div>
+          <button class="logout-btn" onclick="handleLogout()" style="margin-top:20px;">Log Out</button>
         </div>
       </div>
 
-      <!-- Bottom Navigation -->
+      <!-- Bottom Nav -->
       <div class="bottom-nav">
         <div class="nav-item active" onclick="switchNav('Play')"><i class="fa-solid fa-gamepad"></i><span>Play</span></div>
         <div class="nav-item" onclick="switchNav('Friends')"><i class="fa-solid fa-user-group"></i><span>Friends</span></div>
@@ -114,7 +138,7 @@
       <div class="player-strip">
         <img id="gameOpponentAvatar" src="" class="player-avatar">
         <div class="player-meta"><span id="opponentName" class="p-name">Opponent</span></div>
-        <div id="opponentTimer" style="margin-left:auto; background:#222; padding:4px 8px; border-radius:6px; font-weight:bold;">05:00</div>
+        <div id="opponentTimer" class="timer-box">05:00</div>
       </div>
 
       <div class="board-wrapper">
@@ -126,7 +150,7 @@
       <div class="player-strip active-strip">
         <img id="gameYourAvatar" src="" class="player-avatar">
         <div class="player-meta"><span id="yourName" class="p-name">You</span></div>
-        <div id="yourTimer" style="margin-left:auto; background:#222; padding:4px 8px; border-radius:6px; font-weight:bold;">05:00</div>
+        <div id="yourTimer" class="timer-box">05:00</div>
       </div>
 
       <div class="move-history-bar">
@@ -134,18 +158,17 @@
       </div>
 
       <!-- Chat Drawer -->
-      <div id="chatOverlay" style="display:none; position:fixed; bottom:0; left:0; right:0; top:50%; background:#1e1e1e; border-top-left-radius:16px; border-top-right-radius:16px; padding:15px; z-index:100; flex-direction:column;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <h3 style="margin:0;">In-Game Chat</h3>
-          <button onclick="toggleChat()" style="background:none; border:none; color:#fff; font-size:1.2rem;">✕</button>
+      <div id="chatOverlay" class="chat-overlay" style="display:none;">
+        <div class="chat-header">
+          <h3>In-Game Chat</h3>
+          <button onclick="toggleChat()" class="close-chat-btn">✕</button>
         </div>
-        <div id="chatBox" style="flex:1; overflow-y:auto; background:#121212; padding:10px; border-radius:8px; margin-bottom:10px;"></div>
-        <div style="display:flex; gap:5px;">
-          <input type="text" id="chatInput" placeholder="Send message..." style="flex:1; padding:8px; border-radius:6px; border:1px solid #333; background:#222; color:#fff;">
-          <button class="green-btn" onclick="sendChat()" style="padding:8px 15px;">Send</button>
+        <div id="chatBox" class="chat-box"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Send message...">
+          <button class="green-btn" onclick="sendChat()" style="width:auto;">Send</button>
         </div>
       </div>
-
     </div>
 
   </div>
