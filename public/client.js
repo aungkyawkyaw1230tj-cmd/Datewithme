@@ -15,12 +15,12 @@ let ownedBoards = ['wood', 'marble'];
 let equippedBoard = 'wood';
 
 const SHOP_BOARDS = [
-  { id: 'wood', name: 'Classic Wood', price: 0, img: 'assets/images/wood.png' },
-  { id: 'marble', name: 'Royal Marble', price: 0, img: 'assets/images/marble.png' },
-  { id: 'gxw', name: 'Emerald Green', price: 150, img: 'assets/images/gxw.png' },
-  { id: 'dxw', name: 'Dark Walnut', price: 250, img: 'assets/images/dxw.png' },
-  { id: 'bxw', name: 'Ocean Blue', price: 350, img: 'assets/images/bxw.png' },
-  { id: 'bxb', name: 'Cyber Blue', price: 500, img: 'assets/images/bxb.png' }
+  { id: 'wood', name: 'Classic Wood', price: 0, img: '/assets/images/wood.png' },
+  { id: 'marble', name: 'Royal Marble', price: 0, img: '/assets/images/marble.png' },
+  { id: 'gxw', name: 'Emerald Green', price: 150, img: '/assets/images/gxw.png' },
+  { id: 'dxw', name: 'Dark Walnut', price: 250, img: '/assets/images/dxw.png' },
+  { id: 'bxw', name: 'Ocean Blue', price: 350, img: '/assets/images/bxw.png' },
+  { id: 'bxb', name: 'Cyber Blue', price: 500, img: '/assets/images/bxb.png' }
 ];
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -33,6 +33,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadUserData() {
+  if (!currentUser) return;
   const savedCoins = localStorage.getItem(`coins_${currentUser}`);
   const savedStats = localStorage.getItem(`stats_${currentUser}`);
   const savedOwned = localStorage.getItem(`owned_${currentUser}`);
@@ -48,20 +49,25 @@ function loadUserData() {
 
 function updateProfileUI() {
   const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser}`;
-  document.getElementById('topAvatar').src = avatarUrl;
-  document.getElementById('profileAvatar').src = avatarUrl;
-  document.getElementById('gameYourAvatar').src = avatarUrl;
+  
+  if (document.getElementById('topAvatar')) document.getElementById('topAvatar').src = avatarUrl;
+  if (document.getElementById('profileAvatar')) document.getElementById('profileAvatar').src = avatarUrl;
+  if (document.getElementById('gameYourAvatar')) document.getElementById('gameYourAvatar').src = avatarUrl;
 
-  document.getElementById('topUsername').innerText = currentUser;
-  document.getElementById('profileName').innerText = currentUser;
-  document.getElementById('topCoins').innerText = userCoins;
-  document.getElementById('userElo').innerText = userElo;
+  if (document.getElementById('topUsername')) document.getElementById('topUsername').innerText = currentUser;
+  if (document.getElementById('profileName')) document.getElementById('profileName').innerText = currentUser;
+  if (document.getElementById('topCoins')) document.getElementById('topCoins').innerText = userCoins;
+  if (document.getElementById('userElo')) document.getElementById('userElo').innerText = userElo;
 
-  document.getElementById('statGames').innerText = userStats.played;
-  document.getElementById('statWins').innerText = userStats.wins;
-  document.getElementById('statLosses').innerText = userStats.losses;
+  if (document.getElementById('statGames')) document.getElementById('statGames').innerText = userStats.played;
+  if (document.getElementById('statWins')) document.getElementById('statWins').innerText = userStats.wins;
+  if (document.getElementById('statLosses')) document.getElementById('statLosses').innerText = userStats.losses;
 
-  document.getElementById('board').className = `chess-board ${equippedBoard}`;
+  // Board Element Class Name ကို equippedBoard အတိုင်း တိုက်ရိုက်ပြောင်းလဲပေးခြင်း
+  const boardElem = document.getElementById('board');
+  if (boardElem) {
+    boardElem.className = `chess-board ${equippedBoard}`;
+  }
 }
 
 // Navigation Bar Switcher
@@ -130,7 +136,7 @@ function showMainApp() {
   updateProfileUI();
 }
 
-// Game Matchmaking
+// Matchmaking
 function findMatch() {
   document.getElementById('matchSearchStatus').style.display = 'flex';
   socket.emit('findMatch', { username: currentUser });
@@ -159,14 +165,19 @@ function leaveGame() {
   showMainApp();
 }
 
-// Board Rendering (Rotates if Black)
 function getSquareNotation(row, col) {
   const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
   const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
   return files[col] + ranks[row];
 }
 
+// Board ရေးဆွဲချိန်တွင် လက်ရှိ Equip လုပ်ထားသော Skin ကို အမြဲတမ်း ယူသုံးရန်
 function renderBoard() {
+  const boardElem = document.getElementById('board');
+  if (boardElem) {
+    boardElem.className = `chess-board ${equippedBoard}`;
+  }
+
   const boardGrid = document.getElementById('board-grid');
   boardGrid.innerHTML = '';
   const boardState = game.board();
@@ -204,6 +215,7 @@ function renderBoard() {
 
 function updateMoveHistory() {
   const moveList = document.getElementById('moveList');
+  if (!moveList) return;
   moveList.innerHTML = '';
   const history = game.history();
 
@@ -234,9 +246,10 @@ function handleSquareClick(square) {
   renderBoard();
 }
 
-// Shop Logic
+// Shop Rendering & Buying Logic
 function renderShop() {
   const shopGrid = document.getElementById('shopGrid');
+  if (!shopGrid) return;
   shopGrid.innerHTML = '';
 
   SHOP_BOARDS.forEach(item => {
@@ -248,12 +261,14 @@ function renderShop() {
     div.style.marginBottom = '10px';
 
     let btnText = isEquipped ? 'Equipped' : (isOwned ? 'Equip' : `Buy 🪙${item.price}`);
+    let btnStyle = isEquipped ? 'background: #363431; color: #989795; cursor: default;' : '';
+
     div.innerHTML = `
-      <div style="width: 40px; height: 40px; background-image: url('${item.img}'); background-size: cover; border-radius: 6px;"></div>
+      <div style="width: 44px; height: 44px; background-image: url('${item.img}'); background-size: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"></div>
       <div class="mode-info">
         <h3>${item.name}</h3>
       </div>
-      <button class="green-btn" style="padding: 6px 12px; font-size:0.8rem;" onclick="handleShopClick('${item.id}', ${item.price})">${btnText}</button>
+      <button class="green-btn" style="padding: 6px 14px; font-size: 0.85rem; ${btnStyle}" onclick="handleShopClick('${item.id}', ${item.price})">${btnText}</button>
     `;
     shopGrid.appendChild(div);
   });
@@ -261,6 +276,7 @@ function renderShop() {
 
 function handleShopClick(id, price) {
   if (equippedBoard === id) return;
+
   if (ownedBoards.includes(id)) {
     equippedBoard = id;
   } else if (userCoins >= price) {
@@ -271,9 +287,14 @@ function handleShopClick(id, price) {
     alert('Coin မလုံလောက်ပါ!');
     return;
   }
-  localStorage.setItem(`coins_${currentUser}`, userCoins);
-  localStorage.setItem(`owned_${currentUser}`, JSON.stringify(ownedBoards));
-  localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
+
+  // LocalStorage ထဲ သိမ်းဆည်းခြင်း
+  if (currentUser) {
+    localStorage.setItem(`coins_${currentUser}`, userCoins);
+    localStorage.setItem(`owned_${currentUser}`, JSON.stringify(ownedBoards));
+    localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
+  }
+
   updateProfileUI();
   renderShop();
-}
+  }
