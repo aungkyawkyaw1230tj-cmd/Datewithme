@@ -388,10 +388,10 @@ body {
   font-weight: 700;
 }
 
-/* Dynamic Skins */
-.chess-board.wood { background-image: url('assets/images/wood.png') !important; }
-.chess-board.marble { background-image: url('assets/images/marble.png') !important; }
-.chess-board.gxw { background-image: url('assets/images/gxw.png') !important; }
-.chess-board.dxw { background-image: url('assets/images/dxw.png') !important; }
-.chess-board.bxw { background-image: url('assets/images/bxw.png') !important; }
-.chess-board.bxb { background-image: url('assets/images/bxb.png') !important; }
+/* Dynamic Board Skins (Root Path /assets/images/ ဖြင့် ပြင်ဆင်ထားပါသည်) */
+.chess-board.wood { background-image: url('/assets/images/wood.png') !important; }
+.chess-board.marble { background-image: url('/assets/images/marble.png') !important; }
+.chess-board.gxw { background-image: url('/assets/images/gxw.png') !important; }
+.chess-board.dxw { background-image: url('/assets/images/dxw.png') !important; }
+.chess-board.bxw { background-image: url('/assets/images/bxw.png') !important; }
+.chess-board.bxb { background-image: url('/assets/images/bxb.png') !important; }
