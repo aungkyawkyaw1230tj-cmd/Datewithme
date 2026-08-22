@@ -1,26 +1,568 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
 <head>
-  <meta charset="UTF-8">
-  <title>Multiplayer Chess</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Board Game UI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Victory Effects -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'Padauk', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#6366f1',
+                            accentHover: '#4f46e5',
+                            playerX: '#ec4899',
+                            playerO: '#06b6d4',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', 'Padauk', sans-serif;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .board-tile {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .board-tile:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.4);
+        }
+        .active-turn {
+            animation: pulse-glow 1.5s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.4); }
+            100% { box-shadow: 0 0 22px rgba(99, 102, 241, 0.9); }
+        }
+    </style>
 </head>
-<body>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between items-center p-4 select-none">
 
-  <div class="controls">
-    <label for="skinSelect">Board Skin: </label>
-    <select id="skinSelect">
-      <option value="wood">Wood</option>
-      <option value="marble">Marble</option>
-    </select>
-  </div>
+    <!-- Top Navigation UI -->
+    <header class="w-full max-w-4xl flex items-center justify-between glass-panel px-6 py-3 rounded-2xl shadow-xl mt-2">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-gamepad"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                    Board Master Studio
+                </h1>
+                <p class="text-xs text-slate-400">Interactive Game Arena</p>
+            </div>
+        </div>
 
-  <div id="board" class="chess-board wood">
-    <div id="board-grid" class="board-grid"></div>
-  </div>
+        <div class="flex items-center gap-2">
+            <!-- Game Mode Selector -->
+            <select id="gridSizeSelect" onchange="changeGridSize()" class="bg-slate-800 text-sm border border-slate-700 text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                <option value="3">3 x 3 Mode</option>
+                <option value="4">4 x 4 Mode</option>
+                <option value="5">5 x 5 Mode</option>
+            </select>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-  <script src="client.js"></script>
+            <!-- Sound Toggle Button -->
+            <button id="soundBtn" onclick="toggleSound()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
+                <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+            </button>
+
+            <!-- Settings Button -->
+            <button onclick="openSettings()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Section (Centered Layout) -->
+    <main class="w-full max-w-4xl flex-1 flex flex-col items-center justify-center my-6 gap-6">
+
+        <!-- Scoreboard / Player Status UI Cards -->
+        <div class="w-full grid grid-cols-2 sm:grid-cols-3 gap-4 items-center">
+            
+            <!-- Player X Status Card -->
+            <div id="playerXCard" class="glass-panel p-4 rounded-2xl flex items-center gap-3 border-l-4 border-pink-500 transition-all active-turn">
+                <div class="w-12 h-12 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center text-2xl font-bold">
+                    X
+                </div>
+                <div>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Player 1</span>
+                    <h3 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+                        Player X
+                    </h3>
+                    <div class="text-xs text-pink-400 font-semibold">Score: <span id="scoreX">0</span></div>
+                </div>
+            </div>
+
+            <!-- Turn Status & Timer Indicator -->
+            <div class="hidden sm:flex flex-col items-center justify-center glass-panel p-3 rounded-2xl text-center">
+                <span class="text-xs text-slate-400 mb-1">CURRENT TURN</span>
+                <div id="turnBadge" class="px-4 py-1 rounded-full text-sm font-bold bg-pink-500/20 text-pink-400 border border-pink-500/40 flex items-center gap-2">
+                    <span id="turnText">Player X's Turn</span>
+                </div>
+                <div class="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                    <i class="fa-regular fa-clock"></i> <span id="timerText">15s</span>
+                </div>
+            </div>
+
+            <!-- Player O Status Card -->
+            <div id="playerOCard" class="glass-panel p-4 rounded-2xl flex items-center gap-3 border-r-4 border-cyan-500 justify-end transition-all opacity-60">
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Player 2</span>
+                    <h3 class="font-bold text-lg text-slate-100">
+                        Player O
+                    </h3>
+                    <div class="text-xs text-cyan-400 font-semibold">Score: <span id="scoreO">0</span></div>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-2xl font-bold">
+                    O
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Center Game Board Wrapper -->
+        <div class="relative w-full flex flex-col items-center justify-center">
+            
+            <!-- The Centered Board Canvas/Grid Container -->
+            <div id="boardContainer" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-2xl shadow-indigo-950/50 transition-all duration-300 w-full max-w-[420px] aspect-square flex items-center justify-center">
+                <!-- Tiles generated dynamically via JavaScript -->
+                <div id="gameBoard" class="grid grid-cols-3 gap-3 w-full h-full"></div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Game Controls UI -->
+        <div class="glass-panel px-6 py-3 rounded-2xl flex items-center gap-4 shadow-lg">
+            <button onclick="undoMove()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-all active:scale-95">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Undo</span>
+            </button>
+
+            <button onclick="resetGame()" class="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all shadow-lg shadow-indigo-600/30 active:scale-95">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>New Game</span>
+            </button>
+
+            <button onclick="toggleVsAI()" id="aiToggleBtn" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-all active:scale-95">
+                <i class="fa-solid fa-robot"></i>
+                <span id="aiBtnText">VS Human</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer Status Banner -->
+    <footer class="text-xs text-slate-500 text-center py-2 flex items-center gap-2">
+        <i class="fa-solid fa-shield-halved text-indigo-400"></i>
+        <span>Smooth Physics & Modern Responsive Board Controls Active</span>
+    </footer>
+
+    <!-- Game Victory Modal -->
+    <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+        <div class="glass-panel p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl border border-indigo-500/30 transform scale-95 transition-all">
+            <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-amber-400 to-pink-500 flex items-center justify-center text-4xl text-white shadow-lg shadow-amber-500/30 mb-4 animate-bounce">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 id="winnerTitle" class="text-2xl font-bold text-white mb-2">Victory!</h2>
+            <p id="winnerSubtitle" class="text-slate-300 text-sm mb-6">Player X wins this round!</p>
+            
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeVictoryModal(); resetGame();" class="w-full py-3 bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:opacity-90 transition-all">
+                    Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+        <div class="glass-panel p-6 rounded-3xl max-w-md w-full text-left shadow-2xl border border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-400"></i> Game Settings
+                </h3>
+                <button onclick="closeSettings()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-300">
+                <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                    <span>Sound Effects</span>
+                    <input type="checkbox" id="soundToggleCheck" checked onchange="toggleSound()" class="w-4 h-4 accent-indigo-500">
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                    <span>Turn Timer (15 Seconds)</span>
+                    <input type="checkbox" id="timerToggleCheck" checked onchange="toggleTimerSetting()" class="w-4 h-4 accent-indigo-500">
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <span>Reset Scores</span>
+                    <button onclick="resetScores()" class="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 text-xs">
+                        Reset All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Audio API Synthesizer (No external audio files needed) -->
+    <script>
+        // Game State Variables
+        let gridSize = 3;
+        let board = [];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let scores = { X: 0, O: 0 };
+        let historyStack = [];
+        let isVsAI = false;
+        let soundEnabled = true;
+        let timerEnabled = true;
+        let timerInterval = null;
+        let timeLeft = 15;
+
+        // Sound Effects Generator using Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'move') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(currentPlayer === 'X' ? 440 : 587.33, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                }
+            } catch (e) {
+                console.log("Audio playback error", e);
+            }
+        }
+
+        // Initialize App
+        function initGame() {
+            board = Array(gridSize * gridSize).fill('');
+            historyStack = [];
+            currentPlayer = 'X';
+            gameActive = true;
+            renderBoard();
+            updateTurnUI();
+            startTimer();
+        }
+
+        // Render Centered Grid Board
+        function renderBoard() {
+            const boardElem = document.getElementById('gameBoard');
+            boardElem.innerHTML = '';
+            boardElem.style.gridTemplateColumns = `repeat(${gridSize}, minmax(0, 1fr))`;
+
+            board.forEach((cell, index) => {
+                const tile = document.createElement('button');
+                tile.className = `board-tile rounded-2xl glass-panel font-bold flex items-center justify-center cursor-pointer transition-all border border-slate-700/60 shadow-md ${
+                    gridSize === 3 ? 'text-4xl' : gridSize === 4 ? 'text-3xl' : 'text-2xl'
+                } ${cell === 'X' ? 'text-pink-500' : 'text-cyan-400'}`;
+                
+                tile.innerHTML = cell ? `<span class="transform scale-100 transition-transform duration-200">${cell}</span>` : '';
+                tile.disabled = cell !== '' || !gameActive;
+                tile.onclick = () => makeMove(index);
+
+                boardElem.appendChild(tile);
+            });
+        }
+
+        // Make Player Move
+        function makeMove(index) {
+            if (board[index] !== '' || !gameActive) return;
+
+            board[index] = currentPlayer;
+            historyStack.push(index);
+            playSound('move');
+            renderBoard();
+
+            if (checkWin(board, currentPlayer)) {
+                handleWin(currentPlayer);
+                return;
+            }
+
+            if (board.every(cell => cell !== '')) {
+                handleDraw();
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateTurnUI();
+            resetTimer();
+
+            // AI Move Handler
+            if (isVsAI && currentPlayer === 'O' && gameActive) {
+                setTimeout(makeAIMove, 400);
+            }
+        }
+
+        // Simple Smart AI
+        function makeAIMove() {
+            if (!gameActive) return;
+            let emptyIndices = board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+            if (emptyIndices.length === 0) return;
+
+            // AI Check if can win
+            for (let idx of emptyIndices) {
+                let tempBoard = [...board];
+                tempBoard[idx] = 'O';
+                if (checkWin(tempBoard, 'O')) {
+                    makeMove(idx);
+                    return;
+                }
+            }
+
+            // AI Block Player X
+            for (let idx of emptyIndices) {
+                let tempBoard = [...board];
+                tempBoard[idx] = 'X';
+                if (checkWin(tempBoard, 'X')) {
+                    makeMove(idx);
+                    return;
+                }
+            }
+
+            // Random move
+            let randomIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+            makeMove(randomIdx);
+        }
+
+        // Win Condition Checker for N x N Grid
+        function checkWin(b, player) {
+            const winLines = [];
+
+            // Rows & Columns
+            for (let i = 0; i < gridSize; i++) {
+                let row = [], col = [];
+                for (let j = 0; j < gridSize; j++) {
+                    row.push(i * gridSize + j);
+                    col.push(j * gridSize + i);
+                }
+                winLines.push(row, col);
+            }
+
+            // Diagonals
+            let diag1 = [], diag2 = [];
+            for (let i = 0; i < gridSize; i++) {
+                diag1.push(i * gridSize + i);
+                diag2.push(i * gridSize + (gridSize - 1 - i));
+            }
+            winLines.push(diag1, diag2);
+
+            return winLines.some(line => line.every(index => b[index] === player));
+        }
+
+        // Handle Victory State
+        function handleWin(winner) {
+            gameActive = false;
+            clearInterval(timerInterval);
+            scores[winner]++;
+            document.getElementById(`score${winner}`).innerText = scores[winner];
+            playSound('win');
+
+            // Trigger Confetti Celebration
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            setTimeout(() => {
+                document.getElementById('winnerTitle').innerText = 'Victory!';
+                document.getElementById('winnerSubtitle').innerText = `Player ${winner} wins this match!`;
+                document.getElementById('victoryModal').classList.remove('hidden');
+            }, 300);
+        }
+
+        // Handle Draw State
+        function handleDraw() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            setTimeout(() => {
+                document.getElementById('winnerTitle').innerText = 'Draw!';
+                document.getElementById('winnerSubtitle').innerText = 'Well played both sides!';
+                document.getElementById('victoryModal').classList.remove('hidden');
+            }, 300);
+        }
+
+        // Undo Last Move
+        function undoMove() {
+            if (historyStack.length === 0 || !gameActive) return;
+            
+            let lastIndex = historyStack.pop();
+            board[lastIndex] = '';
+            
+            if (isVsAI && historyStack.length > 0) {
+                let aiLastIndex = historyStack.pop();
+                board[aiLastIndex] = '';
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            }
+
+            renderBoard();
+            updateTurnUI();
+            resetTimer();
+        }
+
+        // Update Turn Indicators & Highlight Cards
+        function updateTurnUI() {
+            const cardX = document.getElementById('playerXCard');
+            const cardO = document.getElementById('playerOCard');
+            const turnText = document.getElementById('turnText');
+            const turnBadge = document.getElementById('turnBadge');
+
+            if (currentPlayer === 'X') {
+                cardX.classList.add('active-turn', 'opacity-100');
+                cardX.classList.remove('opacity-60');
+                cardO.classList.remove('active-turn', 'opacity-100');
+                cardO.classList.add('opacity-60');
+
+                turnText.innerText = "Player X's Turn";
+                turnBadge.className = "px-4 py-1 rounded-full text-sm font-bold bg-pink-500/20 text-pink-400 border border-pink-500/40 flex items-center gap-2";
+            } else {
+                cardO.classList.add('active-turn', 'opacity-100');
+                cardO.classList.remove('opacity-60');
+                cardX.classList.remove('active-turn', 'opacity-100');
+                cardX.classList.add('opacity-60');
+
+                turnText.innerText = isVsAI ? "Computer AI Thinking..." : "Player O's Turn";
+                turnBadge.className = "px-4 py-1 rounded-full text-sm font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center gap-2";
+            }
+        }
+
+        // Timer Functionality
+        function startTimer() {
+            if (!timerEnabled) return;
+            clearInterval(timerInterval);
+            timeLeft = 15;
+            document.getElementById('timerText').innerText = `${timeLeft}s`;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timerText').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    // Time out switch turn
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    updateTurnUI();
+                    resetTimer();
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            startTimer();
+        }
+
+        // Change Grid Size
+        function changeGridSize() {
+            gridSize = parseInt(document.getElementById('gridSizeSelect').value);
+            resetGame();
+        }
+
+        // Toggle vs Computer Mode
+        function toggleVsAI() {
+            isVsAI = !isVsAI;
+            document.getElementById('aiBtnText').innerText = isVsAI ? "VS Computer" : "VS Human";
+            resetGame();
+        }
+
+        // Toggle Sound Effects
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundIcon').className = soundEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
+            document.getElementById('soundToggleCheck').checked = soundEnabled;
+        }
+
+        // Reset Game Board
+        function resetGame() {
+            closeVictoryModal();
+            initGame();
+        }
+
+        function closeVictoryModal() {
+            document.getElementById('victoryModal').classList.add('hidden');
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function toggleTimerSetting() {
+            timerEnabled = document.getElementById('timerToggleCheck').checked;
+            if (!timerEnabled) {
+                clearInterval(timerInterval);
+                document.getElementById('timerText').innerText = 'Off';
+            } else {
+                startTimer();
+            }
+        }
+
+        function resetScores() {
+            scores = { X: 0, O: 0 };
+            document.getElementById('scoreX').innerText = '0';
+            document.getElementById('scoreO').innerText = '0';
+            closeSettings();
+        }
+
+        // Window Load Initialization
+        window.onload = initGame;
+    </script>
 </body>
 </html>
+```eof
+
+Board UI အတွက် ဖြည့်စွက်ပေးထားသော အင်္ဂါရပ်များ -
+
+1. **အလယ်တည့်တည့် နေရာချထားခြင်း (Centered Board Layout):** Flexbox နဲ့ Glassmorphism Design သုံးပြီး Board ကို မျက်နှာပြင်ရဲ့ အလယ်တည့်တည့်မှာ ကြည့်ကောင်းအောင် နေရာချထားပေးပါသည်။
+2. **Player Scoreboard & Status Cards:** Player 1 (X) နဲ့ Player 2 (O) တို့ရဲ့ အလှည့်ကျမီးရောင် (Active Glow Effect)၊ Score ထိန်းသိမ်းမှုနဲ့ Turn Timer လေးပါဝင်ပါသည်။
+3. **Game Controls:** 
+   - **Undo:** မှားနှိပ်မိပါက နောက်တစ်ဆင့် ပြန်ဆုတ်နိုင်မည့် ခလုတ်။
+   - **New Game:** Board ကို အသစ်ပြန်စနိုင်မည့် ခလုတ်။
+   - **VS Computer / Human Mode:** 2 Players ကစားမလား သို့မဟုတ် AI နဲ့ ကစားမလား စိတ်ကြိုက်ရွေးချယ်နိုင်ခြင်း။
+4. **Grid Size Selector:** 3x3, 4x4, 5x5 အထိ Mode အမျိုးမျိုး ရွေးချယ်နိုင်ပါသည်။
+5. **Interactive UI & Sound Effects:** Tile လေးတွေကို နှိပ်တဲ့အခါ အသံနဲ့ Animation များ၊ အနိုင်ရသည့်အခါ Confetti ပစ်လွှတ်ပေးမည့် Victory Popup Modal ပါဝင်ပါသည်။
+
+စမ်းသပ်ကြည့်ပြီး အဆင်ပြေမပြေ သို့မဟုတ် အခြား အပြင်အဆင် ထပ်မံထည့်သွင်းချင်ပါက ပြောပြနိုင်ပါတယ်။
