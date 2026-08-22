@@ -7,33 +7,81 @@ let playerColor = 'w';
 let isAuthModeLogin = true;
 let selectedSquare = null;
 
-const boardGrid = document.getElementById('board-grid');
+// User Data & Profile State
+let userCoins = 500;
+let userElo = 1200;
+let userStats = { played: 0, wins: 0, losses: 0 };
+let ownedBoards = ['wood', 'marble'];
+let equippedBoard = 'wood';
 
-// Page Reload လုပ်ပါက Auto Login စစ်ပေးခြင်း
+const SHOP_BOARDS = [
+  { id: 'wood', name: 'Classic Wood', price: 0, img: 'assets/images/wood.png' },
+  { id: 'marble', name: 'Royal Marble', price: 0, img: 'assets/images/marble.png' },
+  { id: 'gxw', name: 'Emerald Green', price: 150, img: 'assets/images/gxw.png' },
+  { id: 'dxw', name: 'Dark Walnut', price: 250, img: 'assets/images/dxw.png' },
+  { id: 'bxw', name: 'Ocean Blue', price: 350, img: 'assets/images/bxw.png' },
+  { id: 'bxb', name: 'Cyber Blue', price: 500, img: 'assets/images/bxb.png' }
+];
+
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('chess_username');
   if (savedUser) {
     currentUser = savedUser;
-    showLobby();
+    loadUserData();
+    showMainApp();
   }
 });
 
-// Logout လုပ်ရန်
-function handleLogout() {
-  localStorage.removeItem('chess_username');
-  currentUser = null;
-  document.getElementById('lobbyScreen').style.display = 'none';
-  document.getElementById('gameScreen').style.display = 'none';
-  document.getElementById('authScreen').style.display = 'block';
+function loadUserData() {
+  const savedCoins = localStorage.getItem(`coins_${currentUser}`);
+  const savedStats = localStorage.getItem(`stats_${currentUser}`);
+  const savedOwned = localStorage.getItem(`owned_${currentUser}`);
+  const savedEquipped = localStorage.getItem(`equipped_${currentUser}`);
+
+  if (savedCoins !== null) userCoins = parseInt(savedCoins);
+  if (savedStats !== null) userStats = JSON.parse(savedStats);
+  if (savedOwned !== null) ownedBoards = JSON.parse(savedOwned);
+  if (savedEquipped !== null) equippedBoard = savedEquipped;
+
+  updateProfileUI();
 }
 
-function toggleAuthMode() {
-  isAuthModeLogin = !isAuthModeLogin;
-  document.getElementById('authTitle').innerText = isAuthModeLogin ? 'Sign In' : 'Sign Up';
-  document.getElementById('authBtn').innerText = isAuthModeLogin ? 'Sign In' : 'Sign Up';
-  document.getElementById('toggleText').innerText = isAuthModeLogin 
-    ? 'အကောင့်မရှိသေးပါက Sign Up လုပ်ပါ' 
-    : 'အကောင့်ရှိပြီးသားပါက Sign In လုပ်ပါ';
+function updateProfileUI() {
+  const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser}`;
+  document.getElementById('topAvatar').src = avatarUrl;
+  document.getElementById('profileAvatar').src = avatarUrl;
+  document.getElementById('gameYourAvatar').src = avatarUrl;
+
+  document.getElementById('topUsername').innerText = currentUser;
+  document.getElementById('profileName').innerText = currentUser;
+  document.getElementById('topCoins').innerText = userCoins;
+  document.getElementById('userElo').innerText = userElo;
+
+  document.getElementById('statGames').innerText = userStats.played;
+  document.getElementById('statWins').innerText = userStats.wins;
+  document.getElementById('statLosses').innerText = userStats.losses;
+
+  document.getElementById('board').className = `chess-board ${equippedBoard}`;
+}
+
+// Navigation Bar Switcher
+function switchNav(tabName) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+
+  const indexMap = { 'Play': 0, 'Puzzles': 1, 'Shop': 2, 'Profile': 3 };
+  document.querySelectorAll('.nav-item')[indexMap[tabName]].classList.add('active');
+  document.getElementById(`view${tabName}`).classList.add('active');
+
+  if (tabName === 'Shop') renderShop();
+}
+
+// Auth Handlers
+function switchAuthTab(isLogin) {
+  isAuthModeLogin = isLogin;
+  document.getElementById('tabLoginBtn').className = `auth-tab ${isLogin ? 'active' : ''}`;
+  document.getElementById('tabSignupBtn').className = `auth-tab ${!isLogin ? 'active' : ''}`;
+  document.getElementById('authSubmitBtn').innerText = isLogin ? 'Sign In' : 'Sign Up';
 }
 
 async function handleAuth() {
@@ -57,38 +105,45 @@ async function handleAuth() {
   } else {
     if (isAuthModeLogin) {
       currentUser = data.username;
-      localStorage.setItem('chess_username', currentUser); // LocalStorage တွင် မှတ်ထားခြင်း
-      showLobby();
+      localStorage.setItem('chess_username', currentUser);
+      loadUserData();
+      showMainApp();
     } else {
       alert('Sign Up အောင်မြင်ပါသည်။ Sign In ပြန်ဝင်ပါ။');
-      toggleAuthMode();
+      switchAuthTab(true);
     }
   }
 }
 
-function showLobby() {
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('gameScreen').style.display = 'none';
-  document.getElementById('lobbyScreen').style.display = 'block';
-  document.getElementById('displayUsername').innerText = currentUser;
+function handleLogout() {
+  localStorage.removeItem('chess_username');
+  currentUser = null;
+  document.getElementById('mainApp').classList.remove('active');
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('authScreen').classList.add('active');
 }
 
+function showMainApp() {
+  document.getElementById('authScreen').classList.remove('active');
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('mainApp').classList.add('active');
+  updateProfileUI();
+}
+
+// Game Matchmaking
 function findMatch() {
-  document.getElementById('findMatchBtn').disabled = true;
-  document.getElementById('matchStatus').innerText = 'ပြိုင်ဘက် ရှာဖွေနေပါသည်... ⏳';
+  document.getElementById('matchSearchStatus').style.display = 'flex';
   socket.emit('findMatch', { username: currentUser });
 }
-
-socket.on('waitingForOpponent', () => {
-  document.getElementById('matchStatus').innerText = 'ပြိုင်ဘက် စောင့်ဆိုင်းနေပါသည်...';
-});
 
 socket.on('matchFound', (data) => {
   currentRoom = data.roomId;
   playerColor = data.color;
 
-  document.getElementById('lobbyScreen').style.display = 'none';
-  document.getElementById('gameScreen').style.display = 'block';
+  document.getElementById('matchSearchStatus').style.display = 'none';
+  document.getElementById('mainApp').classList.remove('active');
+  document.getElementById('gameScreen').classList.add('active');
+
   document.getElementById('yourName').innerText = `${currentUser} (${playerColor === 'w' ? 'White' : 'Black'})`;
   document.getElementById('opponentName').innerText = `${data.opponent} (${playerColor === 'w' ? 'Black' : 'White'})`;
 
@@ -100,18 +155,22 @@ socket.on('opponentMove', (move) => {
   renderBoard();
 });
 
+function leaveGame() {
+  showMainApp();
+}
+
+// Board Rendering (Rotates if Black)
 function getSquareNotation(row, col) {
   const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
   const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
   return files[col] + ranks[row];
 }
 
-// Board ရေးဆွဲခြင်း (Black ဖြစ်ပါက Board ကို လှည့်ဆွဲပေးမည်)
 function renderBoard() {
+  const boardGrid = document.getElementById('board-grid');
   boardGrid.innerHTML = '';
   const boardState = game.board();
 
-  // White ဆိုရင် 0->7 ၊ Black ဆိုရင် 7->0 လှည့်မည်
   const rows = playerColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
   const cols = playerColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
 
@@ -138,10 +197,23 @@ function renderBoard() {
     }
   }
 
-  // Turn Indicator ပြရန်
   const isMyTurn = game.turn() === playerColor;
   document.getElementById('turnBadge').innerText = isMyTurn ? "Your Turn" : "Opponent's Turn";
-  document.getElementById('turnBadge').className = `turn-badge ${isMyTurn ? 'my-turn' : 'op-turn'}`;
+  updateMoveHistory();
+}
+
+function updateMoveHistory() {
+  const moveList = document.getElementById('moveList');
+  moveList.innerHTML = '';
+  const history = game.history();
+
+  history.forEach((m, idx) => {
+    const span = document.createElement('span');
+    span.className = `move-item ${idx === history.length - 1 ? 'active' : ''}`;
+    span.innerText = m;
+    moveList.appendChild(span);
+  });
+  moveList.scrollLeft = moveList.scrollWidth;
 }
 
 function handleSquareClick(square) {
@@ -149,9 +221,7 @@ function handleSquareClick(square) {
 
   if (!selectedSquare) {
     const piece = game.get(square);
-    if (piece && piece.color === playerColor) {
-      selectedSquare = square;
-    }
+    if (piece && piece.color === playerColor) selectedSquare = square;
   } else {
     const moveData = { from: selectedSquare, to: square, promotion: 'q' };
     const move = game.move(moveData);
@@ -162,4 +232,48 @@ function handleSquareClick(square) {
     selectedSquare = null;
   }
   renderBoard();
+}
+
+// Shop Logic
+function renderShop() {
+  const shopGrid = document.getElementById('shopGrid');
+  shopGrid.innerHTML = '';
+
+  SHOP_BOARDS.forEach(item => {
+    const isOwned = ownedBoards.includes(item.id);
+    const isEquipped = equippedBoard === item.id;
+
+    const div = document.createElement('div');
+    div.className = 'mode-card';
+    div.style.marginBottom = '10px';
+
+    let btnText = isEquipped ? 'Equipped' : (isOwned ? 'Equip' : `Buy 🪙${item.price}`);
+    div.innerHTML = `
+      <div style="width: 40px; height: 40px; background-image: url('${item.img}'); background-size: cover; border-radius: 6px;"></div>
+      <div class="mode-info">
+        <h3>${item.name}</h3>
+      </div>
+      <button class="green-btn" style="padding: 6px 12px; font-size:0.8rem;" onclick="handleShopClick('${item.id}', ${item.price})">${btnText}</button>
+    `;
+    shopGrid.appendChild(div);
+  });
+}
+
+function handleShopClick(id, price) {
+  if (equippedBoard === id) return;
+  if (ownedBoards.includes(id)) {
+    equippedBoard = id;
+  } else if (userCoins >= price) {
+    userCoins -= price;
+    ownedBoards.push(id);
+    equippedBoard = id;
+  } else {
+    alert('Coin မလုံလောက်ပါ!');
+    return;
+  }
+  localStorage.setItem(`coins_${currentUser}`, userCoins);
+  localStorage.setItem(`owned_${currentUser}`, JSON.stringify(ownedBoards));
+  localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
+  updateProfileUI();
+  renderShop();
 }
