@@ -22,22 +22,22 @@ function getSquareNotation(row, col) {
 // ခုံနှင့် အရုပ်များကို ရေးဆွဲပေးသည့် Function
 function renderBoard() {
   boardGrid.innerHTML = '';
-  const boardState = game.board(); // chess.js မှ 8x8 Board Data ယူခြင်း
+  const boardState = game.board();
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       const squareDiv = document.createElement('div');
       const squareName = getSquareNotation(r, c);
 
-      const isLight = (r + c) % 2 === 0;
-      squareDiv.className = `square ${isLight ? 'light' : 'dark'}`;
+      // Background ပုံပေါ်စေရန် square class တစ်ခုတည်းပဲ တန်းပေးပါ
+      squareDiv.className = 'square';
 
-      // Highlight ရွေးထားသည့် အကွက်
+      // Select လုပ်ထားပါက Highlight ပြရန်
       if (selectedSquare === squareName) {
         squareDiv.classList.add('selected');
       }
 
-      // အရုပ် ရှိပါက ပုံ ထည့်ပေးခြင်း (wk.png, bp.png စသည်ဖြင့်)
+      // အရုပ်များ ထည့်ခြင်း
       const piece = boardState[r][c];
       if (piece) {
         const img = document.createElement('img');
