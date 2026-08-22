@@ -2,115 +2,184 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  font-family: 'Poppins', sans-serif;
 }
 
 body {
   min-height: 100vh;
+  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+  color: #f8fafc;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #121212;
-  color: white;
-  font-family: sans-serif;
+  padding: 10px;
 }
 
 .app-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 15px;
 }
 
-.game-header {
+/* Glassmorphism UI Cards */
+.glass-card {
   width: 100%;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+.brand h1 {
+  font-size: 1.5rem;
+  background: linear-gradient(to right, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand p {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 20px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: white;
+  outline: none;
+}
+
+.input-group input:focus {
+  border-color: #6366f1;
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  transition: all 0.2s;
+}
+
+.primary-btn:active {
+  transform: scale(0.98);
+}
+
+.toggle-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 15px;
+  cursor: pointer;
+}
+
+.user-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #1e1e1e;
-  padding: 10px 15px;
-  border-radius: 10px;
-  border: 1px solid #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.game-header h2 {
-  font-size: 1.1rem;
+.logout-btn {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.controls select {
-  padding: 5px 8px;
-  border-radius: 6px;
-  background: #2a2a2a;
-  color: white;
-  border: 1px solid #444;
+/* Player Cards & Game UI */
+#gameScreen {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.turn-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.turn-badge.my-turn {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.turn-badge.op-turn {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.4);
 }
 
 .player-card {
-  width: 100%;
-  background: #1e1e1e;
-  padding: 10px 15px;
-  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.7);
+  padding: 10px 16px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid #333;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .player-card.active {
   border-color: #6366f1;
 }
 
-.player-avatar {
-  font-size: 1.5rem;
-}
-
-.player-name {
-  font-weight: bold;
-  font-size: 0.95rem;
-}
-
 .board-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
 }
 
-/* စစ်တုရင်ခုံ Container */
 .chess-board {
   width: 90vw;
   height: 90vw;
-  max-width: 440px;
-  max-height: 440px;
+  max-width: 420px;
+  max-height: 420px;
   position: relative;
   background-size: 100% 100% !important;
   background-repeat: no-repeat;
-  background-position: center;
-  border-radius: 6px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+  border-radius: 8px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.6);
 }
 
-/* Skins */
 .chess-board.wood {
   background-image: url('assets/images/wood.png');
 }
-.chess-board.marble {
-  background-image: url('assets/images/marble.png');
-}
 
-/* 8x8 Grid */
 .board-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  top: 0; bottom: 0; left: 0; right: 0;
   background: transparent !important;
 }
 
@@ -128,58 +197,11 @@ body {
   width: 85%;
   height: 85%;
   object-fit: contain;
-  pointer-events: none;
 }
 
 .square.selected {
-  background-color: rgba(255, 235, 59, 0.4) !important;
-}
-.auth-box, .lobby-box {
-  width: 100%;
-  max-width: 380px;
-  background: #1e1e1e;
-  padding: 25px;
-  border-radius: 12px;
-  border: 1px solid #333;
-  text-align: center;
+  background-color: rgba(255, 235, 59, 0.45) !important;
 }
 
-.auth-box input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #2a2a2a;
-  color: white;
-}
-
-.auth-box button, .lobby-box button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 6px;
-  border: none;
-  background: #6366f1;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.toggle-text {
-  font-size: 0.85rem;
-  color: #a1a1aa;
-  margin-top: 15px;
-  cursor: pointer;
-}
-
-.error-msg {
-  color: #ef4444;
-  font-size: 0.85rem;
-  margin-top: 10px;
-}
-
-.status-msg {
-  margin-top: 15px;
-  color: #eab308;
-}
+.error-msg { color: #f87171; font-size: 0.85rem; margin-top: 10px; }
+.status-msg { margin-top: 15px; color: #facc15; font-size: 0.9rem; }
