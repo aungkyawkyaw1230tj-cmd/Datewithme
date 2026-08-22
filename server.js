@@ -9,74 +9,139 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static('public'));
 
-// In-Memory Database (စမ်းသပ်ရန်)
-const users = {}; 
-let waitingQueue = null; // Matchfind စောင့်နေသူ
-const activeGames = {};  // လက်ရှိ ပွဲစဉ်များ
+app.post('/api/login', (req, res) => res.json({ username: req.body.username }));
+app.post('/api/signup', (req, res) => res.json({ username: req.body.username }));
 
-// Sign Up API
-app.post('/api/signup', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'အချက်အလက် အပြည့်အစုံ ဖြည့်ပါ' });
-  if (users[username]) return res.status(400).json({ error: 'ဒီအကောင့် နာမည်ရှိပြီးသားပါ' });
+let waitingQueue = [];
+let activeRooms = {};
 
-  users[username] = { username, password };
-  res.json({ success: true, message: 'အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်' });
-});
-
-// Sign In API
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  const user = users[username];
-  if (!user || user.password !== password) {
-    return res.status(400).json({ error: 'အကောင့်နာမည် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်' });
-  }
-  res.json({ success: true, username: user.username });
-});
-
-// Socket.io Real-time Matchmaking Logic
 io.on('connection', (socket) => {
-  
-  // Match ရှာခြင်း
+  // Random Matchmaking & Cancel
   socket.on('findMatch', (data) => {
-    socket.username = data.username;
+    waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id && p.username !== data.username);
 
-    if (waitingQueue && waitingQueue.id !== socket.id) {
-      // ပြိုင်ဘက် တွေ့သွားပြီ (Game Room ဖန်တီးမည်)
-      const roomId = `room_${socket.id}_${waitingQueue.id}`;
-      const player1 = waitingQueue;
-      const player2 = socket;
+    if (waitingQueue.length > 0) {
+      const opponent = waitingQueue.shift();
+      const roomId = `room_${socket.id}_${opponent.socketId}`;
 
-      player1.join(roomId);
-      player2.join(roomId);
+      socket.join(roomId);
+      const oppSocket = io.sockets.sockets.get(opponent.socketId);
+      if (oppSocket) oppSocket.join(roomId);
 
-      activeGames[roomId] = { players: [player1.id, player2.id] };
+      activeRooms[roomId] = {
+        white: socket.id,
+        whiteUser: data.username,
+        black: opponent.socketId,
+        blackUser: opponent.username,
+        whiteTime: 300,
+        blackTime: 300,
+        currentTurn: 'w',
+        interval: null
+      };
 
-      // Player 1 ကို အဖြူ၊ Player 2 ကို အမဲ ပေးမည်
-      player1.emit('matchFound', { roomId, color: 'w', opponent: player2.username });
-      player2.emit('matchFound', { roomId, color: 'b', opponent: player1.username });
+      io.to(socket.id).emit('matchFound', { roomId, color: 'w', opponent: opponent.username });
+      io.to(opponent.socketId).emit('matchFound', { roomId, color: 'b', opponent: data.username });
 
-      waitingQueue = null;
+      startTimer(roomId);
     } else {
-      // ပြိုင်ဘက်မရှိသေးပါက တန်းစီစနစ်တွင် ခဏထားမည်
-      waitingQueue = socket;
-      socket.emit('waitingForOpponent');
+      waitingQueue.push({ socketId: socket.id, username: data.username });
     }
   });
 
-  // အရုပ်ရွှေ့ခြင်း လွှဲပြောင်းပေးခြင်း
-  socket.on('makeMove', (data) => {
-    const { roomId, move } = data;
-    socket.to(roomId).emit('opponentMove', move);
+  socket.on('cancelMatch', () => {
+    waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id);
   });
 
-  // Disconnect ဖြစ်ပါက Queue မှ ယ်ထုတ်ခြင်း
+  // Custom Room System
+  socket.on('createCustomRoom', (data) => {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    socket.join(code);
+    activeRooms[code] = {
+      white: socket.id,
+      whiteUser: data.username,
+      black: null,
+      blackUser: null,
+      whiteTime: 300,
+      blackTime: 300,
+      currentTurn: 'w',
+      interval: null
+    };
+    socket.emit('customRoomCreated', { roomCode: code });
+  });
+
+  socket.on('joinCustomRoom', (data) => {
+    const room = activeRooms[data.roomCode];
+    if (!room) return socket.emit('roomError', 'အခန်းသင်္ကေတ မှားယွင်းနေပါသည်။');
+    if (room.black) return socket.emit('roomError', 'အခန်းပြည့်သွားပါပြီ။');
+
+    socket.join(data.roomCode);
+    room.black = socket.id;
+    room.blackUser = data.username;
+
+    io.to(room.white).emit('matchFound', { roomId: data.roomCode, color: 'w', opponent: data.username });
+    io.to(socket.id).emit('matchFound', { roomId: data.roomCode, color: 'b', opponent: room.whiteUser });
+
+    startTimer(data.roomCode);
+  });
+
+  // Gameplay & Chat
+  socket.on('makeMove', (data) => {
+    const room = activeRooms[data.roomId];
+    if (room) {
+      socket.to(data.roomId).emit('opponentMove', data.move);
+      room.currentTurn = room.currentTurn === 'w' ? 'b' : 'w';
+    }
+  });
+
+  socket.on('sendChatMessage', (data) => {
+    io.to(data.roomId).emit('receiveChatMessage', { sender: data.sender, text: data.text });
+  });
+
+  socket.on('leaveGame', (data) => {
+    handleLeave(socket, data.roomId);
+  });
+
   socket.on('disconnect', () => {
-    if (waitingQueue && waitingQueue.id === socket.id) {
-      waitingQueue = null;
+    waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id);
+    for (const [roomId, room] of Object.entries(activeRooms)) {
+      if (room.white === socket.id || room.black === socket.id) {
+        handleLeave(socket, roomId);
+      }
     }
   });
 });
+
+function startTimer(roomId) {
+  const room = activeRooms[roomId];
+  if (!room) return;
+  if (room.interval) clearInterval(room.interval);
+
+  room.interval = setInterval(() => {
+    if (room.currentTurn === 'w') {
+      room.whiteTime--;
+      if (room.whiteTime <= 0) {
+        clearInterval(room.interval);
+        io.to(roomId).emit('gameOver', { winner: 'b', reason: 'Time Out' });
+      }
+    } else {
+      room.blackTime--;
+      if (room.blackTime <= 0) {
+        clearInterval(room.interval);
+        io.to(roomId).emit('gameOver', { winner: 'w', reason: 'Time Out' });
+      }
+    }
+    io.to(roomId).emit('timeUpdate', { whiteTime: room.whiteTime, blackTime: room.blackTime });
+  }, 1000);
+}
+
+function handleLeave(socket, roomId) {
+  const room = activeRooms[roomId];
+  if (room) {
+    if (room.interval) clearInterval(room.interval);
+    socket.to(roomId).emit('opponentLeft');
+    delete activeRooms[roomId];
+  }
+}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
