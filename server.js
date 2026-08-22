@@ -9,14 +9,25 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static('public'));
 
-app.post('/api/login', (req, res) => res.json({ username: req.body.username }));
-app.post('/api/signup', (req, res) => res.json({ username: req.body.username }));
-
 let waitingQueue = [];
 let activeRooms = {};
+let onlineUsers = {}; // username -> socket.id Mapping
+let pendingRequests = {}; // targetUser -> Array of senders
 
 io.on('connection', (socket) => {
-  // Random Matchmaking & Cancel
+
+  // Register User Online
+  socket.on('registerUser', (username) => {
+    socket.username = username;
+    onlineUsers[username] = socket.id;
+
+    // Send existing pending requests if any
+    if (pendingRequests[username]) {
+      socket.emit('updatePendingRequests', pendingRequests[username]);
+    }
+  });
+
+  // Matchmaking
   socket.on('findMatch', (data) => {
     waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id && p.username !== data.username);
 
@@ -52,17 +63,19 @@ io.on('connection', (socket) => {
     waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id);
   });
 
-  // Custom Room System
+  // Custom Room
   socket.on('createCustomRoom', (data) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const timeInSecs = (data.minutes || 5) * 60;
+
     socket.join(code);
     activeRooms[code] = {
       white: socket.id,
       whiteUser: data.username,
       black: null,
       blackUser: null,
-      whiteTime: 300,
-      blackTime: 300,
+      whiteTime: timeInSecs,
+      blackTime: timeInSecs,
       currentTurn: 'w',
       interval: null
     };
@@ -84,7 +97,41 @@ io.on('connection', (socket) => {
     startTimer(data.roomCode);
   });
 
-  // Gameplay & Chat
+  // Friend Request Logic (Accept / Reject)
+  socket.on('sendFriendRequest', (data) => {
+    const { sender, target } = data;
+    if (!pendingRequests[target]) pendingRequests[target] = [];
+
+    if (!pendingRequests[target].includes(sender)) {
+      pendingRequests[target].push(sender);
+    }
+
+    const targetSocketId = onlineUsers[target];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('updatePendingRequests', pendingRequests[target]);
+    }
+  });
+
+  socket.on('respondFriendRequest', (data) => {
+    const { sender, target, accept } = data; // target is current user responding
+
+    if (pendingRequests[target]) {
+      pendingRequests[target] = pendingRequests[target].filter(u => u !== sender);
+    }
+
+    const targetSocketId = onlineUsers[target];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('updatePendingRequests', pendingRequests[target] || []);
+    }
+
+    if (accept) {
+      const senderSocketId = onlineUsers[sender];
+      if (senderSocketId) io.to(senderSocketId).emit('friendRequestAccepted', { friendName: target });
+      socket.emit('friendRequestAccepted', { friendName: sender });
+    }
+  });
+
+  // Game Logic
   socket.on('makeMove', (data) => {
     const room = activeRooms[data.roomId];
     if (room) {
@@ -102,6 +149,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    if (socket.username) delete onlineUsers[socket.username];
     waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id);
     for (const [roomId, room] of Object.entries(activeRooms)) {
       if (room.white === socket.id || room.black === socket.id) {
