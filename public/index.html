@@ -5,191 +5,150 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chess Arena</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 </head>
 <body>
-
-  <div class="app-mobile-frame">
-
-    <!-- Auth Screen (Login / Sign Up) -->
+  <div class="app-container">
+    
+    <!-- Auth Screen -->
     <div id="authScreen" class="screen active">
-      <div class="auth-header">
-        <div class="chess-logo">♟️</div>
-        <h1>Chess Arena</h1>
-        <p>Play Chess Online with Friends</p>
-      </div>
-
       <div class="auth-box">
+        <h2>Chess Arena</h2>
         <div class="auth-tabs">
           <button id="tabLoginBtn" class="auth-tab active" onclick="switchAuthTab(true)">Sign In</button>
           <button id="tabSignupBtn" class="auth-tab" onclick="switchAuthTab(false)">Sign Up</button>
         </div>
-
-        <div class="input-field">
-          <i class="fa-solid fa-user"></i>
-          <input type="text" id="authUsername" placeholder="Username" autocomplete="off">
-        </div>
-        <div class="input-field">
-          <i class="fa-solid fa-lock"></i>
-          <input type="password" id="authPassword" placeholder="Password">
-        </div>
-
+        <div class="input-field"><i class="fa-solid fa-user"></i><input type="text" id="authUsername" placeholder="Username"></div>
+        <div class="input-field"><i class="fa-solid fa-lock"></i><input type="password" id="authPassword" placeholder="Password"></div>
         <button id="authSubmitBtn" class="green-btn" onclick="handleAuth()">Sign In</button>
-        <div id="authError" class="error-text"></div>
+        <div id="authError" class="error-msg"></div>
       </div>
     </div>
 
-    <!-- Main App Screen (With Bottom Navigation) -->
+    <!-- Main App Screen -->
     <div id="mainApp" class="screen">
-      
-      <!-- Top App Header -->
       <div class="app-top-bar">
         <div class="mini-profile">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=User" id="topAvatar" alt="Avatar">
-          <span id="topUsername" class="username">Player</span>
+          <img id="topAvatar" src="" alt="Avatar">
+          <span id="topUsername">Player</span>
         </div>
-        <div class="coin-pill">
-          🪙 <span id="topCoins">500</span>
-        </div>
+        <div class="coin-pill">🪙 <span id="topCoins">500</span></div>
       </div>
 
       <!-- Tab 1: Play View -->
       <div id="viewPlay" class="tab-view active">
-        <div class="mode-card play-online" onclick="findMatch()">
-          <div class="mode-icon">⚔️</div>
+        <div class="mode-card" onclick="findMatch()">
+          <i class="fa-solid fa-bolt mode-icon"></i>
           <div class="mode-info">
-            <h3>Play Online</h3>
-            <p>Match with live players worldwide</p>
+            <h3>Quick Match</h3>
+            <p>Play with random online player</p>
           </div>
-          <i class="fa-solid fa-chevron-right"></i>
         </div>
 
-        <div id="matchSearchStatus" class="search-status-box" style="display: none;">
-          <div class="spinner"></div>
-          <span id="matchStatusText">Searching for Opponent...</span>
+        <div class="mode-card" onclick="createCustomRoom()" style="margin-top: 10px;">
+          <i class="fa-solid fa-plus mode-icon"></i>
+          <div class="mode-info">
+            <h3>Create Custom Room</h3>
+            <p>Generate lobby code for friend</p>
+          </div>
         </div>
 
-        <div class="mode-card play-bot">
-          <div class="mode-icon">🤖</div>
+        <div class="mode-card" onclick="promptJoinRoom()" style="margin-top: 10px;">
+          <i class="fa-solid fa-key mode-icon"></i>
           <div class="mode-info">
-            <h3>Play vs Computer</h3>
-            <p>Practice against stockfish engine</p>
+            <h3>Join Custom Room</h3>
+            <p>Enter 6-digit lobby code</p>
           </div>
-          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+
+        <div id="matchSearchStatus" style="display:none; text-align:center; margin-top:20px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px;">
+          <p id="searchMsg">Match searching...</p>
+          <button class="logout-btn" onclick="cancelMatch()" style="margin-top:10px;">Cancel Search</button>
         </div>
       </div>
 
-      <!-- Tab 2: Puzzles View -->
-      <div id="viewPuzzles" class="tab-view">
-        <div class="puzzle-banner">
-          <h2>🧩 Daily Puzzle</h2>
-          <p>Rating: 1250 • Solve to earn +50 🪙</p>
-          <button class="green-btn">Solve Puzzle</button>
+      <!-- Tab 2: Friends View -->
+      <div id="viewFriends" class="tab-view">
+        <div style="padding:15px;">
+          <h3>Friends List</h3>
+          <div style="display:flex; gap:8px; margin-bottom:15px;">
+            <input type="text" id="friendInput" placeholder="Friend's Username..." style="flex:1; padding:8px; border-radius:6px; border:1px solid #333; background:#222; color:#fff;">
+            <button class="green-btn" onclick="addFriend()">Add Friend</button>
+          </div>
+          <div id="friendsList"></div>
         </div>
       </div>
 
       <!-- Tab 3: Shop View -->
-      <div id="viewShop" class="tab-view">
-        <h3 class="section-title">🛒 Board Store</h3>
-        <div id="shopGrid" class="shop-grid"></div>
-      </div>
+      <div id="viewShop" class="tab-view"><div id="shopGrid"></div></div>
 
       <!-- Tab 4: Profile View -->
       <div id="viewProfile" class="tab-view">
-        <div class="profile-card">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=User" id="profileAvatar" class="large-avatar" alt="User Avatar">
-          <h2 id="profileName">Username</h2>
-          <span class="elo-badge">🏆 Blitz Elo: <strong id="userElo">1200</strong></span>
+        <div style="text-align:center; padding: 20px;">
+          <img id="profileAvatar" src="" style="width: 80px; height: 80px; border-radius: 50%;">
+          <h2 id="profileName">User</h2>
+          <p>Rating: <span id="userElo">1200</span></p>
+          <button class="logout-btn" onclick="handleLogout()">Log Out</button>
         </div>
-
-        <div class="stats-grid">
-          <div class="stat-box">
-            <span class="stat-value" id="statGames">0</span>
-            <span class="stat-label">Played</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-value green" id="statWins">0</span>
-            <span class="stat-label">Wins</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-value red" id="statLosses">0</span>
-            <span class="stat-label">Losses</span>
-          </div>
-        </div>
-
-        <button class="logout-btn-full" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</button>
       </div>
 
-      <!-- Bottom Navigation Bar -->
+      <!-- Bottom Navigation -->
       <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchNav('Play')">
-          <i class="fa-solid fa-gamepad"></i>
-          <span>Play</span>
-        </div>
-        <div class="nav-item" onclick="switchNav('Puzzles')">
-          <i class="fa-solid fa-puzzle-piece"></i>
-          <span>Puzzles</span>
-        </div>
-        <div class="nav-item" onclick="switchNav('Shop')">
-          <i class="fa-solid fa-store"></i>
-          <span>Shop</span>
-        </div>
-        <div class="nav-item" onclick="switchNav('Profile')">
-          <i class="fa-solid fa-user"></i>
-          <span>Profile</span>
-        </div>
+        <div class="nav-item active" onclick="switchNav('Play')"><i class="fa-solid fa-gamepad"></i><span>Play</span></div>
+        <div class="nav-item" onclick="switchNav('Friends')"><i class="fa-solid fa-user-group"></i><span>Friends</span></div>
+        <div class="nav-item" onclick="switchNav('Shop')"><i class="fa-solid fa-store"></i><span>Shop</span></div>
+        <div class="nav-item" onclick="switchNav('Profile')"><i class="fa-solid fa-user"></i><span>Profile</span></div>
       </div>
-
     </div>
 
-    <!-- Game Screen (In-Game Arena) -->
+    <!-- Game Screen (Arena) -->
     <div id="gameScreen" class="screen">
       <div class="game-top-nav">
         <button class="icon-btn" onclick="leaveGame()"><i class="fa-solid fa-arrow-left"></i></button>
         <div id="turnBadge" class="turn-badge">White's Turn</div>
-        <button class="icon-btn"><i class="fa-solid fa-flag"></i></button>
+        <button class="icon-btn" onclick="toggleChat()"><i class="fa-solid fa-comment"></i></button>
       </div>
 
-      <!-- Opponent Header Card -->
       <div class="player-strip">
-        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Opponent" class="player-avatar" alt="Opponent">
-        <div class="player-meta">
-          <span id="opponentName" class="p-name">Opponent (1200)</span>
-        </div>
+        <img id="gameOpponentAvatar" src="" class="player-avatar">
+        <div class="player-meta"><span id="opponentName" class="p-name">Opponent</span></div>
+        <div id="opponentTimer" style="margin-left:auto; background:#222; padding:4px 8px; border-radius:6px; font-weight:bold;">05:00</div>
       </div>
 
-      <!-- Chess Board Wrapper -->
       <div class="board-wrapper">
         <div id="board" class="chess-board wood">
           <div id="board-grid" class="board-grid"></div>
         </div>
       </div>
 
-      <!-- You Header Card -->
       <div class="player-strip active-strip">
-        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=User" id="gameYourAvatar" class="player-avatar" alt="You">
-        <div class="player-meta">
-          <span id="yourName" class="p-name">You (1200)</span>
+        <img id="gameYourAvatar" src="" class="player-avatar">
+        <div class="player-meta"><span id="yourName" class="p-name">You</span></div>
+        <div id="yourTimer" style="margin-left:auto; background:#222; padding:4px 8px; border-radius:6px; font-weight:bold;">05:00</div>
+      </div>
+
+      <div class="move-history-bar">
+        <div id="moveList" class="move-list-scroll"></div>
+      </div>
+
+      <!-- Chat Drawer -->
+      <div id="chatOverlay" style="display:none; position:fixed; bottom:0; left:0; right:0; top:50%; background:#1e1e1e; border-top-left-radius:16px; border-top-right-radius:16px; padding:15px; z-index:100; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 style="margin:0;">In-Game Chat</h3>
+          <button onclick="toggleChat()" style="background:none; border:none; color:#fff; font-size:1.2rem;">✕</button>
+        </div>
+        <div id="chatBox" style="flex:1; overflow-y:auto; background:#121212; padding:10px; border-radius:8px; margin-bottom:10px;"></div>
+        <div style="display:flex; gap:5px;">
+          <input type="text" id="chatInput" placeholder="Send message..." style="flex:1; padding:8px; border-radius:6px; border:1px solid #333; background:#222; color:#fff;">
+          <button class="green-btn" onclick="sendChat()" style="padding:8px 15px;">Send</button>
         </div>
       </div>
 
-      <!-- Move History Navigation Bar (Screenshot 2 Style) -->
-      <div class="move-history-bar">
-        <button class="nav-arrow"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="moveList" class="move-list-scroll">
-          <span class="move-item">1. e4</span>
-          <span class="move-item">e5</span>
-          <span class="move-item active">2. Nf3</span>
-        </div>
-        <button class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
     </div>
 
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
