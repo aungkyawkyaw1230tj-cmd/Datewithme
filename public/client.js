@@ -7,7 +7,8 @@ let currentOpponent = null;
 let playerColor = 'w';
 let selectedSquare = null;
 let selectedTimeLimit = 5;
-let lastMove = null; // Recent Move Tracking
+let lastMove = null;
+let isAiGame = false;
 
 // User Data State
 let userCoins = 500;
@@ -18,7 +19,49 @@ let gameHistory = [];
 let ownedBoards = ['wood'];
 let equippedBoard = 'wood';
 
-// GitHub Image Files များနှင့် ကိုက်ညီသော Shop Items List
+// Web Audio API Synthesizer (No external audio files needed)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+
+  if (type === 'move') {
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+    osc.start(now); osc.stop(now + 0.08);
+  } else if (type === 'capture') {
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    osc.start(now); osc.stop(now + 0.1);
+  } else if (type === 'check') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587, now);
+    osc.frequency.setValueAtTime(880, now + 0.08);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+    osc.start(now); osc.stop(now + 0.25);
+  } else if (type === 'gameover') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.setValueAtTime(554, now + 0.12);
+    osc.frequency.setValueAtTime(659, now + 0.24);
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    osc.start(now); osc.stop(now + 0.5);
+  }
+}
+
+// Shop Items List
 const shopItems = [
   { id: 'wood', name: 'Classic Wood', price: 0, previewClass: 'wood-preview' },
   { id: 'marble', name: 'Royal Marble', price: 300, previewClass: 'marble-preview' },
@@ -32,7 +75,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('chess_username');
   if (savedUser) {
     currentUser = savedUser;
-    socket.emit('registerUser', currentUser);
+    socket.emit('registerUser', { username: currentUser, elo: userElo, coins: userCoins });
     loadUserData();
     showMainApp();
   }
@@ -79,9 +122,14 @@ function switchNav(tabName) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
 
-  const indexMap = { 'Play': 0, 'Friends': 1, 'Shop': 2, 'Profile': 3 };
-  document.querySelectorAll('.nav-item')[indexMap[tabName]].classList.add('active');
-  document.getElementById(`view${tabName}`).classList.add('active');
+  const navs = document.querySelectorAll('.nav-item');
+  if (tabName === 'Play' && navs[0]) navs[0].classList.add('active');
+  if (tabName === 'Leaderboard' && navs[1]) navs[1].classList.add('active');
+  if (tabName === 'Shop' && navs[2]) navs[2].classList.add('active');
+  if (tabName === 'Profile' && navs[3]) navs[3].classList.add('active');
+
+  const targetView = document.getElementById(`view${tabName}`);
+  if (targetView) targetView.classList.add('active');
 
   if (tabName === 'Shop') renderShop();
   if (tabName === 'Profile') renderGameHistory();
@@ -94,7 +142,7 @@ function handleAuth() {
 
   currentUser = username;
   localStorage.setItem('chess_username', currentUser);
-  socket.emit('registerUser', currentUser);
+  socket.emit('registerUser', { username: currentUser, elo: userElo, coins: userCoins });
   loadUserData();
   showMainApp();
 }
@@ -116,6 +164,7 @@ function showMainApp() {
 
 // Matchmaking
 function findMatch() {
+  isAiGame = false;
   document.getElementById('matchSearchStatus').style.display = 'block';
   document.getElementById('searchMsg').innerText = 'Match searching...';
   socket.emit('findMatch', { username: currentUser });
@@ -153,6 +202,7 @@ function promptJoinRoom() {
 socket.on('roomError', (msg) => alert(msg));
 
 socket.on('matchFound', (data) => {
+  isAiGame = false;
   currentRoom = data.roomId;
   playerColor = data.color;
   currentOpponent = data.opponent;
@@ -170,21 +220,67 @@ socket.on('matchFound', (data) => {
   renderBoard();
 });
 
+// Single Player AI Logic
+function startAiGame(difficulty = 'medium') {
+  isAiGame = true;
+  playerColor = 'w';
+  currentRoom = null;
+  currentOpponent = `Bot (${difficulty.toUpperCase()})`;
+  lastMove = null;
+
+  document.getElementById('mainApp').classList.remove('active');
+  document.getElementById('gameScreen').classList.add('active');
+
+  document.getElementById('yourName').innerText = currentUser;
+  document.getElementById('opponentName').innerText = currentOpponent;
+  document.getElementById('gameOpponentAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=Bot${difficulty}`;
+
+  game.reset();
+  renderBoard();
+}
+
+function makeAiMove() {
+  if (game.game_over() || game.turn() === playerColor) return;
+
+  setTimeout(() => {
+    const moves = game.moves({ verbose: true });
+    if (moves.length === 0) return;
+
+    const captures = moves.filter(m => m.captured);
+    const selectedMove = (captures.length > 0) ? captures[Math.floor(Math.random() * captures.length)] : moves[Math.floor(Math.random() * moves.length)];
+
+    const move = game.move(selectedMove);
+    if (move) {
+      lastMove = { from: move.from, to: move.to };
+      if (move.captured) playSound('capture'); else playSound('move');
+      if (game.in_check()) playSound('check');
+      renderBoard();
+      checkGameStatus();
+    }
+  }, 600);
+}
+
 // Socket Game Events
 socket.on('opponentMove', (move) => {
-  game.move(move);
+  const result = game.move(move);
   lastMove = { from: move.from, to: move.to };
+  if (result) {
+    if (result.captured) playSound('capture'); else playSound('move');
+    if (game.in_check()) playSound('check');
+  }
   renderBoard();
   checkGameStatus();
 });
 
 socket.on('opponentLeft', () => {
+  playSound('gameover');
   alert('Opponent ထွက်သွားသည်။ သင်နိုင်ပါပြီ!');
   saveGameResult(currentOpponent, 'WIN', 'Opponent Left', 25, 50);
   leaveGame();
 });
 
 socket.on('gameOver', (data) => {
+  playSound('gameover');
   const isWin = data.winner === playerColor;
   alert(`Game Over! Winner: ${isWin ? 'You' : 'Opponent'} (${data.reason})`);
   saveGameResult(currentOpponent, isWin ? 'WIN' : 'LOSS', data.reason, isWin ? 25 : -15, isWin ? 50 : 10);
@@ -208,7 +304,7 @@ socket.on('timeUpdate', (data) => {
 });
 
 function leaveGame() {
-  if (currentRoom) socket.emit('leaveGame', { roomId: currentRoom });
+  if (currentRoom && !isAiGame) socket.emit('leaveGame', { roomId: currentRoom });
   showMainApp();
 }
 
@@ -217,6 +313,8 @@ function renderBoard() {
   if (boardElem) boardElem.className = `chess-board ${equippedBoard}`;
 
   const boardGrid = document.getElementById('board-grid');
+  if (!boardGrid) return;
+  boardGrid.className = `chess-board ${equippedBoard}`;
   boardGrid.innerHTML = '';
   const boardState = game.board();
 
@@ -241,7 +339,6 @@ function renderBoard() {
       squareDiv.className = 'square';
       if (selectedSquare === squareName) squareDiv.classList.add('selected');
 
-      // Highlight Recent Move
       if (lastMove && (squareName === lastMove.from || squareName === lastMove.to)) {
         squareDiv.classList.add('last-move');
       }
@@ -269,7 +366,7 @@ function renderBoard() {
 }
 
 function handleSquareClick(square) {
-  if (game.turn() !== playerColor) return;
+  if (game.turn() !== playerColor && !isAiGame) return;
 
   if (!selectedSquare) {
     const piece = game.get(square);
@@ -279,7 +376,15 @@ function handleSquareClick(square) {
     const move = game.move(moveData);
     if (move) {
       lastMove = { from: move.from, to: move.to };
-      socket.emit('makeMove', { roomId: currentRoom, move: moveData });
+      
+      if (move.captured) playSound('capture'); else playSound('move');
+      if (game.in_check()) playSound('check');
+
+      if (!isAiGame) {
+        socket.emit('makeMove', { roomId: currentRoom, move: moveData });
+      } else {
+        makeAiMove();
+      }
       checkGameStatus();
     }
     selectedSquare = null;
@@ -289,6 +394,7 @@ function handleSquareClick(square) {
 
 function checkGameStatus() {
   if (game.in_checkmate()) {
+    playSound('gameover');
     const winner = game.turn() === 'w' ? 'b' : 'w';
     const isWin = winner === playerColor;
     alert(isWin ? 'Checkmate! သင်နိုင်ပါပြီ!' : 'Checkmate! Opponent နိုင်သွားပါပြီ!');
@@ -309,6 +415,53 @@ function updateMoveHistory() {
   });
   moveList.scrollLeft = moveList.scrollWidth;
 }
+
+// Emote System
+function toggleEmotePicker() {
+  const picker = document.getElementById('emotePicker');
+  if (picker) picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+}
+
+function sendEmote(emote) {
+  toggleEmotePicker();
+  if (currentRoom && !isAiGame) {
+    socket.emit('sendEmote', { roomId: currentRoom, sender: currentUser, emote });
+  } else {
+    showEmoteBubble(`${currentUser}: ${emote}`);
+  }
+}
+
+socket.on('receiveEmote', (data) => {
+  showEmoteBubble(`${data.sender}: ${data.emote}`);
+});
+
+function showEmoteBubble(text) {
+  const bubble = document.getElementById('emoteBubble');
+  if (!bubble) return;
+  bubble.innerText = text;
+  bubble.style.display = 'block';
+  setTimeout(() => { bubble.style.display = 'none'; }, 2500);
+}
+
+// Leaderboard Sync
+socket.on('updateLeaderboard', (data) => {
+  const list = document.getElementById('leaderboardList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  data.forEach((user, index) => {
+    const div = document.createElement('div');
+    div.className = 'rank-card';
+    div.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="rank-num">#${index + 1}</span>
+        <b>${user.username}</b>
+      </div>
+      <div style="font-size:0.85rem; color:#aaa;">⚡ ${user.elo} ELO | 🪙 ${user.coins}</div>
+    `;
+    list.appendChild(div);
+  });
+});
 
 // Shop Rendering with Previews
 function renderShop() {
@@ -367,6 +520,7 @@ function saveShopData() {
   localStorage.setItem(`coins_${currentUser}`, userCoins);
   localStorage.setItem(`owned_${currentUser}`, JSON.stringify(ownedBoards));
   localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
+  socket.emit('updateStats', { username: currentUser, elo: userElo, coins: userCoins });
 }
 
 // Profile & History
@@ -390,6 +544,7 @@ function saveGameResult(opponent, result, reason, eloChange, coinReward) {
   localStorage.setItem(`coins_${currentUser}`, userCoins);
   localStorage.setItem(`history_${currentUser}`, JSON.stringify(gameHistory));
 
+  socket.emit('updateStats', { username: currentUser, elo: userElo, coins: userCoins });
   updateProfileUI();
 }
 
@@ -496,7 +651,7 @@ function renderFriends() {
 // In-Game Chat
 function toggleChat() {
   const overlay = document.getElementById('chatOverlay');
-  overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
+  if (overlay) overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
 }
 
 function sendChat() {
@@ -510,6 +665,7 @@ function sendChat() {
 
 socket.on('receiveChatMessage', (data) => {
   const chatBox = document.getElementById('chatBox');
+  if (!chatBox) return;
   const p = document.createElement('p');
   p.style.margin = '4px 0';
   p.innerHTML = `<b style="color:${data.sender === currentUser ? '#81b64c' : '#faac42'}">${data.sender}:</b> ${data.text}`;
