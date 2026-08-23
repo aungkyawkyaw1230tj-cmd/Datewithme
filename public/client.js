@@ -7,6 +7,7 @@ let currentOpponent = null;
 let playerColor = 'w';
 let selectedSquare = null;
 let selectedTimeLimit = 5;
+let lastMove = null; // Recent Move Tracking
 
 // User Data State
 let userCoins = 500;
@@ -17,10 +18,13 @@ let gameHistory = [];
 let ownedBoards = ['wood'];
 let equippedBoard = 'wood';
 
-// Shop Items List
+// Expanded Shop Items
 const shopItems = [
-  { id: 'wood', name: 'Classic Wood Board', price: 0 },
-  { id: 'marble', name: 'Royal Marble Board', price: 300 }
+  { id: 'wood', name: 'Classic Wood', price: 0, previewClass: 'wood-preview' },
+  { id: 'marble', name: 'Royal Marble', price: 300, previewClass: 'marble-preview' },
+  { id: 'glass', name: 'Cyber Glass', price: 500, previewClass: 'glass-preview' },
+  { id: 'gold', name: 'Imperial Gold', price: 800, previewClass: 'gold-preview' },
+  { id: 'neon', name: 'Neon Dark', price: 1200, previewClass: 'neon-preview' }
 ];
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -83,7 +87,6 @@ function switchNav(tabName) {
   if (tabName === 'Friends') renderFriends();
 }
 
-// Authentication
 function handleAuth() {
   const username = document.getElementById('authUsername').value.trim();
   if (!username) return alert('Username ဖြည့်ပါ။');
@@ -110,7 +113,7 @@ function showMainApp() {
   updateProfileUI();
 }
 
-// Matchmaking & Custom Room
+// Matchmaking
 function findMatch() {
   document.getElementById('matchSearchStatus').style.display = 'block';
   document.getElementById('searchMsg').innerText = 'Match searching...';
@@ -152,6 +155,7 @@ socket.on('matchFound', (data) => {
   currentRoom = data.roomId;
   playerColor = data.color;
   currentOpponent = data.opponent;
+  lastMove = null;
 
   document.getElementById('matchSearchStatus').style.display = 'none';
   document.getElementById('mainApp').classList.remove('active');
@@ -165,9 +169,10 @@ socket.on('matchFound', (data) => {
   renderBoard();
 });
 
-// Game Logic & Socket Listeners
+// Socket Game Events
 socket.on('opponentMove', (move) => {
   game.move(move);
+  lastMove = { from: move.from, to: move.to };
   renderBoard();
   checkGameStatus();
 });
@@ -235,6 +240,11 @@ function renderBoard() {
       squareDiv.className = 'square';
       if (selectedSquare === squareName) squareDiv.classList.add('selected');
 
+      // Highlight Recent Move
+      if (lastMove && (squareName === lastMove.from || squareName === lastMove.to)) {
+        squareDiv.classList.add('last-move');
+      }
+
       const piece = boardState[r][c];
       if (piece) {
         const img = document.createElement('img');
@@ -267,6 +277,7 @@ function handleSquareClick(square) {
     const moveData = { from: selectedSquare, to: square, promotion: 'q' };
     const move = game.move(moveData);
     if (move) {
+      lastMove = { from: move.from, to: move.to };
       socket.emit('makeMove', { roomId: currentRoom, move: moveData });
       checkGameStatus();
     }
@@ -298,7 +309,7 @@ function updateMoveHistory() {
   moveList.scrollLeft = moveList.scrollWidth;
 }
 
-// Shop System (Buy & Equip)
+// Shop Rendering with Previews
 function renderShop() {
   const grid = document.getElementById('shopGrid');
   if (!grid) return;
@@ -309,7 +320,7 @@ function renderShop() {
     const isEquipped = equippedBoard === item.id;
 
     const div = document.createElement('div');
-    div.style.cssText = 'background:#32302c; padding:15px; border-radius:10px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;';
+    div.style.cssText = 'background:#32302c; padding:12px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:12px;';
 
     let btnHtml = '';
     if (isEquipped) {
@@ -317,15 +328,18 @@ function renderShop() {
     } else if (isOwned) {
       btnHtml = `<button class="green-btn" onclick="equipBoard('${item.id}')">Equip</button>`;
     } else {
-      btnHtml = `<button class="green-btn" onclick="buyBoard('${item.id}', ${item.price})">🪙 ${item.price} Buy</button>`;
+      btnHtml = `<button class="green-btn" onclick="buyBoard('${item.id}', ${item.price})">🪙 ${item.price}</button>`;
     }
 
     div.innerHTML = `
-      <div>
-        <h4 style="margin-bottom:4px; font-size:1rem;">${item.name}</h4>
-        <p style="font-size:0.8rem; color:#aaa;">${isOwned ? 'Owned' : `Price: 🪙 ${item.price}`}</p>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="board-preview-box ${item.previewClass}"></div>
+        <div>
+          <h4 style="font-size:0.95rem;">${item.name}</h4>
+          <p style="font-size:0.75rem; color:#aaa;">${isOwned ? 'Owned' : `Price: 🪙 ${item.price}`}</p>
+        </div>
       </div>
-      ${btnHtml}
+      <div>${btnHtml}</div>
     `;
     grid.appendChild(div);
   });
@@ -354,7 +368,7 @@ function saveShopData() {
   localStorage.setItem(`equipped_${currentUser}`, equippedBoard);
 }
 
-// Profile & History System
+// Profile & History
 function saveGameResult(opponent, result, reason, eloChange, coinReward) {
   if (!currentUser || !opponent) return;
 
@@ -403,7 +417,7 @@ function renderGameHistory() {
   });
 }
 
-// Friend Requests (Send, Accept, Reject)
+// Friends System
 function sendFriendRequest() {
   const input = document.getElementById('friendInput');
   const name = input.value.trim();
