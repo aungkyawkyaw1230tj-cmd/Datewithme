@@ -228,7 +228,9 @@ html, body {
 .move-history-bar { background: #1e1d1b; padding: 8px 12px; margin-top: auto; overflow-x: auto; white-space: nowrap; flex-shrink: 0; }
 .move-list-scroll { display: flex; gap: 8px; }
 .move-item { background: #32302c; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-family: monospace; }
-.move-item.active { background: #81b64c; color: #fff; }/* Shop Preview Boxes */
+.move-item.active { background: #81b64c; color: #fff; }
+
+/* Shop Preview Boxes */
 .board-preview-box {
   width: 48px;
   height: 48px;
@@ -245,7 +247,7 @@ html, body {
 .bxb-preview { background-image: url('assets/images/bxb.png'); }
 .bxw-preview { background-image: url('assets/images/bxw.png'); }
 .dxw-preview { background-image: url('assets/images/dxw.png'); }
-.gxw-preview { background-image: url('assets/
+.gxw-preview { background-image: url('assets/images/gxw.png'); }
 
 /* Chat Overlay */
 .chat-overlay { position: fixed; bottom: 0; left: 0; right: 0; top: 40%; background: #1e1e1e; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 15px; z-index: 100; flex-direction: column; }
@@ -254,6 +256,7 @@ html, body {
 .chat-box { flex: 1; overflow-y: auto; background: #121212; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
 .chat-input-row { display: flex; gap: 8px; }
 .chat-input-row input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #333; background: #222; color: #fff; }
+
 /* Leaderboard Styling */
 .rank-card {
   background: #32302c;
@@ -299,161 +302,4 @@ html, body {
 @keyframes popIn {
   0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
   100% { transform: translateX(-50%) scale(1); opacity: 1; }
-}
-// Web Audio Synthesizer (100% Offline & Reliable)
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function playSound(type) {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  const now = audioCtx.currentTime;
-
-  if (type === 'move') {
-    osc.frequency.setValueAtTime(320, now);
-    osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-    osc.start(now); osc.stop(now + 0.08);
-  } else if (type === 'capture') {
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(180, now);
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-    osc.start(now); osc.stop(now + 0.1);
-  } else if (type === 'check') {
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587, now);
-    osc.frequency.setValueAtTime(880, now + 0.08);
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-    osc.start(now); osc.stop(now + 0.25);
-  } else if (type === 'gameover') {
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(440, now);
-    osc.frequency.setValueAtTime(554, now + 0.12);
-    osc.frequency.setValueAtTime(659, now + 0.24);
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-    osc.start(now); osc.stop(now + 0.5);
-  }
-}
-
-// Single Player AI State
-let isAiGame = false;
-
-function startAiGame(difficulty) {
-  isAiGame = true;
-  playerColor = 'w';
-  currentRoom = null;
-  lastMove = null;
-
-  document.getElementById('mainApp').classList.remove('active');
-  document.getElementById('gameScreen').classList.add('active');
-
-  document.getElementById('yourName').innerText = currentUser;
-  document.getElementById('opponentName').innerText = `Bot (${difficulty.toUpperCase()})`;
-  document.getElementById('gameOpponentAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=Bot${difficulty}`;
-
-  game.reset();
-  renderBoard();
-}
-
-function makeAiMove() {
-  if (game.game_over() || game.turn() === playerColor) return;
-
-  setTimeout(() => {
-    const moves = game.moves({ verbose: true });
-    if (moves.length === 0) return;
-
-    // Prioritize Captures for Medium Bot
-    const captures = moves.filter(m => m.captured);
-    const selectedMove = (captures.length > 0) ? captures[Math.floor(Math.random() * captures.length)] : moves[Math.floor(Math.random() * moves.length)];
-
-    const move = game.move(selectedMove);
-    if (move) {
-      lastMove = { from: move.from, to: move.to };
-      if (move.captured) playSound('capture'); else playSound('move');
-      if (game.in_check()) playSound('check');
-      renderBoard();
-      checkGameStatus();
     }
-  }, 600);
-}
-
-// Move Execution Hooked with Audio
-function handleSquareClick(square) {
-  if (game.turn() !== playerColor && !isAiGame) return;
-
-  if (!selectedSquare) {
-    const piece = game.get(square);
-    if (piece && piece.color === playerColor) selectedSquare = square;
-  } else {
-    const moveData = { from: selectedSquare, to: square, promotion: 'q' };
-    const move = game.move(moveData);
-    if (move) {
-      lastMove = { from: move.from, to: move.to };
-      
-      if (move.captured) playSound('capture'); else playSound('move');
-      if (game.in_check()) playSound('check');
-
-      if (!isAiGame) {
-        socket.emit('makeMove', { roomId: currentRoom, move: moveData });
-      } else {
-        makeAiMove();
-      }
-      checkGameStatus();
-    }
-    selectedSquare = null;
-  }
-  renderBoard();
-}
-
-// In-Game Emotes Logic
-function toggleEmotePicker() {
-  const picker = document.getElementById('emotePicker');
-  picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
-}
-
-function sendEmote(emote) {
-  toggleEmotePicker();
-  if (currentRoom) {
-    socket.emit('sendEmote', { roomId: currentRoom, sender: currentUser, emote });
-  } else {
-    showEmoteBubble(`${currentUser}: ${emote}`);
-  }
-}
-
-socket.on('receiveEmote', (data) => {
-  showEmoteBubble(`${data.sender}: ${data.emote}`);
-});
-
-function showEmoteBubble(text) {
-  const bubble = document.getElementById('emoteBubble');
-  bubble.innerText = text;
-  bubble.style.display = 'block';
-  setTimeout(() => { bubble.style.display = 'none'; }, 2500);
-}
-
-// Leaderboard Sync
-socket.on('updateLeaderboard', (data) => {
-  const list = document.getElementById('leaderboardList');
-  if (!list) return;
-  list.innerHTML = '';
-
-  data.forEach((user, index) => {
-    const div = document.createElement('div');
-    div.className = 'rank-card';
-    div.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span class="rank-num">#${index + 1}</span>
-        <b>${user.username}</b>
-      </div>
-      <div style="font-size:0.85rem; color:#aaa;">⚡ ${user.elo} ELO | 🪙 ${user.coins}</div>
-    `;
-    list.appendChild(div);
-  });
-});
