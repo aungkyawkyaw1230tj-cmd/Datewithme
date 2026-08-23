@@ -18,13 +18,14 @@ let gameHistory = [];
 let ownedBoards = ['wood'];
 let equippedBoard = 'wood';
 
-// Expanded Shop Items
+// GitHub Image Files များနှင့် ကိုက်ညီသော Shop Items List
 const shopItems = [
   { id: 'wood', name: 'Classic Wood', price: 0, previewClass: 'wood-preview' },
   { id: 'marble', name: 'Royal Marble', price: 300, previewClass: 'marble-preview' },
-  { id: 'glass', name: 'Cyber Glass', price: 500, previewClass: 'glass-preview' },
-  { id: 'gold', name: 'Imperial Gold', price: 800, previewClass: 'gold-preview' },
-  { id: 'neon', name: 'Neon Dark', price: 1200, previewClass: 'neon-preview' }
+  { id: 'bxb', name: 'BXB Theme', price: 500, previewClass: 'bxb-preview' },
+  { id: 'bxw', name: 'BXW Theme', price: 600, previewClass: 'bxw-preview' },
+  { id: 'dxw', name: 'DXW Theme', price: 800, previewClass: 'dxw-preview' },
+  { id: 'gxw', name: 'GXW Theme', price: 1000, previewClass: 'gxw-preview' }
 ];
 
 window.addEventListener('DOMContentLoaded', () => {
