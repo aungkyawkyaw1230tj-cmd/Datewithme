@@ -254,3 +254,49 @@ html, body {
 .chat-box { flex: 1; overflow-y: auto; background: #121212; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
 .chat-input-row { display: flex; gap: 8px; }
 .chat-input-row input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #333; background: #222; color: #fff; }
+/* Leaderboard Styling */
+.rank-card {
+  background: #32302c;
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rank-num { font-weight: bold; font-size: 1.1rem; color: #81b64c; width: 28px; }
+
+/* Emote Styling */
+.emote-picker {
+  position: absolute;
+  top: 50px;
+  right: 12px;
+  background: #1e1d1b;
+  border: 1px solid #444;
+  border-radius: 20px;
+  padding: 6px 12px;
+  display: flex;
+  gap: 10px;
+  z-index: 100;
+}
+.emote-picker span { font-size: 1.2rem; cursor: pointer; }
+
+.emote-bubble {
+  position: absolute;
+  top: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(129, 182, 76, 0.95);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1rem;
+  z-index: 90;
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
