@@ -9,7 +9,7 @@
 
 html, body {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   overflow: hidden;
   position: fixed;
   background-color: #161512;
@@ -19,30 +19,95 @@ html, body {
 
 .app-container {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   position: relative;
   background-color: #262421;
+  overflow: hidden;
 }
 
-.screen { display: none; width: 100%; height: 100%; flex-direction: column; }
+.screen { 
+  display: none; 
+  width: 100%; 
+  height: 100%; 
+  flex-direction: column; 
+  position: relative;
+}
 .screen.active { display: flex; }
 
-.app-top-bar { height: 56px; background: #1e1d1b; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.app-top-bar { 
+  height: 56px; 
+  background: #1e1d1b; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 0 16px; 
+  flex-shrink: 0;
+}
 .mini-profile { display: flex; align-items: center; gap: 8px; }
 .mini-profile img { width: 32px; height: 32px; border-radius: 50%; }
 .coin-pill { background: #32302c; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
 
-.bottom-nav { height: 60px; background: #1e1d1b; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #32302c; margin-top: auto; }
+/* Tab Container Scrolling Fix */
+.tab-view { 
+  display: none; 
+  padding: 15px; 
+  flex: 1; 
+  overflow-y: auto; 
+  padding-bottom: 75px; /* Bottom Nav မကွယ်စေရန် Space ချန်ထားခြင်း */
+}
+.tab-view.active { display: block; }
+
+/* Fixed Bottom Navigation */
+.bottom-nav { 
+  height: 60px; 
+  background: #1e1d1b; 
+  display: flex; 
+  justify-content: space-around; 
+  align-items: center; 
+  border-top: 1px solid #32302c; 
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+}
 .nav-item { display: flex; flex-direction: column; align-items: center; color: #8b8987; font-size: 0.75rem; cursor: pointer; }
 .nav-item.active { color: #81b64c; }
 .nav-item i { font-size: 1.2rem; margin-bottom: 2px; }
 
-.tab-view { display: none; padding: 15px; flex: 1; overflow-y: auto; }
-.tab-view.active { display: block; }
+/* Auth Screen */
+.auth-box { padding: 30px 20px; text-align: center; }
+.auth-tabs { display: flex; margin: 20px 0; border-bottom: 2px solid #32302c; }
+.auth-tab { flex: 1; padding: 10px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; }
+.auth-tab.active { color: #81b64c; border-bottom: 2px solid #81b64c; }
+.input-field { display: flex; align-items: center; background: #32302c; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; gap: 10px; }
+.input-field input { background: none; border: none; color: #fff; width: 100%; outline: none; }
+
+/* Buttons & Mode Cards */
+.green-btn { background: #81b64c; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; }
+.red-btn { background: #da3232; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.accept-btn { background: #81b64c; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.logout-btn { background: #da3232; color: #fff; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; }
+
+.mode-card { background: #32302c; padding: 14px; border-radius: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
+.mode-icon { font-size: 1.5rem; color: #81b64c; }
+
+/* Request & History Cards */
+.req-card, .history-card { background: #32302c; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.history-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+.badge-win { background: rgba(129, 182, 76, 0.2); color: #81b64c; border: 1px solid #81b64c; }
+.badge-loss { background: rgba(218, 50, 50, 0.2); color: #da3232; border: 1px solid #da3232; }
+
+/* Modals & Game Layout */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 99; }
+.modal-box { background: #262421; padding: 20px; border-radius: 12px; width: 85%; max-width: 360px; text-align: center; }
+.time-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+.time-btn { background: #32302c; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 6px; cursor: pointer; }
+.time-btn.active { border-color: #81b64c; background: rgba(129, 182, 76, 0.2); color: #81b64c; font-weight: bold; }
 
 .game-top-nav { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; background: #1e1d1b; }
 .turn-badge { font-weight: bold; color: #81b64c; }
@@ -70,35 +135,6 @@ html, body {
 .move-list-scroll { display: flex; gap: 8px; }
 .move-item { background: #32302c; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-family: monospace; }
 .move-item.active { background: #81b64c; color: #fff; }
-
-.green-btn { background: #81b64c; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.red-btn { background: #da3232; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.accept-btn { background: #81b64c; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.logout-btn { background: #da3232; color: #fff; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; }
-
-.mode-card { background: #32302c; padding: 12px; border-radius: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-.mode-icon { font-size: 1.5rem; color: #81b64c; }
-
-/* Friend Request & History Card Items */
-.req-card, .history-card {
-  background: #32302c;
-  padding: 10px 12px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.history-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-.badge-win { background: rgba(129, 182, 76, 0.2); color: #81b64c; border: 1px solid #81b64c; }
-.badge-loss { background: rgba(218, 50, 50, 0.2); color: #da3232; border: 1px solid #da3232; }
-
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 99; }
-.modal-box { background: #262421; padding: 20px; border-radius: 12px; width: 85%; max-width: 360px; text-align: center; }
-.time-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-.time-btn { background: #32302c; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 6px; cursor: pointer; }
-.time-btn.active { border-color: #81b64c; background: rgba(129, 182, 76, 0.2); color: #81b64c; font-weight: bold; }
 
 .chat-overlay { position: fixed; bottom: 0; left: 0; right: 0; top: 40%; background: #1e1e1e; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 15px; z-index: 100; flex-direction: column; }
 .chat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
