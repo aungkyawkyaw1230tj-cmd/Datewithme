@@ -196,9 +196,13 @@ html, body {
   width: 100%;
   height: 100%;
   position: relative;
+  background-size: 100% 100%;
+  background-position: center;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-/* 8x8 Grid ကွက် အတိအကျဖြစ်စေရန် */
+/* 8x8 Grid */
 .board-grid, #board-grid {
   display: grid !important;
   grid-template-columns: repeat(8, 1fr) !important;
@@ -208,7 +212,7 @@ html, body {
   aspect-ratio: 1 / 1;
 }
 
-/* အကွက်တစ်ခုစီ၏ Size */
+/* Square Layout */
 .square {
   width: 100%;
   height: 100%;
@@ -219,7 +223,40 @@ html, body {
   overflow: hidden;
 }
 
-/* နယ်ရုပ်ပုံများ အကွက်ထက် မပိုစေရန် ရာခိုင်နှုန်းဖြင့် ထိန်းချုပ်ခြင်း */
+/* Default Fallback Light & Dark Squares */
+.square.light, .light { background-color: #eeeed2; }
+.square.dark, .dark { background-color: #769656; }
+
+/* ----------------------------------
+   BOARD SKINS MAPPING (IMAGES)
+---------------------------------- */
+.chess-board.wood   { background-image: url('assets/images/wood.png'); }
+.chess-board.marble { background-image: url('assets/images/marble.png'); }
+.chess-board.bxb    { background-image: url('assets/images/bxb.png'); }
+.chess-board.bxw    { background-image: url('assets/images/bxw.png'); }
+.chess-board.dxw    { background-image: url('assets/images/dxw.png'); }
+.chess-board.gxw    { background-image: url('assets/images/gxw.png'); }
+
+/* Overlay Grid colors for Image Skins */
+.chess-board[class*="wood"] .square.light,
+.chess-board[class*="marble"] .square.light,
+.chess-board[class*="bxb"] .square.light,
+.chess-board[class*="bxw"] .square.light,
+.chess-board[class*="dxw"] .square.light,
+.chess-board[class*="gxw"] .square.light {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.chess-board[class*="wood"] .square.dark,
+.chess-board[class*="marble"] .square.dark,
+.chess-board[class*="bxb"] .square.dark,
+.chess-board[class*="bxw"] .square.dark,
+.chess-board[class*="dxw"] .square.dark,
+.chess-board[class*="gxw"] .square.dark {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Piece Sizing */
 .square img, .piece {
   width: 85% !important;
   height: 85% !important;
@@ -229,6 +266,7 @@ html, body {
   display: block;
   margin: auto;
 }
+
 .legal-dot { width: 28%; height: 28%; background-color: rgba(0, 0, 0, 0.35); border-radius: 50%; position: absolute; z-index: 1; pointer-events: none; }
 .legal-capture { width: 100%; height: 100%; border: 4px solid rgba(255, 0, 0, 0.5); box-sizing: border-box; border-radius: 50%; position: absolute; z-index: 1; pointer-events: none; }
 
@@ -309,4 +347,4 @@ html, body {
 @keyframes popIn {
   0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
   100% { transform: translateX(-50%) scale(1); opacity: 1; }
-    }
+  }
