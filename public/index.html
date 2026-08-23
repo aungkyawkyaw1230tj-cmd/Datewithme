@@ -43,7 +43,7 @@
       <div class="app-top-bar">
         <div class="mini-profile">
           <img id="topAvatar" src="" alt="Avatar">
-          <span id="topUsername">Player</span>
+          <span id="topUsername" style="font-weight:bold;">Player</span>
         </div>
         <div class="coin-pill">🪙 <span id="topCoins">500</span></div>
       </div>
@@ -62,7 +62,7 @@
           <i class="fa-solid fa-plus mode-icon"></i>
           <div class="mode-info">
             <h3>Create Custom Room</h3>
-            <p>Select Time (5, 10, 15, 20 mins) & Play with Friends</p>
+            <p>Select Time & Play with Friends</p>
           </div>
         </div>
 
@@ -71,6 +71,15 @@
           <div class="mode-info">
             <h3>Join Custom Room</h3>
             <p>Enter 6-digit lobby code</p>
+          </div>
+        </div>
+
+        <!-- Play vs AI Single Player -->
+        <div class="mode-card" onclick="startAiGame('medium')" style="margin-top: 10px; border: 1px solid #81b64c;">
+          <i class="fa-solid fa-robot mode-icon" style="color: #81b64c;"></i>
+          <div class="mode-info">
+            <h3>Play vs Bot (AI)</h3>
+            <p style="color:#81b64c;">Offline Practice Engine</p>
           </div>
         </div>
 
@@ -95,6 +104,12 @@
           <h4 style="margin-bottom:10px; color:#aaa;"><i class="fa-solid fa-users"></i> My Friends</h4>
           <div id="friendsList"></div>
         </div>
+      </div>
+
+      <!-- Leaderboard Tab View -->
+      <div id="viewLeaderboard" class="tab-view">
+        <h3 style="margin-bottom:15px;"><i class="fa-solid fa-trophy"></i> Global Top Players</h3>
+        <div id="leaderboardList"></div>
       </div>
 
       <!-- Shop Tab View -->
@@ -124,9 +139,9 @@
           <i class="fa-solid fa-gamepad"></i>
           <span>Play</span>
         </div>
-        <div class="nav-item" onclick="switchNav('Friends')">
-          <i class="fa-solid fa-user-group"></i>
-          <span>Friends</span>
+        <div class="nav-item" onclick="switchNav('Leaderboard')">
+          <i class="fa-solid fa-trophy"></i>
+          <span>Rank</span>
         </div>
         <div class="nav-item" onclick="switchNav('Shop')">
           <i class="fa-solid fa-store"></i>
@@ -159,8 +174,22 @@
       <div class="game-top-nav">
         <button class="icon-btn" onclick="leaveGame()"><i class="fa-solid fa-arrow-left"></i></button>
         <div id="turnBadge" class="turn-badge">White's Turn</div>
-        <button class="icon-btn" onclick="toggleChat()"><i class="fa-solid fa-comment"></i></button>
+        <div style="display:flex; gap:8px;">
+          <button class="icon-btn" onclick="toggleEmotePicker()"><i class="fa-solid fa-face-smile"></i></button>
+          <button class="icon-btn" onclick="toggleChat()"><i class="fa-solid fa-comment"></i></button>
+        </div>
       </div>
+
+      <!-- Emote Popup Bar & Display Bubble -->
+      <div id="emotePicker" class="emote-picker" style="display:none;">
+        <span onclick="sendEmote('👍')">👍</span>
+        <span onclick="sendEmote('👏')">👏</span>
+        <span onclick="sendEmote('😂')">😂</span>
+        <span onclick="sendEmote('🔥')">🔥</span>
+        <span onclick="sendEmote('GG')">GG</span>
+        <span onclick="sendEmote('Oops!')">Oops!</span>
+      </div>
+      <div id="emoteBubble" class="emote-bubble" style="display:none;"></div>
 
       <!-- Opponent Info -->
       <div class="player-strip">
@@ -169,80 +198,13 @@
         <div id="opponentTimer" class="timer-box">05:00</div>
       </div>
 
-      <!-- Chess Board -->
+      <!-- Chess Board Area -->
       <div class="board-wrapper">
         <div id="board" class="chess-board wood">
           <div id="board-grid" class="board-grid"></div>
         </div>
       </div>
-<!-- Main App View -->
-<div id="mainApp" class="screen active">
-  <div class="app-top-bar">
-    <div class="mini-profile">
-      <img id="topAvatar" src="" alt="Avatar">
-      <span id="topUsername" style="font-weight:bold;">Player</span>
-    </div>
-    <div class="coin-pill">🪙 <span id="topCoins">500</span></div>
-  </div>
 
-  <!-- Play Tab -->
-  <div id="viewPlay" class="tab-view active">
-    <div class="mode-card" onclick="findMatch()" style="margin-bottom:10px;">
-      <i class="fas fa-bolt mode-icon"></i>
-      <div><h3>Quick Match</h3><p style="font-size:0.8rem; color:#aaa;">Play with online player</p></div>
-    </div>
-    
-    <div class="mode-card" onclick="openCustomRoomModal()" style="margin-bottom:10px;">
-      <i class="fas fa-plus-circle mode-icon"></i>
-      <div><h3>Custom Room</h3><p style="font-size:0.8rem; color:#aaa;">Play with friends</p></div>
-    </div>
-
-    <!-- Play vs AI Single Player -->
-    <div class="mode-card" onclick="startAiGame('medium')" style="margin-bottom:10px; border: 1px solid #81b64c;">
-      <i class="fas fa-robot mode-icon"></i>
-      <div><h3>Play vs Bot (AI)</h3><p style="font-size:0.8rem; color:#81b64c;">Offline Practice Engine</p></div>
-    </div>
-  </div>
-
-  <!-- Leaderboard Tab -->
-  <div id="viewLeaderboard" class="tab-view">
-    <h3 style="margin-bottom:12px;">🏆 Global Top Players</h3>
-    <div id="leaderboardList"></div>
-  </div>
-
-  <!-- Bottom Navigation -->
-  <div class="bottom-nav">
-    <div class="nav-item active" onclick="switchNav('Play')">🎮 Play</div>
-    <div class="nav-item" onclick="switchNav('Leaderboard')">🏆 Rank</div>
-    <div class="nav-item" onclick="switchNav('Shop')">🛍️ Shop</div>
-    <div class="nav-item" onclick="switchNav('Profile')">👤 Profile</div>
-  </div>
-</div>
-
-<!-- Game Arena Overlay Emotes -->
-<div id="gameScreen" class="screen">
-  <div class="game-top-nav">
-    <button class="icon-btn" onclick="leaveGame()">⬅️</button>
-    <span id="turnBadge" class="turn-badge">Your Turn</span>
-    <button class="icon-btn" onclick="toggleEmotePicker()">😃</button>
-  </div>
-
-  <!-- Emote Popup Bar -->
-  <div id="emotePicker" class="emote-picker" style="display:none;">
-    <span onclick="sendEmote('👍')">👍</span>
-    <span onclick="sendEmote('👏')">👏</span>
-    <span onclick="sendEmote('😂')">😂</span>
-    <span onclick="sendEmote('🔥')">🔥</span>
-    <span onclick="sendEmote('GG')">GG</span>
-    <span onclick="sendEmote('Oops!')">Oops!</span>
-  </div>
-
-  <div id="emoteBubble" class="emote-bubble" style="display:none;"></div>
-  <!-- Board rendering area -->
-  <div id="board-grid" class="chess-board wood"></div>
-</div>
-
-      
       <!-- Player Info -->
       <div class="player-strip active-strip">
         <img id="gameYourAvatar" src="" class="player-avatar">
