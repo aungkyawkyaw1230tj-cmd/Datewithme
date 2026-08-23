@@ -191,5 +191,51 @@ function handleLeave(socket, roomId) {
   }
 }
 
+io.on('connection', (socket) => {
+  socket.on('registerUser', (data) => {
+    const username = typeof data === 'string' ? data : data.username;
+    users[socket.id] = username;
+    if (!userScores[username]) {
+      userScores[username] = { elo: data.elo || 1200, coins: data.coins || 500 };
+    } else {
+      if (data.elo) userScores[username].elo = data.elo;
+      if (data.coins) userScores[username].coins = data.coins;
+    }
+    io.emit('updateLeaderboard', getLeaderboardData());
+  });
+
+  socket.on('updateStats', (data) => {
+    if (data.username) {
+      userScores[data.username] = { elo: data.elo, coins: data.coins };
+      io.emit('updateLeaderboard', getLeaderboardData());
+    }
+  });
+
+  socket.on('makeMove', (data) => {
+    socket.to(data.roomId).emit('opponentMove', data.move);
+  });
+
+  socket.on('sendEmote', (data) => {
+    io.to(data.roomId).emit('receiveEmote', { sender: data.sender, emote: data.emote });
+  });
+
+  // Spectator System
+  socket.on('spectateRoom', (roomId) => {
+    socket.join(roomId);
+    socket.emit('spectateSuccess', { roomId });
+  });
+
+  socket.on('disconnect', () => {
+    delete users[socket.id];
+  });
+});
+
+function getLeaderboardData() {
+  return Object.entries(userScores)
+    .map(([username, stats]) => ({ username, elo: stats.elo, coins: stats.coins }))
+    .sort((a, b) => b.elo - a.elo)
+    .slice(0, 20);
+}
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
