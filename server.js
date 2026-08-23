@@ -9,25 +9,48 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static('public'));
 
+// Global State Variables
 let waitingQueue = [];
 let activeRooms = {};
 let onlineUsers = {}; // username -> socket.id Mapping
 let pendingRequests = {}; // targetUser -> Array of senders
+let userScores = {}; // username -> { elo, coins } (Leaderboard Data)
 
 io.on('connection', (socket) => {
 
-  // Register User Online
-  socket.on('registerUser', (username) => {
+  // Register User & Leaderboard Sync
+  socket.on('registerUser', (data) => {
+    const username = typeof data === 'string' ? data : data.username;
     socket.username = username;
     onlineUsers[username] = socket.id;
 
-    // Send existing pending requests if any
+    if (typeof data === 'object' && data.username) {
+      userScores[username] = {
+        elo: data.elo || 1200,
+        coins: data.coins || 500
+      };
+    } else if (!userScores[username]) {
+      userScores[username] = { elo: 1200, coins: 500 };
+    }
+
+    // Leaderboard Update Broadcast
+    io.emit('updateLeaderboard', getLeaderboardData());
+
+    // Send pending friend requests if any
     if (pendingRequests[username]) {
       socket.emit('updatePendingRequests', pendingRequests[username]);
     }
   });
 
-  // Matchmaking
+  // Real-time Stats Update (Elo / Coins change)
+  socket.on('updateStats', (data) => {
+    if (data.username) {
+      userScores[data.username] = { elo: data.elo, coins: data.coins };
+      io.emit('updateLeaderboard', getLeaderboardData());
+    }
+  });
+
+  // Matchmaking System
   socket.on('findMatch', (data) => {
     waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id && p.username !== data.username);
 
@@ -63,7 +86,7 @@ io.on('connection', (socket) => {
     waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id);
   });
 
-  // Custom Room
+  // Custom Room System
   socket.on('createCustomRoom', (data) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const timeInSecs = (data.minutes || 5) * 60;
@@ -97,7 +120,7 @@ io.on('connection', (socket) => {
     startTimer(data.roomCode);
   });
 
-  // Friend Request Logic (Accept / Reject)
+  // Friend Request Logic
   socket.on('sendFriendRequest', (data) => {
     const { sender, target } = data;
     if (!pendingRequests[target]) pendingRequests[target] = [];
@@ -113,7 +136,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('respondFriendRequest', (data) => {
-    const { sender, target, accept } = data; // target is current user responding
+    const { sender, target, accept } = data;
 
     if (pendingRequests[target]) {
       pendingRequests[target] = pendingRequests[target].filter(u => u !== sender);
@@ -131,7 +154,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Game Logic
+  // In-Game Gameplay Actions
   socket.on('makeMove', (data) => {
     const room = activeRooms[data.roomId];
     if (room) {
@@ -140,8 +163,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('sendEmote', (data) => {
+    io.to(data.roomId).emit('receiveEmote', { sender: data.sender, emote: data.emote });
+  });
+
   socket.on('sendChatMessage', (data) => {
     io.to(data.roomId).emit('receiveChatMessage', { sender: data.sender, text: data.text });
+  });
+
+  // Spectator System
+  socket.on('spectateRoom', (roomId) => {
+    socket.join(roomId);
+    socket.emit('spectateSuccess', { roomId });
   });
 
   socket.on('leaveGame', (data) => {
@@ -149,7 +182,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    if (socket.username) delete onlineUsers[socket.username];
+    if (socket.username) {
+      delete onlineUsers[socket.username];
+    }
     waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id);
     for (const [roomId, room] of Object.entries(activeRooms)) {
       if (room.white === socket.id || room.black === socket.id) {
@@ -159,6 +194,7 @@ io.on('connection', (socket) => {
   });
 });
 
+// Helper Functions
 function startTimer(roomId) {
   const room = activeRooms[roomId];
   if (!room) return;
@@ -190,45 +226,6 @@ function handleLeave(socket, roomId) {
     delete activeRooms[roomId];
   }
 }
-
-io.on('connection', (socket) => {
-  socket.on('registerUser', (data) => {
-    const username = typeof data === 'string' ? data : data.username;
-    users[socket.id] = username;
-    if (!userScores[username]) {
-      userScores[username] = { elo: data.elo || 1200, coins: data.coins || 500 };
-    } else {
-      if (data.elo) userScores[username].elo = data.elo;
-      if (data.coins) userScores[username].coins = data.coins;
-    }
-    io.emit('updateLeaderboard', getLeaderboardData());
-  });
-
-  socket.on('updateStats', (data) => {
-    if (data.username) {
-      userScores[data.username] = { elo: data.elo, coins: data.coins };
-      io.emit('updateLeaderboard', getLeaderboardData());
-    }
-  });
-
-  socket.on('makeMove', (data) => {
-    socket.to(data.roomId).emit('opponentMove', data.move);
-  });
-
-  socket.on('sendEmote', (data) => {
-    io.to(data.roomId).emit('receiveEmote', { sender: data.sender, emote: data.emote });
-  });
-
-  // Spectator System
-  socket.on('spectateRoom', (roomId) => {
-    socket.join(roomId);
-    socket.emit('spectateSuccess', { roomId });
-  });
-
-  socket.on('disconnect', () => {
-    delete users[socket.id];
-  });
-});
 
 function getLeaderboardData() {
   return Object.entries(userScores)
