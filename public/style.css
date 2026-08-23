@@ -194,6 +194,7 @@ html, body {
   overflow: hidden;
 }
 
+/* Chess Board Themes */
 .chess-board { 
   width: 100%; 
   max-width: 100vw;
@@ -207,12 +208,12 @@ html, body {
   background-position: center;
 }
 
-.chess-board.wood { background-image: url('/assets/images/wood.png'); }
-.chess-board.marble { background-image: url('/assets/images/marble.png'); }
-.chess-board.bxb { background-image: url('/assets/images/bxb.png'); }
-.chess-board.bxw { background-image: url('/assets/images/bxw.png'); }
-.chess-board.dxw { background-image: url('/assets/images/dxw.png'); }
-.chess-board.gxw { background-image: url('/assets/images/gxw.png'); }
+.chess-board.wood { background-image: url('assets/images/wood.png'); }
+.chess-board.marble { background-image: url('assets/images/marble.png'); }
+.chess-board.bxb { background-image: url('assets/images/bxb.png'); }
+.chess-board.bxw { background-image: url('assets/images/bxw.png'); }
+.chess-board.dxw { background-image: url('assets/images/dxw.png'); }
+.chess-board.gxw { background-image: url('assets/images/gxw.png'); }
 
 .board-grid { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; height: 100%; }
 .square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
@@ -227,9 +228,7 @@ html, body {
 .move-history-bar { background: #1e1d1b; padding: 8px 12px; margin-top: auto; overflow-x: auto; white-space: nowrap; flex-shrink: 0; }
 .move-list-scroll { display: flex; gap: 8px; }
 .move-item { background: #32302c; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-family: monospace; }
-.move-item.active { background: #81b64c; color: #fff; }
-
-/* Shop Preview Boxes */
+.move-item.active { background: #81b64c; color: #fff; }/* Shop Preview Boxes */
 .board-preview-box {
   width: 48px;
   height: 48px;
@@ -241,12 +240,12 @@ html, body {
   background-position: center;
 }
 
-.wood-preview { background-image: url('/assets/images/wood.png'); }
-.marble-preview { background-image: url('/assets/images/marble.png'); }
-.bxb-preview { background-image: url('/assets/images/bxb.png'); }
-.bxw-preview { background-image: url('/assets/images/bxw.png'); }
-.dxw-preview { background-image: url('/assets/images/dxw.png'); }
-.gxw-preview { background-image: url('/assets/images/gxw.png'); }
+.wood-preview { background-image: url('assets/images/wood.png'); }
+.marble-preview { background-image: url('assets/images/marble.png'); }
+.bxb-preview { background-image: url('assets/images/bxb.png'); }
+.bxw-preview { background-image: url('assets/images/bxw.png'); }
+.dxw-preview { background-image: url('assets/images/dxw.png'); }
+.gxw-preview { background-image: url('assets/
 
 /* Chat Overlay */
 .chat-overlay { position: fixed; bottom: 0; left: 0; right: 0; top: 40%; background: #1e1e1e; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 15px; z-index: 100; flex-direction: column; }
