@@ -51,17 +51,15 @@ html, body {
 .mini-profile img { width: 32px; height: 32px; border-radius: 50%; }
 .coin-pill { background: #32302c; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
 
-/* Tab Container Scrolling Fix */
 .tab-view { 
   display: none; 
   padding: 15px; 
   flex: 1; 
   overflow-y: auto; 
-  padding-bottom: 75px; /* Bottom Nav မကွယ်စေရန် Space ချန်ထားခြင်း */
+  padding-bottom: 75px; 
 }
 .tab-view.active { display: block; }
 
-/* Fixed Bottom Navigation */
 .bottom-nav { 
   height: 60px; 
   background: #1e1d1b; 
@@ -79,7 +77,6 @@ html, body {
 .nav-item.active { color: #81b64c; }
 .nav-item i { font-size: 1.2rem; margin-bottom: 2px; }
 
-/* Auth Screen */
 .auth-box { padding: 30px 20px; text-align: center; }
 .auth-tabs { display: flex; margin: 20px 0; border-bottom: 2px solid #32302c; }
 .auth-tab { flex: 1; padding: 10px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; }
@@ -87,8 +84,7 @@ html, body {
 .input-field { display: flex; align-items: center; background: #32302c; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; gap: 10px; }
 .input-field input { background: none; border: none; color: #fff; width: 100%; outline: none; }
 
-/* Buttons & Mode Cards */
-.green-btn { background: #81b64c; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; }
+.green-btn { background: #81b64c; color: #fff; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 .red-btn { background: #da3232; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 .accept-btn { background: #81b64c; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 .logout-btn { background: #da3232; color: #fff; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; }
@@ -96,13 +92,44 @@ html, body {
 .mode-card { background: #32302c; padding: 14px; border-radius: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
 .mode-icon { font-size: 1.5rem; color: #81b64c; }
 
-/* Request & History Cards */
 .req-card, .history-card { background: #32302c; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .history-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
 .badge-win { background: rgba(129, 182, 76, 0.2); color: #81b64c; border: 1px solid #81b64c; }
 .badge-loss { background: rgba(218, 50, 50, 0.2); color: #da3232; border: 1px solid #da3232; }
 
-/* Modals & Game Layout */
+/* Chess Board Themes */
+.chess-board { width: 100%; aspect-ratio: 1 / 1; position: relative; border-radius: 6px; overflow: hidden; background-size: cover; }
+.chess-board.wood { background: linear-gradient(135deg, #b58863 50%, #f0d9b5 50%); }
+.chess-board.marble { background: linear-gradient(135deg, #717171 50%, #e2e2e2 50%); }
+.chess-board.glass { background: linear-gradient(135deg, #0f3443 50%, #34e89e 50%); }
+.chess-board.gold { background: linear-gradient(135deg, #aa771c 50%, #ffd700 50%); }
+.chess-board.neon { background: linear-gradient(135deg, #110022 50%, #00ffcc 50%); }
+
+.board-grid { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; height: 100%; }
+.square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
+.square img { width: 85%; height: 85%; object-fit: contain; z-index: 2; }
+
+/* Selected & Recent Move Highlighting */
+.square.selected { background-color: rgba(255, 255, 0, 0.5) !important; }
+.square.last-move { background-color: rgba(129, 182, 76, 0.55) !important; }
+
+.legal-dot { width: 28%; height: 28%; background-color: rgba(0, 0, 0, 0.35); border-radius: 50%; position: absolute; z-index: 1; pointer-events: none; }
+.legal-capture { width: 100%; height: 100%; border: 4px solid rgba(255, 0, 0, 0.5); box-sizing: border-box; border-radius: 50%; position: absolute; z-index: 1; pointer-events: none; }
+
+/* Shop Preview Boxes */
+.board-preview-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 2px solid #555;
+  flex-shrink: 0;
+}
+.wood-preview { background: linear-gradient(135deg, #b58863 50%, #f0d9b5 50%); }
+.marble-preview { background: linear-gradient(135deg, #717171 50%, #e2e2e2 50%); }
+.glass-preview { background: linear-gradient(135deg, #0f3443 50%, #34e89e 50%); }
+.gold-preview { background: linear-gradient(135deg, #aa771c 50%, #ffd700 50%); }
+.neon-preview { background: linear-gradient(135deg, #110022 50%, #00ffcc 50%); }
+
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 99; }
 .modal-box { background: #262421; padding: 20px; border-radius: 12px; width: 85%; max-width: 360px; text-align: center; }
 .time-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
@@ -119,18 +146,6 @@ html, body {
 .timer-box { margin-left: auto; background: #161512; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 1.1rem; }
 
 .board-wrapper { width: 100%; display: flex; justify-content: center; align-items: center; padding: 5px; box-sizing: border-box; }
-.chess-board { width: 100%; aspect-ratio: 1 / 1; position: relative; border-radius: 4px; overflow: hidden; background-size: cover; }
-.chess-board.wood { background-image: url('/assets/images/wood.png'); }
-.chess-board.marble { background-image: url('/assets/images/marble.png'); }
-
-.board-grid { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; height: 100%; }
-.square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
-.square img { width: 85%; height: 85%; object-fit: contain; z-index: 2; }
-.square.selected { background-color: rgba(255, 255, 0, 0.4) !important; }
-
-.legal-dot { width: 28%; height: 28%; background-color: rgba(0, 0, 0, 0.3); border-radius: 50%; position: absolute; z-index: 1; pointer-events: none; }
-.legal-capture { width: 100%; height: 100%; border: 4px solid rgba(255, 0, 0, 0.4); box-sizing: border-box; border-radius: 50%; position: absolute; z-index: 1; pointer-events: none; }
-
 .move-history-bar { background: #1e1d1b; padding: 8px 12px; margin-top: auto; overflow-x: auto; white-space: nowrap; }
 .move-list-scroll { display: flex; gap: 8px; }
 .move-item { background: #32302c; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-family: monospace; }
