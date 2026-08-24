@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Socket.io & Chess.js -->
+  <!-- Socket.io & Chess.js Engine -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 </head>
@@ -42,31 +42,63 @@
       <!-- App Top Bar -->
       <div class="app-top-bar">
         <div class="mini-profile">
-          <img id="topAvatar" src="" alt="Avatar">
+          <img id="topAvatar" src="assets/images/default-avatar.png" alt="Avatar">
           <span id="topUsername" style="font-weight:bold;">Player</span>
+          <span id="topFlag" class="country-flag">🇲🇲</span>
         </div>
         <div class="coin-pill">🪙 <span id="topCoins">500</span></div>
       </div>
 
       <!-- Play Tab View -->
       <div id="viewPlay" class="tab-view active">
-        <div class="mode-card" onclick="findMatch()">
-          <i class="fa-solid fa-bolt mode-icon"></i>
-          <div class="mode-info">
-            <h3>Quick Match (5 Mins)</h3>
-            <p>Play with random online player</p>
+        
+        <!-- Live Matchmaking Time Controls -->
+        <h4 style="margin-bottom: 8px; color: #81b64c;"><i class="fa-solid fa-bolt"></i> Live Matchmaking</h4>
+        <div class="tc-grid">
+          <div class="tc-btn active" onclick="startQuickMatch('bullet_1_0')">
+            <div class="tc-time">1 min</div>
+            <div class="tc-type">Bullet</div>
+          </div>
+          <div class="tc-btn" onclick="startQuickMatch('blitz_3_0')">
+            <div class="tc-time">3 min</div>
+            <div class="tc-type">Blitz</div>
+          </div>
+          <div class="tc-btn" onclick="startQuickMatch('blitz_5_3')">
+            <div class="tc-time">5 | +3</div>
+            <div class="tc-type">Blitz</div>
+          </div>
+          <div class="tc-btn" onclick="startQuickMatch('rapid_10_0')">
+            <div class="tc-time">10 min</div>
+            <div class="tc-type">Rapid</div>
+          </div>
+          <div class="tc-btn" onclick="startQuickMatch('rapid_30_0')">
+            <div class="tc-time">30 min</div>
+            <div class="tc-type">Rapid</div>
+          </div>
+          <div class="tc-btn" onclick="startDailyMatch()">
+            <div class="tc-time">1 Day</div>
+            <div class="tc-type">Daily</div>
           </div>
         </div>
 
-        <div class="mode-card" onclick="openCustomRoomModal()" style="margin-top: 10px;">
+        <!-- Mode Cards -->
+        <div class="mode-card" onclick="openBotModal()" style="margin-bottom: 10px; border: 1px solid #81b64c;">
+          <i class="fa-solid fa-robot mode-icon"></i>
+          <div class="mode-info">
+            <h3>Play vs Computer (Bots)</h3>
+            <p>100+ Personalities (250 - 3200 Elo)</p>
+          </div>
+        </div>
+
+        <div class="mode-card" onclick="openCustomRoomModal()" style="margin-bottom: 10px;">
           <i class="fa-solid fa-plus mode-icon"></i>
           <div class="mode-info">
-            <h3>Create Custom Room</h3>
-            <p>Select Time & Play with Friends</p>
+            <h3>Custom & Friend Challenge</h3>
+            <p>Play with Friends or Invite Link</p>
           </div>
         </div>
 
-        <div class="mode-card" onclick="promptJoinRoom()" style="margin-top: 10px;">
+        <div class="mode-card" onclick="promptJoinRoom()" style="margin-bottom: 10px;">
           <i class="fa-solid fa-key mode-icon"></i>
           <div class="mode-info">
             <h3>Join Custom Room</h3>
@@ -74,18 +106,38 @@
           </div>
         </div>
 
-        <!-- Play vs AI Single Player -->
-        <div class="mode-card" onclick="startAiGame('medium')" style="margin-top: 10px; border: 1px solid #81b64c;">
-          <i class="fa-solid fa-robot mode-icon" style="color: #81b64c;"></i>
+        <div id="matchSearchStatus" style="display:none; text-align:center; margin-top:15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px;">
+          <p id="searchMsg">Searching for opponent...</p>
+          <button class="logout-btn" onclick="cancelMatch()" style="margin-top:10px;">Cancel Search</button>
+        </div>
+      </div>
+
+      <!-- Puzzles Suite Tab View -->
+      <div id="viewPuzzles" class="tab-view">
+        <h3 style="margin-bottom:15px;"><i class="fa-solid fa-puzzle-piece"></i> Puzzles & Training</h3>
+        
+        <div class="mode-card" onclick="startPuzzleRush('3min')" style="margin-bottom: 10px;">
+          <i class="fa-solid fa-fire mode-icon" style="color:#da3232;"></i>
           <div class="mode-info">
-            <h3>Play vs Bot (AI)</h3>
-            <p style="color:#81b64c;">Offline Practice Engine</p>
+            <h3>Puzzle Rush</h3>
+            <p>3-Min Speed Run (3 Strikes System)</p>
           </div>
         </div>
 
-        <div id="matchSearchStatus" style="display:none; text-align:center; margin-top:20px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px;">
-          <p id="searchMsg">Match searching...</p>
-          <button class="logout-btn" onclick="cancelMatch()" style="margin-top:10px;">Cancel Search</button>
+        <div class="mode-card" onclick="startVisionTrainer()" style="margin-bottom: 10px;">
+          <i class="fa-solid fa-bullseye mode-icon"></i>
+          <div class="mode-info">
+            <h3>Vision Trainer</h3>
+            <p>Coordinate Speed Drill (a1 - h8)</p>
+          </div>
+        </div>
+
+        <div class="mode-card" onclick="startThematicPuzzles()">
+          <i class="fa-solid fa-diagram-project mode-icon"></i>
+          <div class="mode-info">
+            <h3>Thematic Tactics</h3>
+            <p>Pins, Skewers, Forks & Mates</p>
+          </div>
         </div>
       </div>
 
@@ -120,14 +172,71 @@
 
       <!-- Profile & History Tab View -->
       <div id="viewProfile" class="tab-view">
-        <div style="text-align:center; padding: 15px; background: #32302c; border-radius: 12px; margin-bottom: 15px;">
-          <img id="profileAvatar" src="" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid #81b64c;">
-          <h2 id="profileName" style="margin-top: 8px;">User</h2>
-          <p style="color:#aaa; font-size:0.9rem; margin-top: 4px;">Rating (Elo): <span id="userElo" style="color:#81b64c; font-weight:bold;">1200</span></p>
+        <!-- Profile Header -->
+        <div class="profile-card">
+          <img id="profileAvatar" src="assets/images/default-avatar.png" class="profile-avatar-large">
+          <div class="profile-info">
+            <h2 id="profileName" style="display:inline;">User</h2>
+            <span id="profileFlag" class="country-flag">🇲🇲</span>
+            <div><span class="user-badge" id="profileBadge">👑 Grandmaster</span></div>
+            <p id="profileBio" style="color:#aaa; font-size:0.75rem; margin-top:4px;">Chess enthusiast</p>
+          </div>
+        </div>
+
+        <!-- Performance & Stats Insights Dashboard -->
+        <h4 style="margin-bottom:8px; color:#81b64c;"><i class="fa-solid fa-chart-line"></i> Performance Insights</h4>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-val" id="glickoElo">1500</div>
+            <div class="stat-lbl">Glicko-2 Rating</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="winRate">65%</div>
+            <div class="stat-lbl">Win Rate</div>
+          </div>
+        </div>
+
+        <!-- Win / Draw / Loss Ratio Bar -->
+        <div style="margin-bottom: 15px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#aaa;">
+            <span>Wins: 65</span>
+            <span>Draws: 10</span>
+            <span>Losses: 25</span>
+          </div>
+          <div class="ratio-bar">
+            <div class="ratio-win" style="width: 65%;"></div>
+            <div class="ratio-draw" style="width: 10%;"></div>
+          </div>
+        </div>
+
+        <!-- Customization Toggles -->
+        <h4 style="margin-bottom:8px; color:#81b64c;"><i class="fa-solid fa-sliders"></i> Preferences</h4>
+        <div style="background:#32302c; padding: 0 12px; border-radius:10px; margin-bottom:15px;">
+          <div class="setting-row">
+            <span>Auto-Queen Promotion</span>
+            <label class="switch">
+              <input type="checkbox" id="cfgAutoQueen" checked onchange="toggleSetting('autoQueen')">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <span>Enable Premovings</span>
+            <label class="switch">
+              <input type="checkbox" id="cfgPremove" checked onchange="toggleSetting('premoveEnabled')">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row" style="border-bottom:none;">
+            <span>Move Sound Effects</span>
+            <label class="switch">
+              <input type="checkbox" id="cfgSounds" checked onchange="toggleSetting('moveSounds')">
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
 
         <div>
-          <h3 style="margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left"></i> Game History</h3>
+          <h4 style="margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left"></i> Game History</h4>
           <div id="gameHistoryList"></div>
           <button class="logout-btn" onclick="handleLogout()" style="margin-top:20px;"><i class="fa-solid fa-right-from-bracket"></i> Log Out</button>
         </div>
@@ -138,6 +247,10 @@
         <div class="nav-item active" onclick="switchNav('Play')">
           <i class="fa-solid fa-gamepad"></i>
           <span>Play</span>
+        </div>
+        <div class="nav-item" onclick="switchNav('Puzzles')">
+          <i class="fa-solid fa-puzzle-piece"></i>
+          <span>Puzzles</span>
         </div>
         <div class="nav-item" onclick="switchNav('Leaderboard')">
           <i class="fa-solid fa-trophy"></i>
@@ -154,7 +267,49 @@
       </div>
     </div>
 
-    <!-- 3. Custom Room Duration Selection Modal -->
+    <!-- 3. AI Bot Personalities Selection Modal -->
+    <div id="botModal" class="modal-overlay" style="display:none;">
+      <div class="modal-box" style="max-width: 380px;">
+        <h3>Select AI Bot Opponent</h3>
+        <div style="margin: 15px 0; max-height: 260px; overflow-y: auto;">
+          <div class="bot-card" onclick="startBotGame('pawn_novice')">
+            <div class="bot-avatar-box">🤖</div>
+            <div class="bot-meta">
+              <strong>Noob Bot</strong>
+              <div class="bot-quote">"Learning how pieces move!"</div>
+            </div>
+            <div class="bot-elo-badge">250</div>
+          </div>
+          <div class="bot-card" onclick="startBotGame('tactical_cat')">
+            <div class="bot-avatar-box">🐱</div>
+            <div class="bot-meta">
+              <strong>Felix Blitz</strong>
+              <div class="bot-quote">"Watch out for my traps!"</div>
+            </div>
+            <div class="bot-elo-badge">1200</div>
+          </div>
+          <div class="bot-card" onclick="startBotGame('master_mind')">
+            <div class="bot-avatar-box">🧠</div>
+            <div class="bot-meta">
+              <strong>Magnus AI</strong>
+              <div class="bot-quote">"Precision and position."</div>
+            </div>
+            <div class="bot-elo-badge">2800</div>
+          </div>
+          <div class="bot-card" onclick="startBotGame('stockfish_god')">
+            <div class="bot-avatar-box">⚡</div>
+            <div class="bot-meta">
+              <strong>Stockfish Ultra</strong>
+              <div class="bot-quote">"10M moves per second."</div>
+            </div>
+            <div class="bot-elo-badge">3200</div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="closeBotModal()">Close</button>
+      </div>
+    </div>
+
+    <!-- 4. Custom Room Duration Selection Modal -->
     <div id="customModal" class="modal-overlay" style="display:none;">
       <div class="modal-box">
         <h3>Select Game Duration</h3>
@@ -169,7 +324,18 @@
       </div>
     </div>
 
-    <!-- 4. Game Arena Screen -->
+    <!-- 5. Game Over Pop-up Modal -->
+    <div id="game-over-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <h2 id="modal-message">Checkmate!</h2>
+        <p style="margin-top: 8px; color: #aaa;">Game Finished</p>
+        <button class="green-btn" onclick="location.reload()" style="margin-top: 15px; width: 100%;">
+          Play Again
+        </button>
+      </div>
+    </div>
+
+    <!-- 6. Game Arena Screen -->
     <div id="gameScreen" class="screen">
       <div class="game-top-nav">
         <button class="icon-btn" onclick="leaveGame()"><i class="fa-solid fa-arrow-left"></i></button>
@@ -193,7 +359,7 @@
 
       <!-- Opponent Info -->
       <div class="player-strip">
-        <img id="gameOpponentAvatar" src="" class="player-avatar">
+        <img id="gameOpponentAvatar" src="assets/images/default-avatar.png" class="player-avatar">
         <div class="player-meta"><span id="opponentName" class="p-name">Opponent</span></div>
         <div id="opponentTimer" class="timer-box">05:00</div>
       </div>
@@ -207,7 +373,7 @@
 
       <!-- Player Info -->
       <div class="player-strip active-strip">
-        <img id="gameYourAvatar" src="" class="player-avatar">
+        <img id="gameYourAvatar" src="assets/images/default-avatar.png" class="player-avatar">
         <div class="player-meta"><span id="yourName" class="p-name">You</span></div>
         <div id="yourTimer" class="timer-box">05:00</div>
       </div>
@@ -234,5 +400,8 @@
   </div>
 
   <script src="client.js"></script>
+  <script src="settings.js"></script>
+  <script src="bot_engine.js"></script>
+  <script src="puzzles.js"></script>
 </body>
-</html>
+            </html>
