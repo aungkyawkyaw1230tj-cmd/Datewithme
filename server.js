@@ -4,7 +4,12 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -21,6 +26,8 @@ io.on('connection', (socket) => {
   // Register User & Leaderboard Sync
   socket.on('registerUser', (data) => {
     const username = typeof data === 'string' ? data : data.username;
+    if (!username) return;
+
     socket.username = username;
     onlineUsers[username] = socket.id;
 
@@ -44,14 +51,19 @@ io.on('connection', (socket) => {
 
   // Real-time Stats Update (Elo / Coins change)
   socket.on('updateStats', (data) => {
-    if (data.username) {
-      userScores[data.username] = { elo: data.elo, coins: data.coins };
+    if (data && data.username) {
+      userScores[data.username] = { 
+        elo: data.elo !== undefined ? data.elo : 1200, 
+        coins: data.coins !== undefined ? data.coins : 500 
+      };
       io.emit('updateLeaderboard', getLeaderboardData());
     }
   });
 
   // Matchmaking System
   socket.on('findMatch', (data) => {
+    if (!data || !data.username) return;
+
     waitingQueue = waitingQueue.filter(p => p.socketId !== socket.id && p.username !== data.username);
 
     if (waitingQueue.length > 0) {
@@ -88,6 +100,8 @@ io.on('connection', (socket) => {
 
   // Custom Room System
   socket.on('createCustomRoom', (data) => {
+    if (!data || !data.username) return;
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const timeInSecs = (data.minutes || 5) * 60;
 
@@ -106,6 +120,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('joinCustomRoom', (data) => {
+    if (!data || !data.roomCode) return;
+
     const room = activeRooms[data.roomCode];
     if (!room) return socket.emit('roomError', 'အခန်းသင်္ကေတ မှားယွင်းနေပါသည်။');
     if (room.black) return socket.emit('roomError', 'အခန်းပြည့်သွားပါပြီ။');
@@ -122,6 +138,8 @@ io.on('connection', (socket) => {
 
   // Friend Request Logic
   socket.on('sendFriendRequest', (data) => {
+    if (!data || !data.target || !data.sender) return;
+
     const { sender, target } = data;
     if (!pendingRequests[target]) pendingRequests[target] = [];
 
@@ -136,6 +154,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('respondFriendRequest', (data) => {
+    if (!data || !data.target || !data.sender) return;
+
     const { sender, target, accept } = data;
 
     if (pendingRequests[target]) {
@@ -156,6 +176,8 @@ io.on('connection', (socket) => {
 
   // In-Game Gameplay Actions
   socket.on('makeMove', (data) => {
+    if (!data || !data.roomId) return;
+
     const room = activeRooms[data.roomId];
     if (room) {
       socket.to(data.roomId).emit('opponentMove', data.move);
@@ -164,21 +186,29 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sendEmote', (data) => {
-    io.to(data.roomId).emit('receiveEmote', { sender: data.sender, emote: data.emote });
+    if (data && data.roomId) {
+      io.to(data.roomId).emit('receiveEmote', { sender: data.sender, emote: data.emote });
+    }
   });
 
   socket.on('sendChatMessage', (data) => {
-    io.to(data.roomId).emit('receiveChatMessage', { sender: data.sender, text: data.text });
+    if (data && data.roomId) {
+      io.to(data.roomId).emit('receiveChatMessage', { sender: data.sender, text: data.text });
+    }
   });
 
   // Spectator System
   socket.on('spectateRoom', (roomId) => {
-    socket.join(roomId);
-    socket.emit('spectateSuccess', { roomId });
+    if (roomId && activeRooms[roomId]) {
+      socket.join(roomId);
+      socket.emit('spectateSuccess', { roomId });
+    }
   });
 
   socket.on('leaveGame', (data) => {
-    handleLeave(socket, data.roomId);
+    if (data && data.roomId) {
+      handleLeave(socket, data.roomId);
+    }
   });
 
   socket.on('disconnect', () => {
