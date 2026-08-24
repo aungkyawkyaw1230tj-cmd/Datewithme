@@ -19,10 +19,18 @@ let gameHistory = [];
 let ownedBoards = ['wood'];
 let equippedBoard = 'wood';
 
-// Web Audio API Synthesizer (No external audio files needed)
+// App Settings Configuration
+let userSettings = {
+  autoQueen: true,
+  premoveEnabled: true,
+  moveSounds: true
+};
+
+// Web Audio API Synthesizer
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
+  if (!userSettings.moveSounds) return; // Settings Mute Toggle
   if (audioCtx.state === 'suspended') audioCtx.resume();
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -89,6 +97,7 @@ function loadUserData() {
   const savedEquipped = localStorage.getItem(`equipped_${currentUser}`);
   const savedFriends = localStorage.getItem(`friends_${currentUser}`);
   const savedHistory = localStorage.getItem(`history_${currentUser}`);
+  const savedSettings = localStorage.getItem(`settings_${currentUser}`);
 
   if (savedCoins !== null) userCoins = parseInt(savedCoins);
   if (savedElo !== null) userElo = parseInt(savedElo);
@@ -96,8 +105,23 @@ function loadUserData() {
   if (savedEquipped !== null) equippedBoard = savedEquipped;
   if (savedFriends !== null) friendsList = JSON.parse(savedFriends);
   if (savedHistory !== null) gameHistory = JSON.parse(savedHistory);
+  if (savedSettings !== null) userSettings = JSON.parse(savedSettings);
 
+  syncSettingsToUI();
   updateProfileUI();
+}
+
+function syncSettingsToUI() {
+  if (document.getElementById('cfgAutoQueen')) document.getElementById('cfgAutoQueen').checked = userSettings.autoQueen;
+  if (document.getElementById('cfgPremove')) document.getElementById('cfgPremove').checked = userSettings.premoveEnabled;
+  if (document.getElementById('cfgSounds')) document.getElementById('cfgSounds').checked = userSettings.moveSounds;
+}
+
+function toggleSetting(key) {
+  userSettings[key] = !userSettings[key];
+  if (currentUser) {
+    localStorage.setItem(`settings_${currentUser}`, JSON.stringify(userSettings));
+  }
 }
 
 function updateProfileUI() {
@@ -109,8 +133,15 @@ function updateProfileUI() {
 
   if (document.getElementById('topUsername')) document.getElementById('topUsername').innerText = currentUser;
   if (document.getElementById('profileName')) document.getElementById('profileName').innerText = currentUser;
-  if (document.getElementById('userElo')) document.getElementById('userElo').innerText = userElo;
   if (document.getElementById('topCoins')) document.getElementById('topCoins').innerText = userCoins;
+  if (document.getElementById('glickoElo')) document.getElementById('glickoElo').innerText = userElo;
+
+  // Win Rate Calculation
+  if (gameHistory.length > 0) {
+    const wins = gameHistory.filter(h => h.result === 'WIN').length;
+    const wr = Math.round((wins / gameHistory.length) * 100);
+    if (document.getElementById('winRate')) document.getElementById('winRate').innerText = `${wr}%`;
+  }
 
   renderFriends();
   renderPendingRequests();
@@ -124,9 +155,10 @@ function switchNav(tabName) {
 
   const navs = document.querySelectorAll('.nav-item');
   if (tabName === 'Play' && navs[0]) navs[0].classList.add('active');
-  if (tabName === 'Leaderboard' && navs[1]) navs[1].classList.add('active');
-  if (tabName === 'Shop' && navs[2]) navs[2].classList.add('active');
-  if (tabName === 'Profile' && navs[3]) navs[3].classList.add('active');
+  if (tabName === 'Puzzles' && navs[1]) navs[1].classList.add('active');
+  if (tabName === 'Leaderboard' && navs[2]) navs[2].classList.add('active');
+  if (tabName === 'Shop' && navs[3]) navs[3].classList.add('active');
+  if (tabName === 'Profile' && navs[4]) navs[4].classList.add('active');
 
   const targetView = document.getElementById(`view${tabName}`);
   if (targetView) targetView.classList.add('active');
@@ -162,12 +194,16 @@ function showMainApp() {
   updateProfileUI();
 }
 
-// Matchmaking
-function findMatch() {
+// Live Matchmaking & Time Controls
+function startQuickMatch(tcType) {
   isAiGame = false;
   document.getElementById('matchSearchStatus').style.display = 'block';
-  document.getElementById('searchMsg').innerText = 'Match searching...';
-  socket.emit('findMatch', { username: currentUser });
+  document.getElementById('searchMsg').innerText = `Searching match (${tcType.replace('_', ' ')})...`;
+  socket.emit('findMatch', { username: currentUser, tc: tcType });
+}
+
+function startDailyMatch() {
+  alert('Daily Match System Initiated.');
 }
 
 function cancelMatch() {
@@ -220,12 +256,16 @@ socket.on('matchFound', (data) => {
   renderBoard();
 });
 
-// Single Player AI Logic
-function startAiGame(difficulty = 'medium') {
+// Bot AI Opponent System
+function openBotModal() { document.getElementById('botModal').style.display = 'flex'; }
+function closeBotModal() { document.getElementById('botModal').style.display = 'none'; }
+
+function startBotGame(botKey) {
+  closeBotModal();
   isAiGame = true;
   playerColor = 'w';
   currentRoom = null;
-  currentOpponent = `Bot (${difficulty.toUpperCase()})`;
+  currentOpponent = `Bot: ${botKey.replace('_', ' ').toUpperCase()}`;
   lastMove = null;
 
   document.getElementById('mainApp').classList.remove('active');
@@ -233,7 +273,7 @@ function startAiGame(difficulty = 'medium') {
 
   document.getElementById('yourName').innerText = currentUser;
   document.getElementById('opponentName').innerText = currentOpponent;
-  document.getElementById('gameOpponentAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=Bot${difficulty}`;
+  document.getElementById('gameOpponentAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${botKey}`;
 
   game.reset();
   renderBoard();
@@ -260,7 +300,12 @@ function makeAiMove() {
   }, 600);
 }
 
-// Socket Game Events
+// Puzzles Suite Launchers
+function startPuzzleRush(mode) { alert(`Starting Puzzle Rush (${mode})`); }
+function startVisionTrainer() { alert('Starting Vision Coordinate Trainer'); }
+function startThematicPuzzles() { alert('Loading Thematic Tactics'); }
+
+// Socket Events & Game End
 socket.on('opponentMove', (move) => {
   const result = game.move(move);
   lastMove = { from: move.from, to: move.to };
@@ -274,18 +319,24 @@ socket.on('opponentMove', (move) => {
 
 socket.on('opponentLeft', () => {
   playSound('gameover');
-  alert('Opponent ထွက်သွားသည်။ သင်နိုင်ပါပြီ!');
+  showGameOverModal('Opponent Left. You Win!');
   saveGameResult(currentOpponent, 'WIN', 'Opponent Left', 25, 50);
-  leaveGame();
 });
 
 socket.on('gameOver', (data) => {
   playSound('gameover');
   const isWin = data.winner === playerColor;
-  alert(`Game Over! Winner: ${isWin ? 'You' : 'Opponent'} (${data.reason})`);
+  showGameOverModal(isWin ? 'Victory!' : 'Defeat!');
   saveGameResult(currentOpponent, isWin ? 'WIN' : 'LOSS', data.reason, isWin ? 25 : -15, isWin ? 50 : 10);
-  leaveGame();
 });
+
+function showGameOverModal(msg) {
+  const modal = document.getElementById('game-over-modal');
+  if (modal) {
+    document.getElementById('modal-message').innerText = msg;
+    modal.style.display = 'flex';
+  }
+}
 
 socket.on('timeUpdate', (data) => {
   const formatTime = (sec) => {
@@ -372,7 +423,8 @@ function handleSquareClick(square) {
     const piece = game.get(square);
     if (piece && piece.color === playerColor) selectedSquare = square;
   } else {
-    const moveData = { from: selectedSquare, to: square, promotion: 'q' };
+    const promoPiece = userSettings.autoQueen ? 'q' : 'q';
+    const moveData = { from: selectedSquare, to: square, promotion: promoPiece };
     const move = game.move(moveData);
     if (move) {
       lastMove = { from: move.from, to: move.to };
@@ -397,9 +449,8 @@ function checkGameStatus() {
     playSound('gameover');
     const winner = game.turn() === 'w' ? 'b' : 'w';
     const isWin = winner === playerColor;
-    alert(isWin ? 'Checkmate! သင်နိုင်ပါပြီ!' : 'Checkmate! Opponent နိုင်သွားပါပြီ!');
+    showGameOverModal(isWin ? 'Checkmate! You Win!' : 'Checkmate! Defeat!');
     saveGameResult(currentOpponent, isWin ? 'WIN' : 'LOSS', 'Checkmate', isWin ? 25 : -15, isWin ? 50 : 10);
-    leaveGame();
   }
 }
 
@@ -451,10 +502,10 @@ socket.on('updateLeaderboard', (data) => {
 
   data.forEach((user, index) => {
     const div = document.createElement('div');
-    div.className = 'rank-card';
+    div.className = 'req-card';
     div.innerHTML = `
       <div style="display:flex; align-items:center; gap:10px;">
-        <span class="rank-num">#${index + 1}</span>
+        <span style="font-weight:bold; color:#81b64c;">#${index + 1}</span>
         <b>${user.username}</b>
       </div>
       <div style="font-size:0.85rem; color:#aaa;">⚡ ${user.elo} ELO | 🪙 ${user.coins}</div>
@@ -648,7 +699,7 @@ function renderFriends() {
   });
 }
 
-// In-Game Chat
+// In-Game Chat System
 function toggleChat() {
   const overlay = document.getElementById('chatOverlay');
   if (overlay) overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
